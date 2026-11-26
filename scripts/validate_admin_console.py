@@ -5,6 +5,8 @@ ROOT=Path(__file__).resolve().parents[1]
 ADMIN=ROOT/'admin'/'sinjira'/'index.html'
 V18=ROOT/'assets'/'js'/'sinjira-admin-v18.js'
 HEALTH=ROOT/'assets'/'js'/'v24-admin-health.js'
+NAV=ROOT/'assets'/'js'/'sinjira-admin-panel-nav.mjs'
+CORE=ROOT/'assets'/'js'/'sinjira-admin-console-core.js'
 
 REQUIRED_TABS=[
  'projects','documents','players','access','playtests','reports','reader-comments',
@@ -18,12 +20,23 @@ def main()->int:
  if not ADMIN.exists(): errors.append('Route lowercase /admin/sinjira/ absente.')
  if not V18.exists(): errors.append('Module sinjira-admin-v18.js absent.')
  if not HEALTH.exists(): errors.append('Diagnostic v24-admin-health.js absent.')
+ if not NAV.exists() or not CORE.exists(): errors.append('Navigation administrative commune absente.')
  if errors:
   for e in errors: print('- '+e)
   return 1
  html=ADMIN.read_text('utf-8',errors='ignore')
  v18=V18.read_text('utf-8',errors='ignore')
  health=HEALTH.read_text('utf-8',errors='ignore')
+ nav=NAV.read_text('utf-8')
+ core=CORE.read_text('utf-8')
+ for marker in ('aria-controls','aria-labelledby','admin-panel-return','focus({preventScroll:true})'):
+  if marker not in nav: errors.append('Navigation administrative : '+marker)
+ if 'sinjira-admin-panel-nav.mjs?v=1.0.0' not in core or 'sinjira-admin-panel-nav.mjs?v=1.0.0' not in v18:
+  errors.append('Navigation commune non chargée par les deux modules.')
+ if 'await requireSinjiraAdmin();tabs();' not in core:
+  errors.append('Initialisation de la console avant contrôle administrateur.')
+ if any(token in nav for token in ('fetch(', 'localStorage','sessionStorage','getSupabase','functions.invoke')):
+  errors.append('La navigation seule ne doit pas accéder aux données.')
  for tab in REQUIRED_TABS:
   if f'data-admin-tab="{tab}"' not in html: errors.append(f'Onglet admin absent: {tab}')
   if f'data-admin-panel="{tab}"' not in html: errors.append(f'Panneau admin absent: {tab}')

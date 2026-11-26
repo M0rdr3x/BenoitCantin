@@ -130,7 +130,12 @@ def run():
                             check(all(not b["displayed"] for b in state["buttons"]),
                                   f"flèches inutiles visibles {path} {width}px: {state}")
                     page.set_viewport_size({"width":320,"height":800})
-                    page.wait_for_timeout(100)
+                    page.wait_for_function("""() => {
+                      const n=document.querySelector('.universe-subnav');
+                      const t=n?.querySelector('.container');
+                      return n?.classList.contains('is-scrollable') &&
+                        t.scrollWidth>t.clientWidth+2;
+                    }""",timeout=5_000)
                     track=page.locator(".universe-subnav .container")
                     prev=page.get_by_role("button",name="Liens précédents de connexion")
                     nxt=page.get_by_role("button",name="Liens suivants de connexion")
@@ -140,6 +145,11 @@ def run():
                       const b=document.querySelector('.sinjira-auth-nav-arrow');
                       return n && b && n.scrollLeft<=2 && b.disabled;
                     }""",timeout=5_000)
+                    # Un changement de hauteur ne doit pas recentrer le lien actif.
+                    page.set_viewport_size({"width":320,"height":600})
+                    page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+                    check(snapshot(page)["scrollLeft"]<=2,
+                          f"recentrage non sollicité après changement de hauteur {path}: {snapshot(page)}")
                     nxt.focus()
                     nxt.press("Enter")
                     page.wait_for_function("""() => {

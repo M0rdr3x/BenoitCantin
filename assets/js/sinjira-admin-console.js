@@ -1,4 +1,4 @@
-import './sinjira-admin-console-core.js';
+import './sinjira-admin-console-core.js?v=4.3';
 
 function projectSlug(value){
   return String(value||'projet')
@@ -40,6 +40,7 @@ function configureProjectIdentifier(){
     nameField.appendChild(help);
   }
   if(slugField)slugField.hidden=true;
+  slug.required=false;
 
   form.addEventListener('submit',()=>{
     if(!String(slug.value||'').trim())slug.value=projectSlug(name.value);

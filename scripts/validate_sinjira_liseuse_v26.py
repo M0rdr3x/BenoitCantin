@@ -129,6 +129,12 @@ def validate() -> list[str]:
             problems.append("Position de lecture perdue après changement de typographie V56 : " + marker)
     if reader.count("updateReaderTypography(()=>") != 5:
         problems.append("Tous les cinq réglages typographiques doivent préserver la position")
+    if "sinjira-liseuse-v26.css?v=34.11.21.2" not in reader_html:
+        problems.append("Liseuse : URL de style tactile non renouvelée")
+    if '<main class="reader-layout" id="contenu" tabindex="-1">' not in reader_html:
+        problems.append("Liseuse : cible du lien d’évitement inaccessible")
+    if 'role="group" aria-label="Navigation dans le livre"' not in reader_html:
+        problems.append("Liseuse : groupe de navigation non nommé")
     if "sinjira-liseuse-v26.js?v=34.11.22.1" not in reader_html:
         problems.append("Liseuse V56 : URL de script non renouvelée")
     page_html = (ROOT / "compte/liseuse.html").read_text("utf-8")

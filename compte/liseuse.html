@@ -9,16 +9,16 @@
 <title>Liseuse SINJIRA — La Cendre du Jugement</title>
 <link rel="icon" type="image/png" href="/assets/icons/sinjira-officiel-20261120.png">
 <link rel="stylesheet" href="/assets/css/site.css?v=24.4">
-<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=34.11.21.1">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=34.11.21.2">
 </head>
 <body class="sinjira-liseuse account-page" data-read-theme="sepia">
-<a class="skip-link" href="#reader-viewer">Aller au livre</a>
+<a class="skip-link" href="#contenu">Aller à la liseuse</a>
 <header class="reader-top"><div class="reader-top-inner">
   <a class="reader-brand" href="/projets/sinjira/"><img src="/assets/icons/sinjira-officiel-20261120.png" alt=""> SINJIRA™</a>
   <div class="reader-top-title"><strong>La Cendre du Jugement</strong><small id="reader-edition">Préparation de la lecture…</small></div>
   <a class="reader-return" href="/compte/bibliotheque-romans.html">← Mes romans</a>
 </div></header>
-<main class="reader-layout" id="contenu">
+<main class="reader-layout" id="contenu" tabindex="-1">
 <aside class="reader-sidebar" aria-label="Réglages de la lecture">
   <details class="reader-settings" open>
     <summary>Personnaliser ma lecture</summary>
@@ -92,7 +92,7 @@
     <p>Vous pouvez également <a href="/compte/bibliotheque-romans.html">retourner à la bibliothèque</a>.</p>
   </div>
   <div id="reader-content" hidden>
-    <div class="reader-tools" aria-label="Navigation dans le livre">
+    <div class="reader-tools" role="group" aria-label="Navigation dans le livre">
       <button id="reader-previous" type="button" aria-controls="reader-viewer">← Écran précédent</button>
       <label for="reader-page">Page</label>
       <input id="reader-page" type="number" min="1" max="520" value="1" inputmode="numeric">

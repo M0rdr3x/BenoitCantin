@@ -66,8 +66,16 @@ def check_geometry(page, width):
     result=page.evaluate("""() => {
       const cards=[...document.querySelectorAll('[data-comment-id]')];
       const buttons=[...document.querySelectorAll('[data-edit-comment],[data-delete-comment]')];
+      const list=document.querySelector('[data-my-comments]');
+      const guide=document.querySelector('.my-comments-guide');
+      const g=guide.getBoundingClientRect(), l=list.getBoundingClientRect();
+      const links=[...guide.querySelectorAll('a')];
+      const stacked=elements=>elements.length<2||elements[1].getBoundingClientRect().top>=elements[0].getBoundingClientRect().bottom-1;
       return {
         overflow:document.documentElement.scrollWidth>innerWidth+2,
+        listWidth:l.width,guideWidth:g.width,alignment:Math.abs(g.left-l.left),
+        stacked:stacked(buttons),guideStacked:stacked(links),
+        guideLinks:links.map(a=>{const r=a.getBoundingClientRect();return {left:r.left,right:r.right,height:r.height};}),
         cards:cards.map(card=>{
           const r=card.getBoundingClientRect();
           return {left:r.left,right:r.right,width:r.width};
@@ -79,6 +87,13 @@ def check_geometry(page, width):
       };
     }""")
     verify(not result["overflow"], f"débordement horizontal à {width}px : {result}")
+    verify(result["listWidth"]<=861 and result["guideWidth"]<=861 and result["alignment"]<=2,
+           f"guide et liste mal alignés à {width}px : {result}")
+    verify(len(result["guideLinks"])==2 and all(r["height"]>=47.5 and r["left"]>=-2 and r["right"]<=width+2 for r in result["guideLinks"]),
+           f"raccourcis de lecture hors écran ou trop petits à {width}px : {result}")
+    if width<=360:
+        verify(result["stacked"] and result["guideStacked"],
+               f"commandes non empilées à {width}px : {result}")
     for card in result["cards"]:
         verify(card["left"]>=-2 and card["right"]<=width+2,
                f"carte hors écran à {width}px : {result}")

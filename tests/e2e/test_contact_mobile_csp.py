@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173").rstrip("/")
@@ -28,13 +28,19 @@ def static_contracts() -> None:
     assert "Afficher l’aperçu du formulaire personnel" in html
     assert 'data-personal-formspree-state="pending-separate-endpoint"' in html
     assert 'src="/assets/js/sinjira-contact-route-v1.js?v=1.0.0"' in html
-    assert 'href="/assets/css/contact-ux-v1.css?v=1.0.0"' in html
+    assert 'href="/assets/css/contact-ux-v1.css?v=1.0.1"' in html
+    assert 'aria-labelledby="contact-channel-title"' in html
+    assert '<h2 id="contact-channel-title">Choisir le bon contact</h2>' in html
+    assert html.index('name="viewport"') < html.index("sinjira-nav-boot-v2.js")
+    assert html.count("site.js?v=24.4.105") == 1
     assert "onsubmit=" not in html and "onclick=" not in html
     assert "<script>(" not in html and "style=" not in html
     assert "var PERSONAL_ENDPOINT=''" in js
     assert "fields.disabled=true" in js and "event.preventDefault()" in js
     assert "form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
     assert "@media(max-width:640px)" in css
+    assert 'class="contact-channel-list" role="list"' in html
+    assert ".contact-channel-list .btn" in css and "min-height: 48px;" in css
     assert "/projets/projet-nova/contact.html" in html
     assert "/compte/vie-privee.html" in html
     print("OK: contrat statique CSP, destinations et verrou de confidentialité")
@@ -45,21 +51,39 @@ def verify(context, width: int, js_enabled: bool) -> None:
     try:
         response = page.goto(BASE + "/contact.html", wait_until="domcontentloaded", timeout=30_000)
         assert response and response.status == 200, (BROWSER, width, "contact inaccessible")
-        assert page.locator("body.contact-ux-page").count() == 1
-        assert page.get_by_role("heading", name="Choisir le bon contact").count() == 1
-        destinations = page.locator(".contact-route-actions a")
-        assert destinations.count() == 3, (BROWSER, width, "trois parcours attendus")
-        assert page.locator('.contact-route-actions a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1
-        assert page.locator('.contact-route-actions a[href="/compte/vie-privee.html"]').count() == 1
-        assert page.locator('.contact-route-actions a[href="/projets/projet-nova/contact.html"]').count() == 1
+        if js_enabled:
+            assert response.headers.get("content-security-policy") == STRICT_CSP
+        # Vérifier le DOM et l'arbre accessible avec une attente bornée.
+        # count() seul peut lire l'arbre avant sa mise à jour dans Firefox.
+        expect(page.locator("body.contact-ux-page")).to_have_count(1, timeout=5000)
+        title = page.locator("#contact-channel-title")
+        expect(title).to_be_visible(timeout=5000)
+        expect(title).to_have_text("Choisir le bon contact", timeout=5000)
+        heading = page.get_by_role("heading", name="Choisir le bon contact", exact=True)
+        expect(heading).to_have_count(1, timeout=5000)
+        expect(heading).to_be_visible(timeout=5000)
+        channels = page.get_by_role("list", name="Démarches de contact disponibles")
+        expect(channels).to_have_count(1, timeout=5000)
+        expect(channels.get_by_role("listitem")).to_have_count(3, timeout=5000)
+        destinations = channels.locator(":scope > li > a")
+        expect(destinations).to_have_count(3, timeout=5000)
+        assert page.locator('.contact-channel-list > li > a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1
+        assert page.locator('.contact-channel-list > li > a[href="/compte/vie-privee.html"]').count() == 1
+        assert page.locator('.contact-channel-list > li > a[href="/projets/projet-nova/contact.html"]').count() == 1
 
+        assert destinations.nth(0).get_attribute("href") == "mailto:sinjiraofficiel@gmail.com"
+        assert destinations.nth(1).get_attribute("href") == "/compte/vie-privee.html"
+        assert destinations.nth(2).get_attribute("href") == "/projets/projet-nova/contact.html"
+        assert page.locator('main#contenu[tabindex="-1"]').count() == 1
+        assert page.locator('.footer-col a[href="/contact.html"][aria-current="page"]').count() == 1
+        assert page.get_by_text("Si votre application de messagerie ne s’ouvre pas", exact=False).is_visible()
         preview = page.locator("#contact-preview")
         assert preview.count() == 1 and preview.get_attribute("open") is None
         summary = preview.locator("summary")
-        for item in [summary] + destinations.all():
+        for item, minimum in [(summary, 44)] + [(link, 48) for link in destinations.all()]:
             b = item.bounding_box()
             assert b, (BROWSER, width, "élément non affiché")
-            assert b["height"] >= 44, (BROWSER, width, "cible trop petite", b)
+            assert b["height"] >= minimum, (BROWSER, width, "cible trop petite", b)
             assert b["x"] >= -2 and b["x"] + b["width"] <= width + 2, (
                 BROWSER, width, "débordement tactile", b
             )

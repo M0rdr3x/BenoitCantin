@@ -22,6 +22,40 @@ const FULFILLMENT_LABELS = {
 };
 
 const roots = [...document.querySelectorAll('[data-preorder-root]')];
+const readyRoots = new WeakSet();
+let pending = false;
+
+function syncControls(root) {
+  const n = rootNodes(root);
+  const disabled = pending || !readyRoots.has(root);
+  [n.format,n.quantity,n.contact,n.disclosure,n.submit,n.cancel].forEach(control=>{if(control)control.disabled=disabled;});
+  n.form?.setAttribute('aria-busy', String(pending));
+  n.state?.querySelectorAll('button').forEach(control=>control.disabled=disabled);
+}
+function lockUnconfirmed() {
+  for (const root of roots) {
+    readyRoots.delete(root);
+    const n = rootNodes(root);
+    if (n.state) { n.state.hidden=true; n.state.replaceChildren(); }
+    syncControls(root);
+  }
+}
+function confirmCancellation(root) {
+  const dialog=root.querySelector('[data-preorder-cancel-dialog]');
+  const button=rootNodes(root).cancel;
+  if (!dialog || typeof dialog.showModal !== 'function') return Promise.resolve(window.confirm('Annuler votre réservation de précommande du Livre I ? Aucun paiement n’a été prélevé.'));
+  if(dialog.open)return Promise.resolve(false);
+  dialog.returnValue='';
+  return new Promise(resolve=>{
+    const closed=()=>{
+      const accepted=dialog.returnValue==='cancel-reservation';dialog.returnValue='';
+      if(button?.isConnected&&!button.disabled)button.focus({preventScroll:true});
+      resolve(accepted);
+    };
+    dialog.addEventListener('close',closed,{once:true});
+    try{dialog.showModal()}catch{dialog.removeEventListener('close',closed);resolve(false)}
+  });
+}
 
 function rootNodes(root) {
   return {
@@ -45,11 +79,15 @@ function loginHref() {
 }
 
 async function readPreorder() {
-  const { data, error } = await getSupabase().rpc('product_preorder_my_status', {
+  const result = await getSupabase().rpc('product_preorder_my_status', {
     p_product_slug: PRODUCT_SLUG
   });
-  if (error) throw error;
-  return Array.isArray(data) ? (data[0] || null) : (data || null);
+  if (result?.error !== null || !Object.hasOwn(result, 'data')) throw result?.error || new Error('READ_UNCONFIRMED');
+  const data = result.data;
+  if (data === null || (Array.isArray(data) && data.length === 0)) return null;
+  const row = Array.isArray(data) && data.length === 1 ? data[0] : data;
+  if (!row || typeof row !== 'object' || Array.isArray(row) || !['reserved','cancelled'].includes(row.status)) throw new Error('READ_UNCONFIRMED');
+  return row;
 }
 
 function printableDisclosure(preorder) {
@@ -86,12 +124,12 @@ async function copyReservationReference(reference, button, statusNode) {
     if (button) button.textContent = 'Référence copiée';
     if (statusNode) statusNode.textContent = 'Référence de réservation copiée.';
   } catch (error) {
-    console.warn('[SINJIRA preorder copy]', error);
+    // Ne pas journaliser de données techniques de la réservation.
     if (statusNode) statusNode.textContent = 'Impossible de copier automatiquement. Sélectionnez la référence affichée ci-dessus.';
   } finally {
     window.setTimeout(() => {
       if (button) {
-        button.disabled = false;
+        button.disabled = pending || !roots.some(root => root.contains(button) && readyRoots.has(root));
         button.textContent = previous;
       }
       if (statusNode?.textContent === 'Référence de réservation copiée.') statusNode.textContent = '';
@@ -100,7 +138,7 @@ async function copyReservationReference(reference, button, statusNode) {
 }
 
 function printPreorderConfirmation(preorder) {
-  if (!preorder?.reservation_reference) return;
+  if (!/^PR-[0-9A-F]{16}$/.test(String(preorder?.reservation_reference || ''))) return;
   const printWindow = window.open('', '_blank', 'width=850,height=900');
   if (!printWindow) {
     window.alert('Votre navigateur a bloqué la fenêtre d’impression. Autorisez les fenêtres temporaires pour imprimer cette confirmation.');
@@ -119,7 +157,7 @@ function printPreorderConfirmation(preorder) {
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Confirmation de réservation ${escapeHtml(preorder.reservation_reference)}</title>
 <style>
-@page{size:auto;margin:18mm}*{box-sizing:border-box}body{margin:0;color:#111;font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff}.sheet{max-width:760px;margin:0 auto}.brand{font-size:13px;letter-spacing:.12em;text-transform:uppercase}.title{margin:.35rem 0 0;font-size:28px}.subtitle{margin:.25rem 0 1.5rem;color:#444}.badge{display:inline-block;padding:.3rem .65rem;border:1px solid #222;border-radius:999px;font-weight:700}.notice{margin:1.25rem 0;padding:1rem;border:2px solid #222;border-radius:10px}.notice strong{display:block;margin-bottom:.25rem}dl{display:grid;grid-template-columns:minmax(170px,1fr) 2fr;margin:1.25rem 0;border-top:1px solid #bbb}dt,dd{margin:0;padding:.65rem 0;border-bottom:1px solid #ddd}dt{font-weight:700;padding-right:1rem}code{font:700 16px ui-monospace,SFMono-Regular,Menlo,monospace}.fine{font-size:12px;color:#444}
+@page{size:auto;margin:18mm}*{box-sizing:border-box}body{margin:0;color:#111;font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#fff}.sheet{max-width:760px;margin:0 auto}.brand{font-size:13px;letter-spacing:.12em;text-transform:uppercase}.title{margin:.35rem 0 0;font-size:28px}.subtitle{margin:.25rem 0 1.5rem;color:#444}.badge{display:inline-block;padding:.3rem .65rem;border:1px solid #222;border-radius:999px;font-weight:700}.notice{margin:1.25rem 0;padding:1rem;border:2px solid #222;border-radius:10px}.notice strong{display:block;margin-bottom:.25rem}dl{display:grid;grid-template-columns:minmax(170px,1fr) 2fr;margin:1.25rem 0;border-top:1px solid #bbb}dt,dd{margin:0;padding:.65rem 0;border-bottom:1px solid #ddd}dt{font-weight:700;padding-right:1rem}code{font:700 16px ui-monospace,SFMono-Regular,Menlo,monospace}.fine{font-size:12px;color:#444}dd,dt,code{min-width:0;overflow-wrap:anywhere}dl{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}@media screen and (max-width:560px){body{padding:14px}dl{grid-template-columns:minmax(0,1fr)}dt{border-bottom:0;padding-bottom:0}dd{padding-top:.2rem}}@media print{.notice,dl>dt,dl>dd{break-inside:avoid}}
 </style></head><body><main class="sheet">
 <div class="brand">SINJIRA™ · Livre I</div>
 <h1 class="title">Confirmation de réservation</h1>
@@ -165,7 +203,8 @@ function renderState(nodes, preorder) {
   const payment = preorder.payment_status === 'not_collected' && preorder.financial_commitment === false
     ? 'Aucun paiement — aucun engagement financier'
     : 'État financier à vérifier';
-  const reference = preorder.reservation_reference || 'Référence en cours de génération';
+  const referenceValid = /^PR-[0-9A-F]{16}$/.test(String(preorder.reservation_reference || ''));
+  const reference = referenceValid ? preorder.reservation_reference : 'Référence indisponible';
   const disclosure = preorder.disclosure_version && preorder.disclosure_acknowledged_at
     ? `${escapeHtml(preorder.disclosure_version)} — confirmé le ${escapeHtml(formatDate(preorder.disclosure_acknowledged_at))}`
     : 'Confirmation non enregistrée pour cette ancienne réservation';
@@ -187,12 +226,16 @@ function renderState(nodes, preorder) {
     <div class="sinjira-preorder-actions">
       <button class="btn btn-secondary" data-preorder-copy type="button">Copier la référence</button>
       <button class="btn btn-secondary" data-preorder-print type="button">Imprimer / enregistrer en PDF</button>
-      <span class="sr-only" data-preorder-copy-status role="status" aria-live="polite"></span>
+      <span class="sinjira-preorder-copy-feedback" data-preorder-copy-status role="status" aria-live="polite"></span>
     </div>
     <p><small>Cette référence identifie seulement votre réservation SINJIRA™. Elle n’est ni un numéro de commande ni un identifiant technique de votre compte. Copier la référence et générer la confirmation imprimable se font uniquement dans votre navigateur.</small></p>`;
 
   const copyButton = nodes.state.querySelector('[data-preorder-copy]');
   const copyStatus = nodes.state.querySelector('[data-preorder-copy-status]');
+  if (!referenceValid) {
+    copyButton?.remove();
+    nodes.state.querySelector('[data-preorder-print]')?.remove();
+  }
   copyButton?.addEventListener('click', () => copyReservationReference(preorder.reservation_reference, copyButton, copyStatus));
   nodes.state.querySelector('[data-preorder-print]')?.addEventListener('click', () => printPreorderConfirmation(preorder));
 
@@ -207,20 +250,25 @@ async function refreshRoot(root, user = null) {
   const nodes = rootNodes(root);
   const currentUser = user || await getCurrentUser();
 
+  readyRoots.delete(root);
+  syncControls(root);
   if (!currentUser) {
     if (nodes.auth) nodes.auth.hidden = false;
     if (nodes.login) nodes.login.href = loginHref();
     if (nodes.form) nodes.form.hidden = true;
-    if (nodes.state) nodes.state.hidden = true;
+    if (nodes.state) { nodes.state.hidden = true; nodes.state.replaceChildren(); }
     if (nodes.cancel) nodes.cancel.hidden = true;
+    nodes.form?.reset();
     return;
   }
 
   if (nodes.auth) nodes.auth.hidden = true;
-  if (nodes.form) nodes.form.hidden = false;
-
   const preorder = await readPreorder();
+  if (preorder && !['reserved','cancelled'].includes(preorder.status)) throw new Error('RESERVATION_STATE_UNAVAILABLE');
   renderState(nodes, preorder);
+  if (nodes.form) nodes.form.hidden = false;
+  readyRoots.add(root);
+  syncControls(root);
 }
 
 async function refreshAll(user = null) {
@@ -234,6 +282,7 @@ function announcePreorderUpdate() {
 async function reserve(root, event) {
   event.preventDefault();
   const nodes = rootNodes(root);
+  if (pending || !readyRoots.has(root)) return;
   const quantity = Number(nodes.quantity?.value || 1);
   const preferredFormat = String(nodes.format?.value || 'undecided');
   const contactWhenSalesOpen = nodes.contact?.checked !== false;
@@ -254,9 +303,12 @@ async function reserve(root, event) {
     return;
   }
 
-  if (nodes.submit) nodes.submit.disabled = true;
+  pending = true;
+  roots.forEach(syncControls);
+  setStatus(nodes.status, 'Enregistrement de votre réservation…', 'info');
+  let confirmed = false;
   try {
-    const { error } = await getSupabase().rpc('product_preorder_reserve_confirmed', {
+    const result = await getSupabase().rpc('product_preorder_reserve_confirmed', {
       p_product_slug: PRODUCT_SLUG,
       p_preferred_format: preferredFormat,
       p_quantity: quantity,
@@ -264,42 +316,61 @@ async function reserve(root, event) {
       p_disclosure_version: DISCLOSURE_VERSION,
       p_disclosure_acknowledged: true
     });
-    if (error) throw error;
+    if (result?.error !== null || typeof result.data !== 'string' || !/^PR-[0-9A-F]{16}$/.test(result.data)) throw result?.error || new Error('RESERVATION_UNCONFIRMED');
+    confirmed = true;
     setStatus(nodes.status, 'Votre précommande est réservée. Aucun paiement n’a été prélevé; toute future commande devra être confirmée séparément.', 'success');
-    await refreshAll();
-    announcePreorderUpdate();
   } catch (error) {
-    console.error('[SINJIRA preorder reserve]', error);
+    lockUnconfirmed();
     const message = String(error?.message || '');
-    setStatus(
-      nodes.status,
-      message.includes('PREORDER_DISCLOSURE_REQUIRED')
-        ? 'La réservation exige la confirmation du texte de transparence actuel. Relisez l’avertissement et confirmez-le avant de continuer.'
-        : (message || 'La précommande n’a pas pu être enregistrée.'),
-      'error'
-    );
+    setStatus(nodes.status, message.includes('PREORDER_DISCLOSURE_REQUIRED')
+      ? 'La réservation exige la confirmation du texte de transparence actuel. Rechargez la page et relisez les conditions.'
+      : 'Enregistrement non confirmé. Rechargez la page pour vérifier votre réservation avant de réessayer.', 'error');
   } finally {
-    if (nodes.submit) nodes.submit.disabled = false;
+    if (confirmed) {
+      try { await refreshAll(); }
+      catch {
+        lockUnconfirmed();
+        setStatus(nodes.status, 'Réservation enregistrée. Rechargez la page pour actualiser votre confirmation.', 'success');
+      }
+      announcePreorderUpdate();
+    }
+    pending = false;
+    roots.forEach(syncControls);
   }
 }
 
 async function cancel(root) {
   const nodes = rootNodes(root);
-  if (!confirm('Annuler votre réservation de précommande du Livre I ? Aucun paiement n’a été prélevé.')) return;
-  if (nodes.cancel) nodes.cancel.disabled = true;
+  if (pending || !readyRoots.has(root) || nodes.cancel?.hidden) return;
+  if (!await confirmCancellation(root)) return;
+  if (pending || !readyRoots.has(root) || nodes.cancel?.hidden) return;
+  pending = true;
+  roots.forEach(syncControls);
+  setStatus(nodes.status, 'Annulation en cours…', 'info');
+  let confirmed = false;
   try {
-    const { data, error } = await getSupabase().rpc('product_preorder_cancel', {
+    const result = await getSupabase().rpc('product_preorder_cancel', {
       p_product_slug: PRODUCT_SLUG
     });
-    if (error) throw error;
+    if (result?.error !== null || typeof result.data !== 'boolean') throw result?.error || new Error('CANCELLATION_UNCONFIRMED');
+    const data = result.data;
+    confirmed = true;
     setStatus(nodes.status, data ? 'Votre précommande a été annulée.' : 'Aucune précommande active à annuler.', data ? 'success' : 'info');
-    await refreshAll();
-    announcePreorderUpdate();
-  } catch (error) {
-    console.error('[SINJIRA preorder cancel]', error);
-    setStatus(nodes.status, error?.message || 'La précommande n’a pas pu être annulée.', 'error');
+  } catch {
+    lockUnconfirmed();
+    setStatus(nodes.status, 'Annulation non confirmée. Rechargez la page pour vérifier votre réservation avant de réessayer.', 'error');
   } finally {
-    if (nodes.cancel) nodes.cancel.disabled = false;
+    if (confirmed) {
+      try { await refreshAll(); }
+      catch {
+        lockUnconfirmed();
+        setStatus(nodes.status, 'Annulation traitée. Rechargez la page pour vérifier votre réservation.', 'info');
+      }
+      announcePreorderUpdate();
+    }
+    pending = false;
+    roots.forEach(syncControls);
+    if (!nodes.submit?.disabled) nodes.submit?.focus({preventScroll:true});
   }
 }
 
@@ -311,17 +382,17 @@ if (roots.length) {
       setStatus(nodes.status, 'Le service de précommande SINJIRA™ est temporairement indisponible.', 'error');
     }
   } else {
-    const user = await getCurrentUser();
     for (const root of roots) {
       const nodes = rootNodes(root);
+      syncControls(root);
       nodes.form?.addEventListener('submit', event => reserve(root, event));
       nodes.cancel?.addEventListener('click', () => cancel(root));
     }
     try {
-      await refreshAll(user);
+      await refreshAll(await getCurrentUser());
     } catch (error) {
-      console.error('[SINJIRA preorder load]', error);
-      for (const root of roots) setStatus(rootNodes(root).status, error?.message || 'Impossible de charger votre précommande.', 'error');
+      lockUnconfirmed();
+      for (const root of roots) setStatus(rootNodes(root).status, 'Impossible de vérifier votre précommande. Rechargez la page pour réessayer.', 'error');
     }
   }
 }

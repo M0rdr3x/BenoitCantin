@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.99"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.103"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
@@ -230,8 +230,17 @@ def check_routes(context):
         page.wait_for_timeout(150)
         verify(dock.evaluate("(el) => el.scrollLeft") <= 2,
                "la navigation reprend le contrôle contre le glissement de l'utilisateur")
+        # Une variation de hauteur seule (barre d'adresse/clavier) doit
+        # conserver le balayage manuel au lieu de recentrer sur Profil.
+        for height in (360, 840, 700):
+            page.set_viewport_size({"width":240,"height":height})
+            page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+            verify(dock.evaluate("(el)=>el.scrollLeft")<=2,
+                   f"dock recentré après changement de hauteur {height}px")
         # Une rotation 240 -> 390 -> 240 révèle de nouveau l'onglet actif.
         page.set_viewport_size({"width": 390, "height": 700})
+        page.wait_for_function("() => document.querySelector('[data-sinjira-account-mobile-nav]').clientWidth>=380") 
+        page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
         page.set_viewport_size({"width": 240, "height": 700})
         page.wait_for_function("""() => {
           const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
@@ -266,6 +275,33 @@ def check_app(playwright):
             verify(page.locator(".mobile-app-brand img").get_attribute("src") ==
                    "/assets/icons/sinjira-officiel-20261120.png",
                    "emblème officiel SINJIRA manquant")
+            # Le débordement global peut être masqué par overflow-x:hidden.
+            # Vérifier aussi les rectangles des commandes et du formulaire.
+            def verify_composer_layout(width, height, zoom):
+                page.set_viewport_size({"width":width,"height":height})
+                page.evaluate("(zoom) => document.documentElement.style.fontSize=zoom", zoom)
+                geometry=page.evaluate("""() => {
+                  const rect = selector => document.querySelector(selector).getBoundingClientRect();
+                  const within = r => r.left >= -2 && r.right <= innerWidth+2;
+                  const top=rect('.mobile-app-topbar'), brand=rect('.mobile-app-brand');
+                  const actions=rect('.mobile-app-top-actions'), main=rect('.mobile-app-main');
+                  const composer=rect('.mobile-app-composer'), field=rect('.mobile-app-composer textarea');
+                  const submit=rect('.mobile-app-composer-actions button');
+                  return { within:[brand,actions,composer,field,submit].every(within),
+                    separate: brand.right<=actions.left+2 || brand.bottom<=actions.top+2,
+                    mainClear: main.top>=top.bottom-2,
+                    fieldContained: field.left>=composer.left-2 && field.right<=composer.right+2,
+                    submitContained: submit.left>=composer.left-2 && submit.right<=composer.right+2,
+                    submitHeight:submit.height };
+                }""")
+                verify(all(geometry[k] for k in ("within","separate","mainClear",
+                    "fieldContained","submitContained")) and geometry["submitHeight"]>=47.5,
+                    f"entête ou publication mal disposés à {width}x{height}, zoom {zoom}: {geometry}")
+
+            for width, height, zoom in ((240,700,"100%"),(320,700,"200%"),
+                                         (390,360,"100%"),(768,360,"100%")):
+                verify_composer_layout(width,height,zoom)
+            page.evaluate("document.documentElement.style.fontSize=''")
             for width in WIDTHS:
                 page.set_viewport_size({"width":width,"height":700})
                 state=page.evaluate("""() => {

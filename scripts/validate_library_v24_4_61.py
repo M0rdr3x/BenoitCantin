@@ -67,7 +67,7 @@ def main()->int:
 
     require(reads_html,[
         'data-v18-page="reads-v24-4-61"',
-        'sinjira-reads-v24-4-61.js?v=24.4.61',
+        'sinjira-reads-v24-4-61.js?v=26.11.25',
         'data-reader-library'
     ],'mes-lectures.html')
 
@@ -87,7 +87,9 @@ def main()->int:
         "from('sinjira_reader_library')",
         'data-v2461-add-read',
         'data-v2461-remove-read',
-        "onConflict:'user_id,novel_id'"
+        "onConflict:'user_id,novel_id',ignoreDuplicates:true",
+        '<progress class="reading-progress"',
+        "delete().eq('user_id',user.id).eq('novel_id',novelId)"
     ],'sinjira-reads-v24-4-61.js')
     forbid(reads_js,["from('novels')","from('reader_library')"],'sinjira-reads-v24-4-61.js')
 

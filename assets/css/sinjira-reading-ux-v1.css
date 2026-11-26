@@ -1,0 +1,15 @@
+/* Mes lectures et Mes romans : composants isolés, sans modifier les droits. */
+body[data-reading-ux="v1"] main :is(.account-shell,.account-reader-grid,.reader-book-card,.sinjira-library-feature,.hero-actions){min-width:0;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+body[data-reading-ux="v1"] main .reader-book-card{padding:clamp(12px,3vw,24px)}
+body[data-reading-ux="v1"] main .reader-book-card :is(h2,p,.eyebrow){overflow-wrap:anywhere;white-space:normal;min-width:0}
+body[data-reading-ux="v1"] main .reader-book-card .hero-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px;margin-top:16px}
+body[data-reading-ux="v1"] main .reader-book-card .btn,.reading-remove-dialog .btn{box-sizing:border-box;min-width:0;min-height:48px;width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center}
+.reading-progress{display:block;width:100%;max-width:100%;height:16px;accent-color:#82ded1}
+.reading-remove-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(36rem,calc(100% - 24px));max-width:calc(100% - 24px);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;padding:clamp(12px,4vw,24px);border:1px solid #5fbfb4;border-radius:18px;background:#101d2c;color:#f2f8ff;overflow-wrap:anywhere}
+.reading-remove-dialog::backdrop{background:rgba(4,8,16,.78)}
+.reading-remove-dialog form{display:grid;gap:12px;min-width:0}
+.reading-remove-dialog :is(h2,p){margin:0}
+.reading-remove-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+body[data-reading-ux="v1"] :is(.reader-book-card,.reading-remove-dialog) :is(a,button):focus-visible{outline:3px solid #a1f4ec;outline-offset:2px}
+@media(max-width:560px){.reading-remove-actions{grid-template-columns:minmax(0,1fr)}}
+@media(forced-colors:active){.reading-remove-dialog{border-color:CanvasText}}

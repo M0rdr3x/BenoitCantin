@@ -67,9 +67,16 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-8', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-9', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-16', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-17', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-18', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-19', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-16'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-17'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-18'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-19'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-20'), true);
   assert.ok(h.requests.length > 0);
   for (const req of h.requests) {
     assert.equal(req.credentials, 'omit');
@@ -274,4 +281,35 @@ test('hors ligne : les ressources absentes produisent une réponse réseau en er
   ]) {
     assert.equal((await h.request(path, { destination })).type, 'error');
   }
+});
+
+
+test('accueil et univers : scripts et styles publics versionnés disponibles hors ligne', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  const assets = [
+    ['/assets/css/site-personality-v25.css', 'style'],
+    ['/assets/css/sinjira-universe-nav-v2.css', 'style'],
+    ['/projets/sinjira/sinjira.css', 'style'],
+    ['/assets/js/home-session-lazy-v24-5-1.js', 'script'],
+    ['/assets/js/sinjira-universe-session-lazy-v1.js', 'script'],
+    ['/assets/js/site-personality-v25.js', 'script'],
+    ['/assets/js/sinjira-universe-nav-v2.js', 'script'],
+  ];
+  for (const [path, destination] of assets) {
+    const request = h.requests.find(r => new URL(r.url).pathname === path);
+    assert.ok(request, path);
+    assert.equal(request.credentials, 'omit');
+    assert.equal(request.cache, 'no-store');
+    assert.equal((await h.request(path + '?v=1.0.0', { destination })).status, 200);
+  }
+  assert.equal(h.writes.length, 0);
+  h.setOnline(false);
+  for (const [path, destination] of assets) {
+    assert.equal(await (await h.request(path + '?v=1.0.0', { destination })).text(), 'precache:' + path);
+  }
+  assert.equal((await h.request('/projets/sinjira/sinjira.css?token=fictif', { destination: 'style' })).type, 'error');
+  assert.equal((await h.request('/projets/sinjira/autre.css?v=1', { destination: 'style' })).type, 'error');
+  assert.equal((await h.request('/compte/', { destination: 'document' })).status, 200);
+  assert.equal(await h.caches.match('/compte/'), undefined);
+  assert.equal(h.writes.length, 0);
 });

@@ -25,3 +25,33 @@
 .character-account-portrait img{width:100%;height:100%;object-fit:cover;display:block}
 .character-account-copy{min-width:0}
 @media (max-width:760px){.character-account-card-with-portrait{grid-template-columns:1fr}.character-account-portrait{width:min(72vw,320px);margin-inline:auto}}
+
+/* Messageries du compte : contenu long, saisie mobile et clavier.
+   Limiter le changement aux deux interfaces de conversation. */
+body[data-v20-page="messages"] .v20-message-shell :where(.v20-contact-pane,.v20-chat-pane,.v20-chat-header,.v20-chat-log,.v20-chat-form){min-width:0}
+body[data-v20-page="messages"] .v20-contact-search,
+body[data-v20-page="messages"] .v20-chat-form textarea{
+  box-sizing:border-box;min-width:0;max-width:100%;font-size:max(16px,1rem);min-height:48px;
+}
+body[data-v20-page="messages"] .v20-chat-form[hidden]{display:none!important}
+body[data-v20-page="messages"] .v20-contact{min-height:48px;min-width:0;cursor:pointer}
+body[data-v20-page="messages"] .v20-contact img,
+body[data-v20-page="messages"] .v20-chat-header .v20-social-avatar{flex-shrink:0}
+body[data-v20-page="messages"] .v20-contact span,
+body[data-v20-page="messages"] .v20-chat-header .v20-social-identity > div,
+body[data-v20-page="messages"] .v20-bubble{min-width:0;overflow-wrap:anywhere}
+body[data-v20-page="messages"] .v20-chat-header{flex-wrap:wrap}
+body[data-v20-page="messages"] .v20-chat-form button,
+body[data-v20-page="messages"] .v20-chat-header button,
+body[data-v20-page="messages"] .v20-bubble button{min-height:48px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+body[data-v20-page="messages"] .v20-message-shell :is(button,input,textarea):focus-visible{outline:3px solid #a1f4ec;outline-offset:-3px}
+@media(max-width:900px){
+  body[data-v20-page="messages"] .v20-message-shell{grid-template-columns:minmax(0,1fr);min-height:0}
+  body[data-v20-page="messages"] .v20-contact-list{max-height:clamp(100px,32vh,240px)}
+  body[data-v20-page="messages"] .v20-chat-pane{min-height:320px;grid-template-rows:auto minmax(0,1fr) auto}
+}
+@media(max-width:600px){
+  body[data-v20-page="messages"] .v20-chat-form:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr)}
+  body[data-v20-page="messages"] .v20-chat-form :is(textarea,button){width:100%}
+  body[data-v20-page="messages"] .v20-chat-log{padding:12px}
+}

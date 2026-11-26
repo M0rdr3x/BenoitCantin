@@ -1,0 +1,31 @@
+/* Socle de composants du compte : activation d'une licence uniquement. */
+body[data-license-ux="v1"] main :is(.account-card,.v24-panel,.v24-two-col,.account-form,.field,[data-license-list]){box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere}
+body[data-license-ux="v1"] main .account-card{padding:clamp(12px,3vw,28px)}
+body[data-license-ux="v1"] main :is(.account-form input,.btn){box-sizing:border-box;min-height:48px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+body[data-license-ux="v1"] main .account-form input{width:100%;font-size:max(16px,1rem)}
+body[data-license-ux="v1"] main .account-form small{display:block;line-height:1.5}
+body[data-license-ux="v1"] main .account-form .btn{width:100%}
+body[data-license-ux="v1"] main :is(button,input,a):focus-visible{outline:3px solid #a1f4ec;outline-offset:2px}
+@media(max-width:850px){body[data-license-ux="v1"] main .v24-two-col{grid-template-columns:minmax(0,1fr)}}
+@media(forced-colors:active){body[data-license-ux="v1"] main :is(button,input,a):focus-visible{outline-color:Highlight}}
+
+/* Le reflow concerne également le menu de repli et le pied de page.
+   Ne pas masquer les débordements du document : laisser le texte se replier. */
+body[data-license-ux="v1"] :is(.container,.account-shell,.nav-shell,.brand,.brand-text,.footer-bottom,.account-status){box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere}
+body[data-license-ux="v1"] main :is(h1,h2,h3,p,small,.v24-badge,.v24-empty){min-width:0;max-width:100%;overflow-wrap:anywhere}
+body[data-license-ux="v1"] main .v24-badge{white-space:normal}
+body[data-license-ux="v1"] main .v24-panel{padding:clamp(10px,3vw,24px)}
+body[data-license-ux="v1"] main .v24-empty{padding:clamp(10px,3vw,26px)}
+body[data-license-ux="v1"] .footer-bottom>*{min-width:0;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:1020px){
+  body[data-license-ux="v1"] .nav-shell{display:grid;grid-template-columns:minmax(0,1fr) auto}
+  body[data-license-ux="v1"] .nav-shell .brand{max-width:100%}
+  body[data-license-ux="v1"] .brand-text strong{overflow-wrap:anywhere}
+  body[data-license-ux="v1"] .account-nav-scroll{box-sizing:border-box;min-width:0;max-width:100%;overflow-x:auto!important;overflow-y:hidden!important}
+  html:not([data-sinjira-nav-ready]) body[data-license-ux="v1"] .main-nav{grid-column:1/-1;box-sizing:border-box;min-width:0;max-width:100%}
+  body[data-license-ux="v1"] .main-nav a{min-width:0;overflow-wrap:anywhere;white-space:normal}
+}
+@media(max-width:600px){
+  body[data-license-ux="v1"] main h1{font-size:clamp(1.5rem,8vw,2.5rem)}
+  body[data-license-ux="v1"] .footer-bottom{flex-direction:column;gap:10px}
+}

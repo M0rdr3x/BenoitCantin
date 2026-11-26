@@ -5,11 +5,26 @@ const roots = [...document.querySelectorAll('[data-preorder-fulfillment]')];
 const s = getSupabase();
 let styleLoaded = false;
 
+// Les opportunités de coupure explicites restent compatibles avec le texte
+// agrandi et ne changent ni la valeur du contrôle ni le texte copié.
+function setSelectionText(node, value) {
+  const pieces = String(value || '').split(/(\s+)/u);
+  const fragment = document.createDocumentFragment();
+  for (const piece of pieces) {
+    const chars = Array.from(piece);
+    for (let i = 0; i < chars.length; i += 8) {
+      if (i) fragment.append(document.createElement('wbr'));
+      fragment.append(document.createTextNode(chars.slice(i, i + 8).join('')));
+    }
+  }
+  node.replaceChildren(fragment);
+}
+
 function ensureStyle() {
   if (styleLoaded || document.querySelector('link[data-preorder-cost-summary-style]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = new URL('../css/sinjira-preorder-cost-summary-v24-5-25.css?v=24.5.25', import.meta.url).href;
+  link.href = new URL('../css/sinjira-preorder-cost-summary-v24-5-25.css?v=24.5.46.3', import.meta.url).href;
   link.dataset.preorderCostSummaryStyle = 'true';
   document.head.appendChild(link);
   styleLoaded = true;
@@ -17,17 +32,18 @@ function ensureStyle() {
 
 function centsValue(value) {
   if (value === null || value === undefined || value === '') return null;
+  if (typeof value !== 'number' && (typeof value !== 'string' || !/^\d+$/.test(value))) return null;
   const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : null;
+  return Number.isSafeInteger(n) && n >= 0 ? n : null;
 }
 
 function money(cents, currency) {
   const value = centsValue(cents);
-  if (value === null) return null;
+  if (value === null || !/^[A-Z]{3}$/.test(currency || '')) return null;
   try {
-    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: currency || 'CAD' }).format(value / 100);
+    return new Intl.NumberFormat('fr-CA', { style: 'currency', currency }).format(value / 100);
   } catch {
-    return `${(value / 100).toFixed(2)} ${currency || 'CAD'}`;
+    return null;
   }
 }
 
@@ -35,7 +51,7 @@ function safeCommercial(info) {
   if (!info) return null;
   if (info.sales_enabled !== false || info.checkout_enabled !== false || info.payment_enabled !== false
       || info.external_fulfillment_enabled !== false || info.auto_conversion_allowed !== false) return null;
-  return info;
+  return /^[A-Z]{3}$/.test(info.currency || '') ? info : null;
 }
 
 function markup() {
@@ -51,7 +67,7 @@ function markup() {
       <label>Réception<select data-pcs-method><option value="undecided">Je déciderai plus tard</option><option value="shipping">Livraison — frais à ma charge</option><option value="pickup">Ramassage sur place — 0 $ de frais de livraison</option></select></label>
       <label data-pcs-zone-wrap hidden>Zone de livraison<select data-pcs-zone><option value="">Choisir une zone</option></select></label>
     </div>
-    <div class="sinjira-cost-summary-grid" aria-live="polite">
+    <div class="sinjira-cost-summary-grid" aria-live="polite" aria-atomic="false">
       <div><span>Prix du livre</span><strong data-pcs-book>Prix pas encore annoncé</strong><small data-pcs-book-note>Seul un prix officiellement publié peut être utilisé.</small></div>
       <div><span>Livraison</span><strong data-pcs-shipping>Estimation pas encore disponible</strong><small data-pcs-shipping-note>Le coût final devra être confirmé avant toute future commande.</small></div>
       <div class="sinjira-cost-summary-total"><span>Sous-total estimatif avant taxes</span><strong data-pcs-total>Total estimatif indisponible pour le moment</strong><small data-pcs-total-note>Aucun total n’est inventé lorsqu’une donnée manque.</small></div>
@@ -77,9 +93,9 @@ function ui(summary) {
 }
 
 async function rpc(name, args = {}) {
-  const { data, error } = await s.rpc(name, args);
-  if (error) throw error;
-  return data;
+  const result = await s.rpc(name, args);
+  if (result?.error !== null || !Object.hasOwn(result, 'data')) throw result?.error || new Error('Réponse non confirmée');
+  return result.data;
 }
 
 function commercialRow(data) {
@@ -114,6 +130,8 @@ async function init(root) {
   if (grid) root.insertBefore(summary, grid);
   else root.appendChild(summary);
   const n = ui(summary);
+  const controls = [n.format, n.quantity, n.method, n.zone];
+  controls.forEach(control => { control.disabled = true; });
 
   if (!isSinjiraBackendConfigured()) {
     n.book.textContent = 'Prix pas encore annoncé';
@@ -132,7 +150,7 @@ async function init(root) {
     commercial = commercialRow(commercialData);
     options = fulfillmentData || {};
   } catch (error) {
-    console.error('[SINJIRA preorder cost summary]', error);
+    // Les détails techniques du serveur ne sont pas affichés ni journalisés.
   }
   const zones = renderZones(n, options);
   let calculationId = 0;
@@ -140,15 +158,22 @@ async function init(root) {
   async function calculate() {
     const thisCalculation = ++calculationId;
     const format = String(n.format.value || 'undecided');
-    const quantity = Math.max(1, Math.min(5, Number(n.quantity.value || 1)));
+    const quantity = Number(n.quantity.value);
+    n.total.textContent = 'Nouveau calcul…';
+    n.totalNote.textContent = 'Le sous-total précédent n’est plus applicable.';
+    n.shipping.textContent = 'Estimation à vérifier…';
+    n.shippingNote.textContent = 'Les valeurs précédentes ne sont plus applicables.';
     const method = String(n.method.value || 'undecided');
     const includesPhysical = format === 'paper' || format === 'both';
     const digitalOnly = format === 'digital';
-    const subtotal = bookSubtotal(commercial, format, quantity);
+    const subtotal = Number.isInteger(quantity) && quantity >= 1 && quantity <= 5 ? centsValue(bookSubtotal(commercial, format, quantity)) : null;
     const currency = commercial?.currency || null;
 
     n.zoneWrap.hidden = !(includesPhysical && method === 'shipping' && zones.length > 0);
-    if (!n.zoneWrap.hidden && !n.zone.value && zones.length === 1) n.zone.value = zones[0].zone_code;
+    n.zone.disabled = n.zoneWrap.hidden;
+    if (n.zoneWrap.hidden) n.zone.value = '';
+    const zoneLabel = n.zone.closest('.sinjira-select-shell')?.nextElementSibling;
+    if (zoneLabel?.classList.contains('sinjira-selected-option')) setSelectionText(zoneLabel, n.zone.selectedOptions[0]?.textContent);
 
     if (subtotal === null) {
       n.book.textContent = commercial ? 'Prix non disponible pour ce choix' : 'Prix pas encore annoncé';
@@ -182,7 +207,7 @@ async function init(root) {
       if (!options?.shipping_estimates_enabled || !zones.length) {
         n.shipping.textContent = 'Estimation pas encore publiée';
         n.shippingNote.textContent = 'Les frais seront à la charge du client; aucune fourchette fiable n’est publiée actuellement.';
-      } else if (!n.zone.value) {
+      } else if (!n.zone.value || !zones.some(zone => zone.zone_code === n.zone.value) || !Number.isInteger(quantity) || quantity < 1 || quantity > 5) {
         n.shipping.textContent = 'Choisissez une zone';
         n.shippingNote.textContent = 'Aucune adresse exacte n’est demandée : la zone publiée suffit pour l’estimation.';
       } else {
@@ -198,8 +223,8 @@ async function init(root) {
           if (row && row.shipping_customer_pays === true && row.estimate_nonbinding === true) {
             shippingMin = centsValue(row.estimate_min_cents);
             shippingMax = centsValue(row.estimate_max_cents);
-            shippingCurrency = row.currency || currency;
-            if (shippingMin !== null && shippingMax !== null) {
+            shippingCurrency = row.currency;
+            if (shippingMin !== null && shippingMax !== null && shippingMin <= shippingMax && money(shippingMin, shippingCurrency) && money(shippingMax, shippingCurrency)) {
               fulfillmentComplete = true;
               n.shipping.textContent = `${money(shippingMin, shippingCurrency)} à ${money(shippingMax, shippingCurrency)}`;
               n.shippingNote.textContent = `Estimation non contractuelle — ${row.zone_label || 'zone publiée'}. Coût final à confirmer avant achat.`;
@@ -220,8 +245,8 @@ async function init(root) {
       n.shippingNote.textContent = 'Le ramassage, lorsqu’un lieu est publié, ajoute 0 $ de frais de livraison.';
     }
 
-    const sameCurrency = !shippingCurrency || !currency || shippingCurrency === currency;
-    if (subtotal !== null && fulfillmentComplete && sameCurrency && shippingMin !== null && shippingMax !== null) {
+    const sameCurrency = Boolean(currency && shippingCurrency === currency);
+    if (subtotal !== null && fulfillmentComplete && sameCurrency && shippingMin !== null && shippingMax !== null && Number.isSafeInteger(subtotal + shippingMin) && Number.isSafeInteger(subtotal + shippingMax)) {
       const totalMin = subtotal + shippingMin;
       const totalMax = subtotal + shippingMax;
       n.total.textContent = totalMin === totalMax
@@ -230,13 +255,26 @@ async function init(root) {
       n.totalNote.textContent = 'Sous-total estimatif avant taxes applicables. Les taxes, le cas échéant, ne sont pas calculées ici; le montant final devra être présenté et accepté avant tout futur paiement.';
     } else {
       n.total.textContent = 'Total estimatif indisponible pour le moment';
-      n.totalNote.textContent = sameCurrency
+      n.totalNote.textContent = !(currency && shippingCurrency && shippingCurrency !== currency)
         ? 'Aucun total n’est inventé lorsqu’un prix, une estimation ou un mode de réception confirmé manque. Les taxes applicables ne sont pas calculées ici.'
         : 'Les monnaies du prix et de la livraison ne correspondent pas; aucun total n’est calculé et aucune taxe n’est estimée.';
     }
   }
 
-  [n.format, n.quantity, n.method, n.zone].forEach(control => control?.addEventListener('change', calculate));
+  controls.forEach(control => {
+    const selected = document.createElement('small');
+    selected.className = 'sinjira-selected-option';
+    selected.setAttribute('aria-hidden', 'true');
+    const showSelection = () => { setSelectionText(selected, control.selectedOptions[0]?.textContent); };
+    const shell = document.createElement('span');
+    shell.className = 'sinjira-select-shell';
+    control.before(shell);
+    shell.append(control);
+    shell.after(selected);
+    control.disabled = false;
+    control.addEventListener('change', () => { showSelection(); calculate(); });
+    showSelection();
+  });
   await calculate();
 }
 

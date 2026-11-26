@@ -266,7 +266,7 @@ def validate_install_runtime(errors: list[str]) -> None:
         ('display-mode: standalone', 'Détection du mode installé absente.'),
         ('loadMobileAccountShell', 'Chargement de la continuité mobile du compte absent.'),
         ('sinjira-mobile-account-shell-v24-4-95.css?v=24.4.99', 'Style de continuité mobile V24.4.95 non chargé.'),
-        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.99', 'Runtime de continuité mobile V24.4.95 non chargé.'),
+        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.101', 'Runtime de continuité mobile V24.4.95 non chargé.'),
     ]:
         if marker not in text:
             errors.append(message)
@@ -275,7 +275,7 @@ def validate_install_runtime(errors: list[str]) -> None:
     exact_card_selector = "d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]')"
     if text.count(exact_card_selector) < 3 or "d.querySelector('[data-sinjira-pwa-install]')" in text:
         errors.append("Le runtime PWA peut confondre sa balise script avec la carte interactive.")
-    if '/assets/js/sinjira-pwa-install.js?v=24.4.100' not in site_text:
+    if '/assets/js/sinjira-pwa-install.js?v=24.4.103' not in site_text:
         errors.append('site.js ne charge pas le runtime PWA historique compatible.')
     if 'serviceWorker.register' in session_text:
         errors.append('v19-session.js enregistre encore un deuxième Service Worker.')
@@ -290,7 +290,7 @@ def validate_install_runtime(errors: list[str]) -> None:
         if marker not in shell_text:
             errors.append(f'Navigation mobile du compte V24.4.95 incomplète: {marker}')
     for marker in ['function revealActiveLink()', "a[aria-current=\"page\"],a[data-current-section]", '(max-width:270px)',
-                   'window.requestAnimationFrame(revealActiveLink)', "window.addEventListener('resize'"]:
+                   'window.requestAnimationFrame(syncAfterLayout)', 'lastViewportWidth', 'lastDockWidth', 'revealPending', "window.addEventListener('resize'"]:
         if marker not in shell_text:
             errors.append(f'Dock compte: révélation de la rubrique active absente: {marker}')
     for marker in ['function editingControl(element)', "document.addEventListener('focusin',updateTypingState)",

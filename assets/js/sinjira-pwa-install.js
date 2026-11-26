@@ -38,22 +38,22 @@
       var style=d.createElement('link');style.rel='stylesheet';style.href='/assets/css/sinjira-mobile-account-shell-v24-4-95.css?v=24.4.99';style.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(style);
     }
     if(!d.querySelector('script[data-sinjira-mobile-account-shell]')){
-      var script=d.createElement('script');script.src='/assets/js/sinjira-mobile-account-shell-v24-4-95.js?v=24.4.99';script.defer=true;script.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(script);
+      var script=d.createElement('script');script.src='/assets/js/sinjira-mobile-account-shell-v24-4-95.js?v=24.4.101';script.defer=true;script.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(script);
     }
   }
 
   function addStyle(){
     if(d.querySelector('[data-sinjira-pwa-style]'))return;
     var s=d.createElement('style');s.setAttribute('data-sinjira-pwa-style','');
-    s.textContent='.sinjira-pwa-install{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:9997;width:min(390px,calc(100vw - 28px));padding:16px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(10,12,22,.96);box-shadow:0 18px 50px rgba(0,0,0,.38);backdrop-filter:blur(14px);color:#fff}.sinjira-pwa-install[hidden]{display:none}.sinjira-pwa-install__top{display:flex;gap:12px;align-items:flex-start}.sinjira-pwa-install__top img{width:44px;height:44px;border-radius:12px}.sinjira-pwa-install h2{font-size:1rem;margin:0 0 5px}.sinjira-pwa-install p{font-size:.88rem;line-height:1.45;margin:0;color:rgba(255,255,255,.78)}.sinjira-pwa-install__actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.sinjira-pwa-install__actions button{min-height:48px}.sinjira-pwa-install__close{position:absolute;right:8px;top:7px;border:0;background:transparent;color:#fff;font-size:1.25rem;min-width:44px;min-height:44px;padding:8px;cursor:pointer}.sinjira-pwa-install__ios{margin-top:10px!important;color:rgba(255,255,255,.9)!important}@media(max-width:600px){.sinjira-pwa-install{left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));width:auto}}';
+    s.textContent='.sinjira-pwa-install{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:9997;width:min(390px,calc(100vw - 28px));padding:16px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(10,12,22,.96);box-shadow:0 18px 50px rgba(0,0,0,.38);backdrop-filter:blur(14px);color:#fff}.sinjira-pwa-install[hidden]{display:none}.sinjira-pwa-install__top{display:flex;gap:12px;align-items:flex-start}.sinjira-pwa-install__top img{width:44px;height:44px;border-radius:12px}.sinjira-pwa-install h2{font-size:1rem;margin:0 0 5px}.sinjira-pwa-install p{font-size:.88rem;line-height:1.45;margin:0;color:rgba(255,255,255,.78)}.sinjira-pwa-install__actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.sinjira-pwa-install__actions button{min-height:48px}.sinjira-pwa-install__close{position:static;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:48px;height:48px;min-width:48px;min-height:48px;align-self:start;justify-self:end;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:transparent;color:#fff;font-size:1.25rem;line-height:1;padding:0;cursor:pointer}.sinjira-pwa-install__ios{margin-top:10px!important;color:rgba(255,255,255,.9)!important}@media(max-width:600px){.sinjira-pwa-install{left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));width:auto}}';
 
     // Invitation compacte : l'installation ne masque pas le contenu au chargement.
-    s.textContent += '.sinjira-pwa-install{box-sizing:border-box;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}' +
-      '.sinjira-pwa-install.is-collapsed{width:auto;max-width:calc(100vw - 28px);padding:8px 50px 8px 8px}' +
-      '.sinjira-pwa-install__reveal{display:inline-flex;align-items:center;justify-content:center;min-height:44px;max-width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:#182a42;color:#fff;font:700 .87rem/1.25 system-ui,sans-serif;cursor:pointer;white-space:normal}' +
+    s.textContent += '.sinjira-pwa-install{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:10px;align-items:start;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}' +
+      '.sinjira-pwa-install.is-collapsed{width:auto;max-width:calc(100vw - 28px);padding:8px}' +
+      '.sinjira-pwa-install__reveal{grid-column:1;grid-row:1;display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:48px;max-width:100%;overflow-wrap:anywhere;padding:8px 12px;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:#182a42;color:#fff;font:700 .87rem/1.25 system-ui,sans-serif;cursor:pointer;white-space:normal}' +
       '.sinjira-pwa-install__details[hidden]{display:none!important}' +
-      '.sinjira-pwa-install__details{padding-top:10px}' +
-      '.sinjira-pwa-install__top{padding-right:32px}' +
+      '.sinjira-pwa-install__details{grid-column:1/-1;min-width:0;padding-top:2px}' +
+      '.sinjira-pwa-install__top{min-width:0;padding-right:0;overflow-wrap:anywhere}.sinjira-pwa-install__top img{flex-shrink:0}' +
       '.sinjira-pwa-install :is(button,a):focus-visible{outline:3px solid #9ddcff;outline-offset:2px}' +
       '@media(max-width:600px){.sinjira-pwa-install.is-collapsed{left:auto;right:max(12px,env(safe-area-inset-right));width:auto}}' +
       '@supports(height:100dvh){.sinjira-pwa-install{max-height:calc(100dvh - 24px)}}' +
@@ -68,8 +68,8 @@
     var card=d.createElement('aside');card.className='sinjira-pwa-install is-collapsed';
     card.setAttribute('data-sinjira-pwa-install','');
     card.setAttribute('aria-label','Installer l’application SINJIRA™');
-    card.innerHTML='<button class="sinjira-pwa-install__close" type="button" aria-label="Masquer cette proposition">×</button>' +
-      '<button class="sinjira-pwa-install__reveal" type="button" data-pwa-install-reveal aria-expanded="false" aria-controls="sinjira-pwa-install-details">Installer SINJIRA™</button>' +
+    card.innerHTML='<button class="sinjira-pwa-install__reveal" type="button" data-pwa-install-reveal aria-expanded="false" aria-controls="sinjira-pwa-install-details">Installer SINJIRA™</button>' +
+      '<button class="sinjira-pwa-install__close" type="button" aria-label="Masquer cette proposition">×</button>' +
       '<div class="sinjira-pwa-install__details" id="sinjira-pwa-install-details" hidden>' +
       '<div class="sinjira-pwa-install__top"><img src="/android-chrome-192x192.png" alt=""><div><h2>Installer SINJIRA™</h2><p>Ajoutez SINJIRA™ à votre téléphone comme une application. Aucun magasin d’applications ni service payant n’est nécessaire.</p></div></div>' +
       '<div class="sinjira-pwa-install__actions"><button class="btn btn-primary btn-small" type="button" data-pwa-install-action>Installer</button></div></div>';

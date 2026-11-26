@@ -20,7 +20,12 @@
         button.addEventListener('click', function () {
           var distance = Math.max(120, Math.round(strip.clientWidth * .75));
           var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          strip.scrollBy({ left: direction * distance, behavior: reduced ? 'auto' : 'smooth' });
+          if (reduced) {
+            strip.scrollLeft += direction * distance;
+          } else {
+            strip.scrollBy({ left: direction * distance, behavior: 'smooth' });
+          }
+          scheduleUpdate();
         });
         return button;
       }
@@ -52,15 +57,33 @@
         }
       }
 
-      strip.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update, { passive: true });
+      // Les polices et les feuilles de style peuvent modifier la largeur
+      // après DOMContentLoaded. Regrouper les mesures hors ResizeObserver.
+      var resizeFrame = null;
+      function scheduleUpdate() {
+        if (resizeFrame !== null) return;
+        resizeFrame = window.requestAnimationFrame(function () {
+          resizeFrame = null;
+          update();
+        });
+      }
+      strip.addEventListener('scroll', scheduleUpdate, { passive: true });
+      window.addEventListener('resize', scheduleUpdate, { passive: true });
       if (typeof ResizeObserver === 'function') {
-        var observer = new ResizeObserver(update);
+        var observer = new ResizeObserver(scheduleUpdate);
         observer.observe(strip);
+        strip.querySelectorAll('a').forEach(function (link) { observer.observe(link); });
+      }
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', scheduleUpdate, { once: true });
+      }
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(scheduleUpdate).catch(function () {});
       }
       update();
       revealActive();
       update();
+      scheduleUpdate();
     });
   }
   if (document.readyState === 'loading') {

@@ -53,15 +53,18 @@ def validate() -> list[str]:
             failures.append(f"JS sans garde UX : {marker}")
 
     for marker in (
-        "sinjira-comments-responsive-v2.css?v=2.0.3",
+        "sinjira-comments-responsive-v2.css?v=2.0.4",
         "sinjira-account-v18.js?v=24.1.5",
         # Les flèches du compte sont apportées par la PR UX #1160.
         "site-ux-sinjira-v1.css?v=1.0.1",
-        "site.js?v=24.4.102",
+        "site.js?v=24.4.105",
         'data-v18-page="comments"',
         'data-my-comments',
         'aria-busy="true"',
         'reader-comments-loading',
+        'aria-labelledby="my-comments-title"',
+        'href="mes-lectures.html"',
+        'href="/projets/sinjira/romans/#commentaires"',
         'role="status"',
 
     ):
@@ -74,6 +77,9 @@ def validate() -> list[str]:
         '.reader-comment:focus',
         'min-height:48px!important',
         '@media(max-width:520px)',
+        '@media(max-width:360px)',
+        '.my-comments-guide .hero-actions',
+        'width:min(100%,860px)',
         'grid-template-columns:repeat(2,minmax(0,1fr))',
     ):
         if marker not in css:

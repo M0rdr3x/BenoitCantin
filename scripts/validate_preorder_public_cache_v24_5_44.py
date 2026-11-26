@@ -30,11 +30,12 @@ def check_page(path, errors):
         return
 
     for asset in ASSETS:
-        expected = asset + '?v=24.5.44'
+        version = {'sinjira-preorders-v24-5-3.js': '24.5.48', 'sinjira-preorders-v24-5-3.css': '24.5.48', 'sinjira-preorder-fulfillment-v24-5-6.js': '24.5.46.3', 'sinjira-preorder-fulfillment-v24-5-6.css': '24.5.45'}.get(asset, '24.5.44')
+        expected = asset + '?v=' + version
         if expected not in text:
             errors.append(f'{path.relative_to(ROOT)} ne charge pas {expected}')
         matches = re.findall(re.escape(asset) + r'\?v=([^"\'<>\s]+)', text)
-        if matches != ['24.5.44']:
+        if matches != [version]:
             errors.append(f'{path.relative_to(ROOT)} cache-buster inattendu pour {asset}: {matches}')
 
     semantic_markers = [
@@ -108,7 +109,7 @@ def main():
             print('- ' + err)
         return 1
 
-    print('OK V24.5.44 historique: cache public 24.5.44 et invariants non-paiement/livraison/minimisation conservés; migrations ultérieures autorisées.')
+    print('OK V24.5.44 historique: versions cache par ressource et invariants non-paiement/livraison/minimisation conservés; migrations ultérieures autorisées.')
     return 0
 
 

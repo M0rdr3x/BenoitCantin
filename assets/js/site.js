@@ -58,7 +58,7 @@
   function appendPwaAssets() {
     if (doc.querySelector('script[data-sinjira-pwa-install]')) return;
     var pwaScript = doc.createElement('script');
-    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.100';
+    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.103';
     pwaScript.defer = true;
     pwaScript.setAttribute('data-sinjira-pwa-install', '');
     // Conserver l'invite éventuellement émise pendant le chargement du module.
@@ -229,7 +229,17 @@
       revealCurrentTab();
       scrollLimits();
     }
+    var lastAccountViewportWidth = window.innerWidth;
     window.addEventListener('resize', function () {
+      var width = window.innerWidth;
+      // Les barres du navigateur mobile et le clavier virtuel peuvent
+      // modifier uniquement la hauteur. Ne pas effacer le parcours manuel
+      // des rubriques : recentrer uniquement après un changement de largeur.
+      if (width === lastAccountViewportWidth) {
+        scrollLimits();
+        return;
+      }
+      lastAccountViewportWidth = width;
       alignCurrentAfterLayout();
       // WebKit peut finaliser la largeur effective des onglets au frame
       // suivant une modification de taille.
@@ -241,7 +251,15 @@
     revealCurrentTab();
     scrollLimits();
     if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(scrollLimits).observe(accountNav);
+      // Les écritures de géométrie sont effectuées hors du cycle de notification.
+      var accountResizeFrame = null;
+      new ResizeObserver(function () {
+        if (accountResizeFrame !== null) return;
+        accountResizeFrame = window.requestAnimationFrame(function () {
+          accountResizeFrame = null;
+          scrollLimits();
+        });
+      }).observe(accountNav);
     }
     var adminTab = accountNav.querySelector('[data-admin-nav]');
     if (adminTab && typeof MutationObserver !== 'undefined') {

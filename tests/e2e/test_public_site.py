@@ -46,7 +46,11 @@ def assert_true(value, message):
 
 
 def register_error_capture(page, target):
-    page.on("pageerror", lambda error: target.append(f"pageerror: {error}"))
+    # Indiquer uniquement le chemin, jamais les paramètres ni le fragment.
+    # Conserver toutes les erreurs, y compris celles de ResizeObserver.
+    page.on("pageerror", lambda error: target.append(
+        f"pageerror [{urlparse(page.url).path}]: {error}"
+    ))
 
 
 def wait_for_assistant(page):
@@ -109,6 +113,889 @@ def check_legal_navigation(browser):
                         assert_true(urlparse(page.url).fragment == "sommaire", f"{path}: retour sommaire")
         finally:
             ctx.close()
+
+
+def check_message_layout(browser):
+    # HTML/CSS réels, contenus synthétiques; tous les scripts de compte et
+    # services externes sont bloqués. Aucun message réel ni envoi.
+    ctx = browser.new_context(locale="fr-CA", service_workers="block",
+                              reduced_motion="reduce")
+    ctx.route("**/*", lambda route: route.continue_() if
+              urlparse(route.request.url).netloc == urlparse(BASE_URL).netloc
+              and route.request.resource_type != "script" else route.abort())
+    try:
+        page = ctx.new_page()
+        for path, search_label, message_label in (
+            ("compte/messages-reels.html", "Rechercher un membre", "Votre message"),
+            ("compte/messages-personnage.html", "Rechercher un personnage",
+             "Votre message en personnage"),
+        ):
+            response = page.goto(urljoin(BASE_URL, path), wait_until="load", timeout=30_000)
+            assert_true(response is not None and response.ok, f"{path}: page inaccessible")
+            search = page.get_by_role("textbox", name=search_label)
+            form = page.locator("[data-chat-form]")
+            assert_true(search.count() == 1 and form.is_hidden(),
+                        f"{path}: recherche inaccessible ou formulaire ouvert avant sélection")
+            page.evaluate("""() => {
+              const long = 'Fictif'.repeat(60);
+              const list = document.querySelector('[data-contact-list]');
+              const chat = document.querySelector('[data-chat-log]');
+              for (let i=0; i<20; i++) {
+                const contact=document.createElement('button');
+                contact.className='v20-contact';
+                const span=document.createElement('span');
+                span.textContent=long;
+                contact.append(span); list.append(contact);
+              }
+              const bubble=document.createElement('div');
+              bubble.className='v20-bubble';
+              bubble.textContent=long; chat.append(bubble);
+              document.querySelector('[data-chat-form]').hidden=false;
+            }""")
+            field = page.get_by_role("textbox", name=message_label)
+            assert_true(field.count() == 1, f"{path}: zone de message sans nom")
+            field.fill("Brouillon fictif")
+            for width in (240, 320, 390, 768, 1440):
+                page.set_viewport_size({"width":width,"height":720})
+                metrics = page.evaluate("""() => {
+                  const shell=document.querySelector('.v20-message-shell');
+                  const list=document.querySelector('.v20-contact-list');
+                  const log=document.querySelector('.v20-chat-log');
+                  const form=document.querySelector('.v20-chat-form');
+                  const field=form.querySelector('textarea');
+                  const button=form.querySelector('button');
+                  const sr=shell.getBoundingClientRect();
+                  const inside=e=>{const r=e.getBoundingClientRect();
+                    return r.left>=sr.left-2 && r.right<=sr.right+2;};
+                  return {inside:[list,log,field,button].every(inside),
+                    listOverflow:list.scrollWidth>list.clientWidth+2,
+                    logOverflow:log.scrollWidth>log.clientWidth+2,
+                    fieldFont:parseFloat(getComputedStyle(field).fontSize),
+                    buttonHeight:button.getBoundingClientRect().height,
+                    mobileListHeight:list.getBoundingClientRect().height};
+                }""")
+                assert_true(metrics["inside"] and not metrics["listOverflow"] and
+                            not metrics["logOverflow"] and metrics["fieldFont"]>=16 and
+                            metrics["buttonHeight"]>=47.5 and
+                            (width>900 or metrics["mobileListHeight"]<=241),
+                            f"{path} à {width}px: {metrics}")
+                assert_true(field.input_value()=="Brouillon fictif",
+                            f"{path}: brouillon perdu au redimensionnement")
+            form.evaluate("(el) => el.hidden=true")
+            assert_true(form.is_hidden(), f"{path}: attribut hidden ignoré")
+    finally:
+        ctx.close()
+
+
+def check_conversation_isolation(browser):
+    # Données entièrement fictives. Les modules officiels sont chargés sur
+    # le serveur local; aucun compte ni trafic backend réel.
+    for kind in ("real","character"):
+        ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":844})
+        try:
+            ctx.route("**/*",lambda route: route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+            source=(Path(__file__).resolve().parents[2]/("compte/messages-reels.html" if kind=="real" else "compte/messages-personnage.html")).read_text("utf-8")
+            moderation=source[source.index('<dialog class="message-moderation-dialog"'):source.index("</dialog>")+len("</dialog>")]
+            ctx.route("**/messages-race-fixture.html*",lambda route: route.fulfill(
+                content_type="text/html",body=f"""<link rel="stylesheet" href="/assets/css/sinjira-message-moderation-v1.css"><input data-contact-search><div data-contact-list></div>
+                <header data-chat-title></header><div data-chat-log></div><p data-social-status></p>
+                <form data-chat-form hidden><textarea name="body"></textarea><button type="submit">Envoyer</button></form>
+                {moderation}<script type="module" src="/assets/js/sinjira-messages-{kind}.js"></script>"""))
+            ctx.route("**/assets/js/sinjira-message-read-state.js*",lambda route: route.fulfill(
+                content_type="text/javascript",body="""export async function unreadCounts(){return new Map()}
+                export async function markConversationRead(table,user,filters){window.reads.push({table,user,filters})}"""))
+            ctx.route("**/assets/js/sinjira-social-common.js*",lambda route: route.fulfill(
+                content_type="text/javascript",body="""window.requests=[];window.sends=[];window.reads=[];window.reports=[];window.blocks=[];
+                const contacts=['a','b'].map(id=>({user_id:id,character_id:'char-'+id,pseudo:id,public_name:id}));
+                export async function requireCommunityUser(){return {id:'self',email:'fixture@example.invalid'}}
+                export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+                export const formatDate=()=>'';export const avatarUrl=()=>'/assets/icons/sinjira-favicon.png';
+                export const reportContent=async(payload)=>{window.reports.push(payload);return {ok:true}};export const socialStatus=(node,msg)=>{node.textContent=msg};
+                export const socialErrorStatus=(node,error,msg)=>{node.textContent=msg};
+                export function getSupabase(){return {
+                  from(table){return {
+                    select(){let filter='';return {neq(){return this},eq(){return this},
+                      maybeSingle:async()=>({data:{user_id:'self',character_id:'char-self'},error:null}),
+                      or(value){filter=value;return this},
+                      order(){return table.endsWith('_messages')?new Promise(resolve=>window.requests.push({filter,resolve})):Promise.resolve({data:contacts,error:null})}}},
+                    insert(payload){return new Promise(resolve=>window.sends.push({payload,resolve}))},
+                    async upsert(payload){window.blocks.push(payload);return {error:{message:'fixture'}}}
+                  }},
+                  channel(){return {on(){return this},subscribe(){return this}}}
+                }}
+                window.resolveRead=(index,id)=>{const other=id==='a'?'b':'a';window.requests[index].resolve({error:null,data:[
+                  {id:'msg-'+id,body:'Message '+id,sender_user_id:id,recipient_user_id:'self',sender_character_id:'char-'+id,recipient_character_id:'char-self'},
+                  {id:'wrong',body:'Hors conversation',sender_user_id:other,recipient_user_id:'self',sender_character_id:'char-'+other,recipient_character_id:'char-self'}
+                ]})};"""))
+            page=ctx.new_page()
+            page.goto(urljoin(BASE_URL,"messages-race-fixture.html"),wait_until="domcontentloaded")
+            attr="data-user" if kind=="real" else "data-character"
+            prefix="" if kind=="real" else "char-"
+            a=page.locator(f'[{attr}="{prefix}a"]')
+            b=page.locator(f'[{attr}="{prefix}b"]')
+            log=page.locator("[data-chat-log]")
+            composer=page.locator('textarea[name="body"]')
+            a.click()
+            composer.fill("Brouillon A")
+            b.click()
+            assert_true(composer.input_value()=="","brouillon transféré au mauvais contact")
+            assert_true("Chargement" in log.inner_text(),"ancien contenu non effacé")
+            page.wait_for_function("window.requests.length===2")
+            page.evaluate("window.resolveRead(1,'b')")
+            page.wait_for_function("window.reads.length===1")
+            page.evaluate("window.resolveRead(0,'a')")
+            page.evaluate("() => new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))")
+            assert_true("Message b" in log.inner_text() and "Message a" not in log.inner_text() and "Hors conversation" not in log.inner_text(),"réponse périmée affichée")
+            assert_true(page.evaluate("window.reads.length")==1,"ancienne conversation marquée lue")
+            assert_true(page.evaluate("Object.values(window.reads[0].filters)[0]")==prefix+"b","marquage du mauvais contact")
+            report=log.locator("[data-report-message]")
+            dialog=page.locator("[data-message-moderation]")
+            for width,height,zoom in ((240,420,"100%"),(320,760,"200%"),(390,360,"100%"),(1440,760,"100%")):
+                page.set_viewport_size({"width":width,"height":height})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                report.click()
+                dialog.wait_for(state="visible")
+                assert_true(dialog.locator('[value="cancel"]').evaluate("(el)=>document.activeElement===el"),"focus initial")
+                state=dialog.evaluate("""el=>{const r=el.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.top>=-2&&r.bottom<=innerHeight+2&&el.scrollWidth<=el.clientWidth+2&&[...el.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=47.5)}""")
+                assert_true(state,f"dialogue hors écran {width}/{zoom}")
+                if width==240:
+                    page.keyboard.press("Escape")
+                else:
+                    dialog.locator('[value="cancel"]').click()
+                dialog.wait_for(state="hidden")
+                page.wait_for_function("window.reports.length===0&&document.activeElement===document.querySelector('[data-report-message]')")
+            page.evaluate("document.documentElement.style.fontSize=''")
+            report.click()
+            dialog.locator('[name="reason"]').select_option("harassment")
+            dialog.locator('[name="details"]').fill("Texte fictif")
+            dialog.locator('[value="confirm"]').click()
+            page.wait_for_function("window.reports.length===1")
+            assert_true(page.evaluate("window.reports[0].target_id==='msg-b'&&window.reports[0].reason==='harassment'&&window.reports[0].details==='Texte fictif'"),"signalement mal ciblé")
+            if kind=="real":
+                page.locator("[data-block-peer]").click()
+                dialog.locator('[value="cancel"]').click()
+                dialog.wait_for(state="hidden")
+                assert_true(page.evaluate("window.blocks.length===0"),"blocage annulé transmis")
+                page.locator("[data-block-peer]").click()
+                dialog.locator('[value="confirm"]').click()
+                page.wait_for_function("window.blocks.length===1")
+                assert_true(page.evaluate("window.blocks[0].blocked_user_id==='b'"),"mauvais compte bloqué")
+            composer.fill("Brouillon B")
+            a.click()
+            assert_true(composer.input_value()=="Brouillon A","brouillon A perdu")
+            page.locator('[data-chat-form] button[type="submit"]').click()
+            page.evaluate("document.querySelector('[data-chat-form]').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+            assert_true(page.evaluate("window.sends.length")==1,"double envoi")
+            b.click()
+            assert_true(composer.input_value()=="Brouillon B","brouillon B perdu")
+            page.evaluate("window.sends[0].resolve({error:null})")
+            page.wait_for_function("!document.querySelector('[data-chat-form] button').disabled")
+            assert_true(composer.input_value()=="Brouillon B","envoi précédent efface le brouillon courant")
+            assert_true(page.evaluate("window.sends[0].payload.recipient_user_id")=="a","mauvais destinataire")
+            a.click()
+            assert_true(composer.input_value()=="","brouillon envoyé encore présent")
+        finally:
+            ctx.close()
+
+
+def check_notification_counts(browser):
+    # Real page and notification module; synthetic Supabase adapter only.
+    mock = r"""
+let unread=5;
+const mode=new URLSearchParams(location.search).get('fixture');
+export const requireUser=async()=>({id:'synthetic-user'});
+export const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const formatDate=value=>String(value);
+export const setStatus=(node,message,type)=>{node.textContent=message;node.hidden=false;node.dataset.statusType=type};
+export const getSupabase=()=>({from(table){
+  if(table!=='user_notifications')throw Error('unexpected table');
+  let scoped=false,head=false,mutation=false,unreadOnly=false;
+  const query={
+    select(fields,options){head=options?.head===true;return this},
+    eq(key,value){if(key==='user_id'&&value==='synthetic-user')scoped=true;return this},
+    is(key,value){if(key==='read_at'&&value===null)unreadOnly=true;return this},
+    order(){return this},limit(){return this},
+    update(){mutation=true;return this},
+    then(resolve,reject){
+      return Promise.resolve().then(()=>{
+        if(!scoped||((head||mutation)&&!unreadOnly))throw Error('unscoped query');
+        if(mutation){
+          if(mode==='update-error')return {error:{message:'synthetic failure'}};
+          unread=0;return {error:null};
+        }
+        if(head)return mode==='count-error'?{error:{message:'synthetic failure'}}:{count:unread,error:null};
+        return {data:Array.from({length:100},(_,i)=>({id:'fake-'+i,title:'Avis fictif',body:'Contenu fictif',read_at:'2026-01-01',created_at:'2026-01-01'})),error:null};
+      }).then(resolve,reject);
+    }
+  };return query;
+}});
+"""
+    for mode in ("success", "count-error", "update-error"):
+        context = browser.new_context(viewport={"width": 390, "height": 844}, service_workers="block")
+        page = context.new_page()
+        def route_request(route):
+            request = route.request
+            parsed = urlparse(request.url)
+            if parsed.netloc != urlparse(BASE_URL).netloc:
+                return route.abort()
+            if parsed.path.endswith("/sinjira-supabase.js"):
+                return route.fulfill(status=200, content_type="text/javascript", body=mock)
+            if request.resource_type == "script" and not parsed.path.endswith((
+                "/sinjira-user-notifications-v24-4-63.js", "/sinjira-social-navigation-guard.mjs"
+            )):
+                return route.abort()
+            return route.continue_()
+        page.route("**/*", route_request)
+        try:
+            page.goto(urljoin(BASE_URL, "compte/notifications.html?fixture="+mode))
+            page.wait_for_function("document.querySelector('[data-notifications-list]').getAttribute('aria-busy') === 'false'")
+            count = page.locator("[data-notifications-unread-count]")
+            total = page.locator("[data-notifications-total-count]")
+            button = page.locator("[data-notifications-read-all]")
+            status = page.locator("[data-notifications-status]")
+            if mode == "count-error":
+                assert_true(count.inner_text() == "—" and button.is_disabled(), "Failed count must not be reported as zero")
+                assert_true("indisponibles" in page.locator("[data-notifications-list]").inner_text(), "Loading must end on failure")
+            else:
+                assert_true(count.inner_text() == "5" and total.inner_text() == "100", "Unread count must include older notifications")
+                assert_true(button.is_enabled(), "Older unread notifications must be actionable")
+                for width in (240, 320, 390, 768, 1440):
+                    page.set_viewport_size({"width": width, "height": 760})
+                    geometry=page.evaluate("""() => {
+                      const controls=[...document.querySelectorAll('main .hero-actions :is(button,a)')];
+                      const cards=[...document.querySelectorAll('[data-notification-id]')];
+                      return document.documentElement.scrollWidth<=innerWidth+2 &&
+                        cards.length===100 && cards.every(c=>{const r=c.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2;}) &&
+                        controls.every(c=>{const r=c.getBoundingClientRect();return r.height>=47.5&&r.left>=-2&&r.right<=innerWidth+2;});
+                    }""")
+                    assert_true(geometry, f"Notifications: débordement ou commande trop petite à {width}px")
+                button.click()
+                page.wait_for_function("!document.querySelector('[data-notifications-status]').hidden")
+                if mode == "success":
+                    assert_true(count.inner_text() == "0" and button.is_disabled(), "Successful bulk action must refresh count")
+                else:
+                    assert_true(count.inner_text() == "5" and button.is_enabled(), "Failed action must preserve count and allow retry")
+                    assert_true(status.get_attribute("data-status-type") == "error", "Failed update must be announced")
+        finally:
+            context.close()
+
+
+def check_fulfillment_feedback(browser):
+    # Réponses entièrement fictives, aucun accès ou changement de compte réel.
+    ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+        for script in ("site.js","sinjira-account.js","sinjira-nav-boot-v2.js","sinjira-preorders-v24-5-3.js","sinjira-preorder-commercial-v24-5-5.js","sinjira-preorder-cost-summary-v24-5-25.js","sinjira-preorder-tax-estimate-v24-5-27.js"):
+            ctx.route("**/assets/js/"+script+"*",lambda route:route.fulfill(content_type="text/javascript",body=""))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.estimates=[];window.saves=[];window.failStatus=false;
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export async function getCurrentUser(){return {id:'fixture-user'}}
+          export const isSinjiraBackendConfigured=()=>true;
+          export function getSupabase(){return {async rpc(name,args){
+            if(name==='product_preorder_fulfillment_options')return {data:{shipping_estimates_enabled:true,shipping_zones:[{zone_code:'fixture',label:'Zone fictive'}],pickup_points_enabled:false},error:null};
+            if(name==='product_preorder_fulfillment_status')return window.failStatus?{data:null,error:{message:'fixture'}}:{data:{fulfillment_preference:'undecided'},error:null};
+            if(name==='product_preorder_shipping_estimate')return new Promise(resolve=>window.estimates.push({args,resolve}));
+            if(name==='product_preorder_set_fulfillment_preference')return new Promise(resolve=>window.saves.push({args,resolve}));
+            throw Error('RPC inattendue');
+          }}}
+        """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"compte/mes-achats.html"),wait_until="domcontentloaded")
+        zone=page.locator("[data-pf-zone]")
+        quantity=page.locator("[data-pf-quantity]")
+        estimate=page.locator("[data-pf-estimate]")
+        result=page.locator("[data-pf-estimate-result]")
+        method=page.locator("[data-pf-method]")
+        save=page.locator("[data-pf-save-preference]")
+        status=page.locator("[data-pf-preference-status]")
+        method.wait_for(state="visible")
+        for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(1440,"100%")):
+            page.set_viewport_size({"width":width,"height":760})
+            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+            geom=page.locator("[data-preorder-fulfillment]").evaluate("""el=>[...el.querySelectorAll('select,button')].filter(n=>n.getClientRects().length).every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})""")
+            assert_true(geom,f"contrôles livraison hors écran {width}/{zoom}")
+        zone.select_option("fixture")
+        estimate.click()
+        page.wait_for_function("window.estimates.length===1")
+        quantity.select_option("2")
+        assert_true("Options modifiées" in result.inner_text(),"estimation périmée non invalidée")
+        estimate.click()
+        page.wait_for_function("window.estimates.length===2")
+        page.evaluate("window.estimates[1].resolve({data:{estimate_min_cents:2000,estimate_max_cents:3000,zone_label:'Zone fictive',currency:'CAD'},error:null})")
+        page.wait_for_function("document.querySelector('[data-pf-estimate-result]').textContent.includes('pour 2 exemplaire')")
+        page.evaluate("window.estimates[0].resolve({data:{estimate_min_cents:1000,estimate_max_cents:1500,zone_label:'Zone fictive',currency:'CAD'},error:null})")
+        page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+        assert_true("pour 2 exemplaire" in result.inner_text(),"ancienne estimation remplace la nouvelle")
+        estimate.click()
+        page.wait_for_function("window.estimates.length===3")
+        page.evaluate("window.estimates[2].resolve({data:{estimate_min_cents:null,estimate_max_cents:3000,zone_label:'Zone fictive',currency:'CAD'},error:null})")
+        page.wait_for_function("document.querySelector('[data-pf-estimate-result]').dataset.kind==='error'")
+        assert_true("Estimation :" not in result.inner_text(),"montant absent présenté comme zéro")
+        method.select_option("pickup")
+        page.evaluate("window.dispatchEvent(new Event('sinjira:preorder-updated'))")
+        page.wait_for_function("document.querySelector('[data-pf-preference-status]').textContent.includes('conservé')")
+        assert_true(method.input_value()=="pickup","brouillon écrasé par actualisation")
+        save.click()
+        page.evaluate("document.querySelector('[data-pf-save-preference]').click()")
+        assert_true(page.evaluate("window.saves.length")==1 and method.is_disabled(),"soumission parallèle")
+        page.evaluate("window.saves[0].resolve({data:null,error:{message:'fixture'}})")
+        page.wait_for_function("document.querySelector('[data-pf-preference-status]').textContent.includes('non confirmé')")
+        assert_true(method.input_value()=="pickup" and save.is_disabled(),"choix incertain perdu ou rejouable")
+        page.evaluate("window.failStatus=true;window.dispatchEvent(new Event('sinjira:preorder-updated'))")
+        page.wait_for_function("document.querySelector('[data-pf-preference-status]').textContent.includes('Impossible de vérifier')")
+        assert_true(not page.locator("[data-pf-no-preorder]").is_visible(),"erreur présentée comme absence de réservation")
+        assert_true(save.is_disabled(),"mutation autorisée sans état serveur")
+    finally:
+        ctx.close()
+
+
+def check_cost_summary_feedback(browser):
+    # Aucun prix réel, aucune adresse, aucun fournisseur de paiement.
+    ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+        ctx.route("**/cost-summary-fixture.html*",lambda route:route.fulfill(content_type="text/html",body="""<!doctype html><html lang="fr-CA"><meta name="viewport" content="width=device-width,initial-scale=1"><main data-preorder-fulfillment></main>
+          <script type="module" src="/assets/js/sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.3"></script>
+          <script type="module" src="/assets/js/sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46.3"></script></html>"""))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.ship=[];window.tax=[];
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export const isSinjiraBackendConfigured=()=>true;
+          const guards={estimate_nonbinding:true,billing_authoritative:false,external_tax_api_enabled:false,final_tax_confirmation_required:true};
+          export function getSupabase(){return {async rpc(name,args){
+            if(name==='product_preorder_commercial_info')return {data:{currency:'CAD',paper_price_cents:2000,digital_price_cents:1000,sales_enabled:false,checkout_enabled:false,payment_enabled:false,external_fulfillment_enabled:false,auto_conversion_allowed:false},error:null};
+            if(name==='product_preorder_fulfillment_options')return {data:{shipping_estimates_enabled:true,shipping_zones:[{zone_code:'fixture',label:'Zone fictive'}]},error:null};
+            if(name==='product_preorder_tax_options')return {data:{...guards,tax_profiles:[{tax_code:'fixture-tax',label:'Profil fictif'}]},error:null};
+            if(name==='product_preorder_shipping_estimate')return new Promise(resolve=>window.ship.push({args,resolve}));
+            if(name==='product_preorder_tax_estimate')return new Promise(resolve=>window.tax.push({args,resolve}));
+            throw Error('RPC inattendue');
+          }}}
+          window.shipResult=(i,min,max,currency='CAD')=>window.ship[i].resolve({data:{estimate_min_cents:min,estimate_max_cents:max,currency,shipping_customer_pays:true,estimate_nonbinding:true,zone_label:'Zone fictive'},error:null});
+          window.taxResult=(i,min,max,totalMin,totalMax,currency='CAD')=>window.tax[i].resolve({data:{...guards,estimate_complete:true,currency,estimated_tax_min_cents:min,estimated_tax_max_cents:max,estimated_total_min_cents:totalMin,estimated_total_max_cents:totalMax,source_reference:'Source fictive'},error:null});
+        """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"cost-summary-fixture.html"),wait_until="domcontentloaded")
+        fmt=page.locator("[data-pcs-format]")
+        qty=page.locator("[data-pcs-quantity]")
+        method=page.locator("[data-pcs-method]")
+        zone=page.locator("[data-pcs-zone]")
+        total=page.locator("[data-pcs-total]")
+        tax=page.locator("[data-ptax-public]")
+        tax_total=page.locator("[data-ptax-total]")
+        page.wait_for_function("!!document.querySelector('link[data-preorder-cost-summary-style]')?.sheet")
+        fmt.select_option("paper")
+        method.select_option("shipping")
+        assert_true(zone.input_value()=="","zone de livraison choisie automatiquement")
+        zone.select_option("fixture")
+        page.wait_for_function("window.ship.length===1")
+        page.evaluate("window.shipResult(0,1000,1200)")
+        page.wait_for_function("document.querySelector('[data-pcs-total]').textContent.includes('30')")
+        qty.select_option("2")
+        page.wait_for_function("window.ship.length===2")
+        assert_true("Nouveau calcul" in total.inner_text(),"ancien sous-total conservé pendant le calcul")
+        qty.select_option("3")
+        page.wait_for_function("window.ship.length===3")
+        page.evaluate("window.shipResult(2,2000,1000)")
+        page.wait_for_function("document.querySelector('[data-pcs-total]').textContent.includes('indisponible')")
+        page.evaluate("window.shipResult(1,1000,1200)")
+        page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+        assert_true("indisponible" in total.inner_text(),"réponse périmée ou fourchette inversée affichée")
+        qty.select_option("4")
+        page.wait_for_function("window.ship.length===4")
+        page.evaluate("window.shipResult(3,1000,1200,null)")
+        page.wait_for_function("document.querySelector('[data-pcs-total]').textContent.includes('indisponible')")
+        fmt.select_option("digital")
+        assert_true(not zone.is_visible() and zone.is_disabled(),"zone inutile visible")
+        assert_true(tax.input_value()=="","zone fiscale présélectionnée")
+        tax.select_option("fixture-tax")
+        assert_true("Profil fictif" in tax.locator("xpath=../following-sibling::small[1]").text_content(),
+                    "libellé fiscal complet absent hors contrôle natif")
+        page.wait_for_function("window.tax.length===1")
+        page.evaluate("window.taxResult(0,100,200,4100,4200)")
+        page.wait_for_function("document.querySelector('[data-ptax-tax-note]').textContent.includes('Source fictive')")
+        qty.select_option("5")
+        page.wait_for_function("window.tax.length===2")
+        assert_true("Calcul" in tax_total.inner_text() and "Source fictive" not in page.locator("[data-ptax-tax-note]").inner_text(),"ancienne information fiscale conservée")
+        page.evaluate("window.taxResult(1,-100,200,4900,5200)")
+        page.wait_for_function("document.querySelector('[data-ptax-tax]').textContent.includes('incomplète')")
+        # Tester le libellé ordinaire puis le libellé serveur sans espace.
+        for long_label in (False,True):
+            if long_label:
+                page.evaluate("""() => {
+                  const select=document.querySelector('[data-ptax-public]');
+                  select.selectedOptions[0].textContent='Profil fiscal fictif très long '+ 'X'.repeat(100);
+                  select.dispatchEvent(new Event('change'));
+                }""")
+            for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(768,"100%"),(1440,"100%")):
+                page.set_viewport_size({"width":width,"height":760})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+                state=page.locator("[data-preorder-cost-summary]").evaluate("""el=>{
+                  const edge=el.getBoundingClientRect().right;
+                  const visible=[...el.querySelectorAll('*')].filter(n=>n.getClientRects().length);
+                  const overflowing=visible.filter(n=>n.scrollWidth>n.clientWidth+2).slice(0,12)
+                    .map(n=>({tag:n.tagName,cls:String(n.className),client:n.clientWidth,scroll:n.scrollWidth}));
+                  const textOutside=[];
+                  for(const n of el.querySelectorAll('.sinjira-selected-option')){
+                    const range=document.createRange();range.selectNodeContents(n);
+                    if([...range.getClientRects()].some(r=>r.right>edge+2))textOutside.push(n.textContent.slice(0,40));
+                  }
+                  return {overflow:el.scrollWidth>el.clientWidth+2,width:el.clientWidth,scrollWidth:el.scrollWidth,
+                    overflowing,textOutside,
+                    outside:visible.filter(n=>n.getBoundingClientRect().right>edge+2).slice(0,8).map(n=>[n.tagName,String(n.className)]),
+                    controls:visible.filter(n=>n.tagName==='SELECT').every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})};
+                }""")
+                assert_true(not state["overflow"] and not state["textOutside"] and state["controls"],
+                            f"résumé coût hors écran {width}/{zoom}, long={long_label}: {state}")
+                assert_true(page.evaluate("document.documentElement.scrollWidth<=innerWidth+2"),
+                            f"débordement du document coût {width}/{zoom}")
+                if long_label:
+                    assert_true("X"*100 in tax.locator("xpath=../following-sibling::small[1]").text_content(),
+                                "libellé long tronqué hors contrôle")
+    finally:
+        ctx.close()
+
+
+def check_reservation_feedback(browser):
+    # Réservation fictive : aucun compte réel, aucun paiement.
+    ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+        for script in ("site.js","sinjira-account.js","sinjira-nav-boot-v2.js","sinjira-preorder-commercial-v24-5-5.js","sinjira-preorder-fulfillment-v24-5-6.js"):
+            ctx.route("**/assets/js/"+script+"*",lambda route:route.fulfill(content_type="text/javascript",body=""))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.writes=[];window.failRead=false;
+          const reservation={status:'reserved',reservation_reference:'PR-0123456789ABCDEF',quantity:1,preferred_format:'paper',payment_status:'not_collected',financial_commitment:false};
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export const formatDate=()=> 'Date fictive';
+          export async function getCurrentUser(){return {id:'fixture'}}
+          export const isSinjiraBackendConfigured=()=>true;
+          export function setStatus(node,msg,type){node.hidden=false;node.textContent=msg;node.dataset.type=type}
+          export function getSupabase(){return {async rpc(name,args){
+            if(name==='product_preorder_my_status')return window.failRead?{data:null,error:{message:'fixture'}}:{data:reservation,error:null};
+            if(name==='product_preorder_cancel'||name==='product_preorder_reserve_confirmed')return new Promise(resolve=>window.writes.push({name,args,resolve}));
+            throw Error('RPC inattendue');
+          }}}
+        """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"compte/mes-achats.html"),wait_until="domcontentloaded")
+        cancel=page.locator("[data-preorder-cancel]")
+        form=page.locator("[data-preorder-form]")
+        submit=page.locator("[data-preorder-submit]")
+        dialog=page.locator("[data-preorder-cancel-dialog]")
+        status=page.locator("[data-preorder-status]")
+        cancel.wait_for(state="visible")
+        for width,height,zoom in ((240,420,"100%"),(320,760,"200%"),(390,360,"100%"),(1440,760,"100%")):
+            page.set_viewport_size({"width":width,"height":height})
+            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+            cancel.click()
+            dialog.wait_for(state="visible")
+            assert_true(dialog.locator('[value="keep"]').evaluate("(el)=>document.activeElement===el"),"focus initial non sûr")
+            geometry=dialog.evaluate("""el=>{const r=el.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.top>=-2&&r.bottom<=innerHeight+2&&el.scrollWidth<=el.clientWidth+2&&[...el.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=47.5)}""")
+            assert_true(geometry,f"annulation hors écran {width}/{zoom}")
+            if width==240:
+                page.keyboard.press("Escape")
+            else:
+                dialog.locator('[value="keep"]').click()
+            dialog.wait_for(state="hidden")
+            page.wait_for_function("document.activeElement===document.querySelector('[data-preorder-cancel]')")
+            assert_true(page.evaluate("window.writes.length")==0,"annulation non confirmée transmise")
+        cancel.click()
+        dialog.locator('[value="cancel-reservation"]').click()
+        page.wait_for_function("window.writes.length===1")
+        assert_true(submit.is_disabled() and cancel.is_disabled(),"actions concurrentes autorisées")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.writes.length===1"),"double mutation")
+        page.evaluate("window.failRead=true;window.writes[0].resolve({data:true,error:null})")
+        page.wait_for_function("document.querySelector('[data-preorder-status]').textContent.includes('Annulation traitée')")
+        assert_true(not page.locator("[data-preorder-state]").is_visible() and submit.is_disabled(),"confirmation périmée ou nouvelle mutation possible")
+        assert_true(page.evaluate("window.writes[0].name==='product_preorder_cancel'&&Object.keys(window.writes[0].args).join()==='p_product_slug'"),"contrat de mutation modifié")
+        page.reload(wait_until="domcontentloaded")
+        submit.wait_for(state="visible")
+        page.wait_for_function("!document.querySelector('[data-preorder-submit]').disabled")
+        page.locator("[data-preorder-disclosure]").check()
+        submit.click()
+        page.wait_for_function("window.writes.length===1")
+        page.evaluate("window.writes[0].resolve({data:null,error:null})")
+        page.wait_for_function("document.querySelector('[data-preorder-status]').textContent.includes('non confirmé')")
+        assert_true(submit.is_disabled() and not page.locator("[data-preorder-state]").is_visible(),
+                    "réservation sans référence valide annoncée comme confirmée")
+    finally:
+        ctx.close()
+
+
+def check_admin_responsive_layout(browser):
+    # Uniquement le squelette HTML local : aucun script administratif ni backend.
+    context=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        context.route("**/*",lambda route: route.continue_() if
+            route.request.url.startswith(BASE_URL) and route.request.resource_type!="script"
+            else route.abort())
+        page=context.new_page()
+        for path in ("admin/sinjira/index.html","admin/sinjira/licences.html",
+                     "admin/sinjira/heritage.html","admin/sinjira/precommandes.html",
+                     "admin/sinjira/precommandes-readiness.html"):
+            page.goto(urljoin(BASE_URL,path),wait_until="load")
+            assert_true(page.locator('meta[name="robots"]').get_attribute("content")=="noindex,nofollow",
+                        f"indexation admin modifiée : {path}")
+            assert_true(page.locator("main").get_attribute("tabindex")=="-1",
+                        f"cible clavier absente : {path}")
+            assert_true(page.evaluate("""() => {
+              const links=[...document.querySelectorAll('.universe-subnav a')];
+              const labels=[...document.querySelectorAll('label[for^="admin-ux-"]')];
+              return links.length===5 && links.filter(a=>a.getAttribute('aria-current')==='page').length===1 &&
+                labels.every(l=>l.control && document.querySelectorAll('[id="'+l.htmlFor+'"]').length===1);
+            }"""),f"navigation ou labels incorrects : {path}")
+            for width,height,zoom in ((240,760,"100%"),(320,760,"200%"),(390,360,"100%"),(768,760,"100%"),(1440,900,"100%")):
+                page.set_viewport_size({"width":width,"height":height})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+                state=page.evaluate("""() => {
+                  const controls=[...document.querySelectorAll('main button,main .btn,main select,main input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),main textarea,.universe-subnav a')].filter(n=>n.getClientRects().length&&getComputedStyle(n).visibility==='visible');
+                  const invalid=controls.filter(n=>{const r=n.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2||r.height<47.5});
+                  return {count:controls.length,invalid:invalid.slice(0,8).map(n=>({tag:n.tagName,cls:String(n.className),width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})),
+                    overflow:document.documentElement.scrollWidth>innerWidth+2};
+                }""")
+                assert_true(not state["invalid"] and not state["overflow"],
+                            f"admin {path} {width}x{height}/{zoom}: {state}")
+    finally:
+        context.close()
+
+
+def check_admin_panel_navigation(browser):
+    # Recette du module de présentation réel, sur le squelette local.
+    # Aucun module d'autorisation, de mutation ou de lecture privée exécuté.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        ctx.route("**/*",lambda route: route.continue_() if
+            route.request.url.startswith(BASE_URL) and
+            (route.request.resource_type!="script" or
+             urlparse(route.request.url).path=="/assets/js/sinjira-admin-panel-nav.mjs")
+            else route.abort())
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="load")
+        page.evaluate("""async () => {
+          const m=await import('/assets/js/sinjira-admin-panel-nav.mjs?v=1.0.0');
+          window.testAdminNav=m;
+          m.prepareAdminNavigation();
+          for(const b of document.querySelectorAll('[data-admin-tab]'))
+            b.addEventListener('click',()=>m.openAdminPanel(b.dataset.adminTab));
+        }""")
+        for name in ("documents","players","character-bible","social-moderation"):
+            tab=page.locator(f'[data-admin-tab="{name}"]')
+            tab.focus()
+            tab.press("Enter")
+            panel=page.locator(f'[data-admin-panel="{name}"]')
+            assert_true(panel.is_visible() and tab.get_attribute("aria-current")=="page",
+                        f"rubrique non activée : {name}")
+            assert_true(page.evaluate("""() => {
+              const p=[...document.querySelectorAll('[data-admin-panel]')].filter(p=>!p.hidden);
+              return p.length===1 && p[0].contains(document.activeElement) &&
+                document.activeElement.matches('h2,h3');
+            }"""),f"focus ou panneau incohérent : {name}")
+            panel.locator(".admin-panel-return").click()
+            assert_true(tab.evaluate("(b)=>document.activeElement===b"),"retour clavier absent")
+        assert_true(page.evaluate("""() => {
+          const nav=document.querySelector('.admin-console-tabs');
+          const b=document.createElement('button');b.dataset.adminTab='notifications';b.textContent='Notifications';nav.prepend(b);
+          const p=document.createElement('section');p.dataset.adminPanel='notifications';p.hidden=true;
+          const h=document.createElement('h2');h.textContent='Notifications fictives';p.append(h);
+          document.querySelector('main').append(p);
+          window.testAdminNav.prepareAdminNavigation();
+          window.testAdminNav.prepareAdminNavigation();
+          return b.getAttribute('aria-controls')===p.id && p.querySelectorAll('.admin-panel-return').length===1 &&
+            window.testAdminNav.openAdminPanel('notifications') && !p.hidden &&
+            document.activeElement===h && !window.testAdminNav.openAdminPanel('inconnue') && !p.hidden;
+        }"""),"panneau dynamique ou destination inconnue mal gérés")
+        page.locator('[data-admin-panel="notifications"] .admin-panel-return').click()
+        assert_true(page.locator('[data-admin-tab="notifications"]').evaluate("(b)=>document.activeElement===b"),"retour du panneau dynamique absent")
+    finally:
+        ctx.close()
+
+
+def check_admin_license_generation(browser):
+    # Le module client réel ne voit qu'un backend fictif, sans compte ni code réel.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        ctx.route("**/*",lambda route: route.continue_() if
+            route.request.url.startswith(BASE_URL) and
+            (route.request.resource_type!="script" or
+             urlparse(route.request.url).path=="/assets/js/v24-admin-licenses.js")
+            else route.abort())
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(
+            content_type="text/javascript",body="""window.writes=[];
+            export const requireUser=async()=>({id:'fixture'});
+            export function setStatus(n,m,t){n.hidden=false;n.textContent=m;n.dataset.type=t}
+            export function getSupabase(){return {functions:{invoke:(name,args)=>new Promise(resolve=>window.writes.push({name,args,resolve}))}}}
+            """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/licences.html"),wait_until="domcontentloaded")
+        form=page.locator("[data-admin-license-form]")
+        button=form.locator('button[type="submit"]')
+        batch=form.locator('[name="batch_code"]')
+        output=page.locator("[data-admin-license-output]")
+        next_button=page.locator("[data-admin-license-next]")
+        status=page.locator("[data-admin-license-status]")
+        form.locator('[name="product_slug"]').fill("fixture")
+        batch.fill("LOT-FICTIF")
+        form.locator('[name="quantity"]').fill("2")
+        button.click()
+        page.wait_for_function("window.writes.length===1")
+        assert_true(button.is_disabled() and batch.is_disabled() and form.get_attribute("aria-busy")=="true","génération non verrouillée")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.writes.length===1"),"double génération")
+        assert_true(page.evaluate("window.writes[0].name==='admin-license-codes'&&Object.keys(window.writes[0].args.body).sort().join() === 'batch_code,product_slug,quantity'"),"contrat serveur modifié")
+        page.evaluate("""window.writes[0].resolve({error:null,data:{ok:true,batch:{batch_code:'LOT-FICTIF'},codes:['SJR-FIXTUR-AAAAA-BBBBB-CCCCC','SJR-FIXTUR-DDDDD-EEEEE-FFFFF']}})""")
+        next_button.wait_for(state="visible")
+        assert_true("LOT-FICTIF" in output.input_value() and button.is_disabled(),"export non protégé")
+        saved=output.input_value()
+        page.once("dialog",lambda d:d.dismiss())
+        next_button.click()
+        assert_true(output.input_value()==saved and button.is_disabled(),"export perdu sans confirmation")
+        page.once("dialog",lambda d:d.accept())
+        next_button.click()
+        assert_true(output.input_value()=="" and batch.input_value()=="" and not button.is_disabled(),"nouveau lot non préparé")
+        batch.fill("LOT-FICTIF-2")
+        button.click()
+        page.wait_for_function("window.writes.length===2")
+        page.evaluate("window.writes[1].resolve({data:{ok:true},error:null})")
+        page.wait_for_function("document.querySelector('[data-admin-license-status]').textContent.includes('non confirmée')")
+        assert_true(output.input_value()=="" and button.is_disabled() and not next_button.is_visible(),"réponse partielle acceptée")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.writes.length===2"),"relance après résultat incertain")
+    finally:
+        ctx.close()
+
+
+def check_admin_form_saves(browser):
+    # Console réelle, réponses synthétiques uniquement, réseau externe bloqué.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        allowed={"/assets/js/"+name for name in ("sinjira-admin-console.js","sinjira-admin-console-core.js",
+                 "sinjira-admin-panel-nav.mjs","sinjira-admin-save-guard.mjs")}
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
+                  and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
+                  else route.abort())
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.saves=[];window.failRefresh=false;window.uploads=[];window.docActions=[];window.uploadPath='projet-fictif/fixture/test.pdf';
+          export const requireUser=async()=>({id:'fixture'});
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export function setStatus(n,m,t){n.hidden=false;n.textContent=m;n.dataset.statusType=t}
+          const project={id:'fixture-project',name:'Projet fictif',slug:'projet-fictif',status:'development',visibility:'account'};
+          export function getSupabase(){return {auth:{getUser:async()=>({data:{user:{id:'fixture'}},error:null})},
+            rpc:async()=>({data:true,error:null}),storage:{from(bucket){return {uploadToSignedUrl:(path,token,file,options)=>new Promise(resolve=>window.uploads.push({bucket,path,token,size:file.size,options,resolve}))}}},functions:{async invoke(name,{body}){
+              const a=body.action;
+              if(a.startsWith('save_'))return new Promise(resolve=>window.saves.push({name,body,resolve}));
+              if(a==='prepare_document_upload'||a==='finalize_document')return new Promise(resolve=>window.docActions.push({name,body,resolve}));
+              if(a==='dashboard')return {data:{ok:true,dashboard:{}},error:null};
+              if(a==='list_projects')return {data:{ok:true,projects:[project]},error:null};
+              if(a==='list_playtests'&&window.failRefresh)return {data:null,error:{message:'fixture'}};
+              return {data:{ok:true,documents:[],requests:[],users:[],playtests:[],extensions:[],signals:[],reports:[],analytics:{}},error:null};
+            }}}}
+          """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="domcontentloaded")
+        project=page.locator("[data-project-form]")
+        name=project.locator('[name="name"]')
+        submit=project.locator('button[type="submit"]')
+        status=project.locator("[data-admin-save-status]")
+        page.wait_for_function("!document.querySelector('[data-project-form] button[type=submit]').disabled")
+        name.fill("Nouveau projet fictif")
+        page.once("dialog",lambda d:d.dismiss())
+        page.locator("[data-edit-project]").click()
+        assert_true(name.input_value()=="Nouveau projet fictif","saisie remplacée sans confirmation")
+        submit.click()
+        page.wait_for_function("window.saves.length===1")
+        assert_true(name.is_disabled() and submit.is_disabled(),"formulaire non verrouillé")
+        project.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.saves.length===1 && window.saves[0].body.project.slug==='nouveau-projet-fictif'"),"double sauvegarde ou slug absent")
+        page.evaluate("window.saves[0].resolve({data:{ok:true},error:null})")
+        page.wait_for_function("document.querySelector('[data-project-form] [data-admin-save-status]').textContent.includes('non confirmé')")
+        assert_true(name.input_value()=="Nouveau projet fictif" and submit.is_disabled(),"saisie perdue ou relance incertaine")
+        page.locator('[data-admin-tab="playtests"]').click()
+        play=page.locator("[data-playtest-form]")
+        play.locator('[name="title"]').fill("Playtest fictif")
+        play.locator('button[type="submit"]').click()
+        page.wait_for_function("window.saves.length===2")
+        page.evaluate("window.failRefresh=true;window.saves[1].resolve({data:{ok:true,playtest:{id:'fixture-playtest'}},error:null})")
+        page.wait_for_function("document.querySelector('[data-playtest-form] [data-admin-save-status]').textContent.includes('Actualisation indisponible')")
+        assert_true(play.locator('button[type="submit"]').is_disabled() and play.locator('[name="title"]').input_value()=="","confirmation suivie d’un échec de lecture mal gérée")
+        page.locator('[data-admin-tab="extensions"]').click()
+        ext=page.locator("[data-extension-form]")
+        ext.locator('[name="title"]').fill("Extension fictive")
+        ext.locator('button[type="submit"]').click()
+        page.wait_for_function("window.saves.length===3")
+        page.evaluate("window.saves[2].resolve({data:{ok:true,extension:{id:'fixture-extension'}},error:null})")
+        page.wait_for_function("document.querySelector('[data-extension-form] [data-admin-save-status]').textContent==='Extension enregistrée.'")
+        assert_true(not ext.locator('button[type="submit"]').is_disabled() and ext.locator('[name="title"]').input_value()=="","sauvegarde confirmée non réinitialisée")
+        page.locator('[data-admin-tab="documents"]').click()
+        doc=page.locator("[data-document-upload-form]")
+        upload=doc.locator('[name="file"]')
+        title=doc.locator('[name="title"]')
+        button=doc.locator('button[type="submit"]')
+        feedback=doc.locator("[data-admin-save-status]")
+        title.fill("Document fictif")
+        upload.set_input_files({"name":"test.pdf","mimeType":"application/pdf","buffer":b"fixture only"})
+        doc.locator('[name="publish_status"]').select_option("approved")
+        page.once("dialog",lambda d:d.dismiss())
+        button.click()
+        assert_true(page.evaluate("window.docActions.length===0"),"publication transmise sans confirmation")
+        doc.locator('[name="publish_status"]').select_option("review")
+        button.click()
+        page.wait_for_function("window.docActions.length===1")
+        assert_true(upload.is_disabled() and button.is_disabled(),"téléversement non verrouillé")
+        doc.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.docActions.length===1"),"préparation dupliquée")
+        page.evaluate("""window.docActions[0].resolve({error:null,data:{ok:true,document:{id:'doc-fixture',project_id:'fixture-project',status:'draft',storage_bucket:'sinjira-private-documents',storage_path:window.uploadPath},upload:{bucket:'sinjira-private-documents',path:window.uploadPath,token:'fixture-token'}}})""")
+        page.wait_for_function("window.uploads.length===1")
+        assert_true("Étape 2" in feedback.inner_text(),"état du transfert absent")
+        assert_true(page.evaluate("window.uploads[0].bucket==='sinjira-private-documents' && window.uploads[0].size===12"),"contrat du transfert modifié")
+        page.evaluate("window.uploads[0].resolve({error:null,data:{path:window.uploadPath}})")
+        page.wait_for_function("window.docActions.length===2")
+        assert_true(page.evaluate("window.docActions[1].body.action==='finalize_document' && window.docActions[1].body.document_id==='doc-fixture' && window.docActions[1].body.status==='review'"),"finalisation incorrecte")
+        page.evaluate("window.docActions[1].resolve({error:null,data:{ok:true,document:{id:'doc-fixture',status:'review'}}})")
+        page.wait_for_function("document.querySelector('[data-document-upload-form] [data-admin-save-status]').textContent.includes('statut confirmé')")
+        assert_true(not button.is_disabled() and title.input_value()=="" and upload.evaluate("el=>el.files.length")==0,"transfert confirmé non réinitialisé")
+        title.fill("Document interrompu")
+        upload.set_input_files({"name":"test.pdf","mimeType":"application/pdf","buffer":b"fixture only"})
+        button.click()
+        page.wait_for_function("window.docActions.length===3")
+        page.evaluate("""window.docActions[2].resolve({error:null,data:{ok:true,document:{id:'doc-fixture-2',project_id:'fixture-project',status:'draft',storage_bucket:'sinjira-private-documents',storage_path:window.uploadPath},upload:{bucket:'sinjira-private-documents',path:window.uploadPath,token:'fixture-token'}}})""")
+        page.wait_for_function("window.uploads.length===2")
+        page.evaluate("window.uploads[1].resolve({error:null,data:{path:'unexpected-path'}})")
+        page.wait_for_function("document.querySelector('[data-document-upload-form] [data-admin-save-status]').textContent.includes('non confirmé (transfert)')")
+        assert_true(button.is_disabled() and title.input_value()=="Document interrompu" and upload.evaluate("el=>el.files.length")==1,"saisie ou fichier perdu après transfert incertain")
+        assert_true(page.evaluate("window.docActions.length===3"),"finalisation après transfert non confirmé")
+    finally:
+        ctx.close()
+
+
+def check_admin_character_editor(browser):
+    # V18 réel, données entièrement fictives ; aucun compte, source ou RPC réel.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        allowed={"/assets/js/"+name for name in ("sinjira-admin-v18.js","sinjira-admin-panel-nav.mjs","sinjira-admin-save-guard.mjs")}
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
+                  and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
+                  else route.abort())
+        ctx.route("**/assets/js/v24-admin-health.js*",lambda route:route.fulfill(content_type="text/javascript",body="export {};"))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.characterWrites=[];window.failCharacterRead=false;
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          const characters=[{id:'fixture-a',public_name:'Personnage A',status:'author_review',canon_status:'PROVISOIRE',novel_id:'novel-fixture',bible:{note:'A'}},
+            {id:'fixture-b',public_name:'Personnage B',status:'future',canon_status:'PROVISOIRE',bible:{note:'B'}}];
+          export function getSupabase(){return {functions:{async invoke(name,{body}){
+            if(body.action==='save_character')return new Promise(resolve=>window.characterWrites.push({name,body,resolve}));
+            if(body.action==='list_characters')return window.failCharacterRead?{error:{message:'fixture'},data:null}:{error:null,data:{ok:true,characters,novels:[{id:'novel-fixture',title:'Roman fictif'}]}};
+            return {error:null,data:{ok:true,dashboard:{},comments:[],submissions:[],contexts:[],rows:[],notifications:[],unread:0}};
+          }}}}
+          """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="domcontentloaded")
+        page.wait_for_function("document.querySelectorAll('[data-edit-character]').length===2")
+        page.evaluate("""async()=>{const m=await import('/assets/js/sinjira-admin-panel-nav.mjs?v=1.0.0');m.openAdminPanel('character-bible')}""")
+        form=page.locator("[data-character-editor]")
+        button=form.locator('button[type="submit"]')
+        name=form.locator('[name="public_name"]')
+        bible=form.locator('[name="bible_json"]')
+        status=form.locator("[data-admin-save-status]")
+        assert_true(button.is_disabled() and name.is_disabled(),"éditeur ouvert sans sélection")
+        page.locator('[data-edit-character="fixture-a"]').click()
+        assert_true(name.input_value()=="Personnage A" and not button.is_disabled(),"sélection non chargée")
+        assert_true(form.locator('[name="novel_id"]').input_value()=="novel-fixture","roman non conservé")
+        name.fill("Personnage A modifié")
+        page.once("dialog",lambda d:d.dismiss())
+        page.locator('[data-edit-character="fixture-b"]').click()
+        assert_true(name.input_value()=="Personnage A modifié","brouillon écrasé")
+        bible.fill("[1,2]")
+        button.click()
+        assert_true(bible.get_attribute("aria-invalid")=="true" and page.evaluate("window.characterWrites.length===0"),"JSON invalide transmis")
+        bible.fill('{"note":"modifiée"}')
+        form.locator('[name="canon_status"]').select_option("CANON")
+        button.click()
+        assert_true(page.evaluate("window.characterWrites.length===0") and "manuscrit" in status.inner_text(),"CANON transmis sans confirmation")
+        form.locator('[name="author_confirmed_canon"]').check()
+        button.click()
+        page.wait_for_function("window.characterWrites.length===1")
+        assert_true(button.is_disabled() and name.is_disabled(),"sauvegarde non verrouillée")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("""window.characterWrites.length===1 && window.characterWrites[0].name==='admin-sinjira-v18' &&
+          window.characterWrites[0].body.character.id==='fixture-a' &&
+          window.characterWrites[0].body.character.author_confirmed_canon===true &&
+          window.characterWrites[0].body.character.author_confirmed_retcon===false &&
+          window.characterWrites[0].body.character.novel_id==='novel-fixture'"""),"double sauvegarde ou contrat canon modifié")
+        page.evaluate("window.characterWrites[0].resolve({error:null,data:{ok:true,character:{id:'fixture-a'}}})")
+        page.wait_for_function("document.querySelector('[data-character-editor] [data-admin-save-status]').textContent.includes('Personnage enregistré')")
+        assert_true(button.is_disabled() and name.is_disabled(),"nouvelle sélection non requise après confirmation")
+        page.locator('[data-edit-character="fixture-b"]').click()
+        assert_true(not form.locator('[name="author_confirmed_canon"]').is_checked(),"confirmation héritée du personnage précédent")
+        name.fill("Personnage B modifié")
+        button.click()
+        page.wait_for_function("window.characterWrites.length===2")
+        page.evaluate("window.characterWrites[1].resolve({error:null,data:{ok:true,character:{id:'fixture-a'}}})")
+        page.wait_for_function("document.querySelector('[data-character-editor] [data-admin-save-status]').textContent.includes('non confirmé')")
+        assert_true(button.is_disabled() and name.input_value()=="Personnage B modifié","réponse d’une autre fiche acceptée")
+        page.locator('[data-edit-character="fixture-a"]').click()
+        assert_true(name.input_value()=="Personnage B modifié","saisie incertaine écrasée")
+    finally:
+        ctx.close()
+
+
+def check_admin_moderation(browser):
+    # Modération réelle côté interface, uniquement des dossiers fictifs.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        allowed={"/assets/js/sinjira-admin-social-v20.js","/assets/js/sinjira-admin-panel-nav.mjs"}
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
+                  and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
+                  else route.abort())
+        ctx.route("**/assets/js/sinjira-admin-parallel-v24.js*",lambda route:route.fulfill(content_type="text/javascript",body="export {};"))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.moderationWrites=[];
+          window.reports=[{id:'fixture-report-a',network:'real',reason:'other',snapshot:{}},{id:'fixture-report-b',network:'real',reason:'scam',snapshot:{}}];
+          window.appeals=[{id:'fixture-appeal',decision:{id:'fixture-decision',action:'hide_content'},appeal_text:'Appel fictif'}];
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export function getSupabase(){return {functions:{async invoke(name,{body}){
+            if(body.action==='dashboard')return {error:null,data:{ok:true,dashboard:{open_reports:window.reports.length,active_suspensions:0,pending_appeals:window.appeals.length}}};
+            if(body.action==='list_reports')return {error:null,data:{ok:true,reports:window.reports}};
+            if(body.action==='list_appeals')return {error:null,data:{ok:true,appeals:window.appeals}};
+            return new Promise(resolve=>window.moderationWrites.push({name,body,resolve}));
+          }}}}
+          """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="domcontentloaded")
+        page.wait_for_function("document.querySelectorAll('[data-social-report-list] [data-report]').length===2")
+        page.evaluate("""async()=>{const m=await import('/assets/js/sinjira-admin-panel-nav.mjs?v=1.0.0');m.openAdminPanel('social-moderation')}""")
+        first=page.locator('[data-report="fixture-report-a"]')
+        second=page.locator('[data-report="fixture-report-b"]')
+        appeal=page.locator('[data-appeal="fixture-appeal"]')
+        feedback=page.locator("[data-social-admin-status]")
+        first.locator("[data-suspend]").click()
+        assert_true("motivation humaine" in feedback.inner_text() and page.evaluate("window.moderationWrites.length===0"),"sanction sans motivation")
+        first.locator("[data-statement]").fill("Motivation humaine fictive pour la première décision.")
+        second.locator("summary").click()
+        second.locator("[data-statement]").fill("Brouillon indépendant à conserver après actualisation.")
+        appeal.locator("[data-review-reason]").fill("Révision humaine fictive suffisamment détaillée.")
+        page.once("dialog",lambda d:d.dismiss())
+        first.locator("[data-suspend]").click()
+        assert_true(page.evaluate("window.moderationWrites.length===0"),"décision annulée transmise")
+        page.once("dialog",lambda d:d.accept())
+        first.locator("[data-restrict]").click()
+        page.wait_for_function("window.moderationWrites.length===1")
+        assert_true(first.locator("[data-suspend]").is_disabled() and second.locator("[data-resolve]").is_disabled() and appeal.locator("[data-reverse]").is_disabled(),"actions concurrentes non verrouillées")
+        first.locator("[data-suspend]").evaluate("el=>el.dispatchEvent(new MouseEvent('click',{bubbles:true}))")
+        assert_true(page.evaluate("""window.moderationWrites.length===1 && window.moderationWrites[0].name==='admin-social-v20' &&
+          window.moderationWrites[0].body.action==='restrict_reported_content' &&
+          window.moderationWrites[0].body.report_id==='fixture-report-a' &&
+          window.moderationWrites[0].body.statement_of_reasons.startsWith('Motivation humaine')"""),"double décision ou contrat modifié")
+        page.evaluate("window.reports.shift();window.moderationWrites[0].resolve({error:null,data:{ok:true,decision_id:'fixture-decision',reversible:true}})")
+        page.wait_for_function("document.querySelector('[data-social-admin-status]').textContent.includes('Décision confirmée')")
+        assert_true(first.count()==0 and second.locator("[data-statement]").input_value()=="Brouillon indépendant à conserver après actualisation." and appeal.locator("[data-review-reason]").input_value()=="Révision humaine fictive suffisamment détaillée.","brouillons indépendants perdus")
+        page.once("dialog",lambda d:d.accept())
+        appeal.locator("[data-reverse]").click()
+        page.wait_for_function("window.moderationWrites.length===2")
+        page.evaluate("window.moderationWrites[1].resolve({error:null,data:{ok:true,outcome:'upheld',decision_id:'fixture-decision'}})")
+        page.wait_for_function("document.querySelector('[data-social-admin-status]').textContent.includes('Décision non confirmée')")
+        assert_true(appeal.locator("[data-uphold]").is_disabled() and second.locator("[data-resolve]").is_disabled(),"relance après réponse contradictoire")
+        assert_true(appeal.locator("[data-review-reason]").input_value()=="Révision humaine fictive suffisamment détaillée.","motivation perdue après incertitude")
+        assert_true(page.evaluate("""()=>[...document.querySelectorAll('[data-report] .field label,[data-appeal] .field label')].every(l=>l.control)"""),"libellés dynamiques non associés")
+    finally:
+        ctx.close()
 
 
 def run() -> None:
@@ -1626,12 +2513,12 @@ def run() -> None:
         # Navigation de continuité : les pages secondaires et les pages 404
         # doivent utiliser les mêmes correctifs clavier que les accueils.
         for route, script_version in (
-            ("404.html", "site.js?v=24.4.101"),
-            ("univers.html", "site.js?v=24.4.101"),
-            ("transparence-ia.html", "site.js?v=24.4.101"),
-            ("confidentialite.html", "site.js?v=24.4.101"),
-            ("gouvernance-vie-privee.html", "site.js?v=24.4.101"),
-            ("avis-legal.html", "site.js?v=24.4.101"),
+            ("404.html", "site.js?v=24.4.105"),
+            ("univers.html", "site.js?v=24.4.105"),
+            ("transparence-ia.html", "site.js?v=24.4.105"),
+            ("confidentialite.html", "site.js?v=24.4.105"),
+            ("gouvernance-vie-privee.html", "site.js?v=24.4.105"),
+            ("avis-legal.html", "site.js?v=24.4.105"),
             ("projets/projet-nova/registre-rencontres.html", "script.js?v=26.1.0"),
             ("projets/projet-nova/visionneuse.html?doc=resume", "script.js?v=26.1.0"),
             ("projets/projet-nova/document.html?doc=corpus", "script.js?v=26.1.0"),
@@ -1949,6 +2836,18 @@ def run() -> None:
         context.close()
         if IS_LOCAL:
             check_legal_navigation(browser)
+            check_message_layout(browser)
+            check_conversation_isolation(browser)
+            check_notification_counts(browser)
+            check_fulfillment_feedback(browser)
+            check_cost_summary_feedback(browser)
+            check_reservation_feedback(browser)
+            check_admin_responsive_layout(browser)
+            check_admin_panel_navigation(browser)
+            check_admin_license_generation(browser)
+            check_admin_form_saves(browser)
+            check_admin_character_editor(browser)
+            check_admin_moderation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(

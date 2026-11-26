@@ -1,0 +1,15 @@
+/* Centre d'avis privé : reflow et cibles tactiles, sans impact sur les autres pages. */
+body[data-account-page="notifications"] main :is(.account-shell,.account-stats,.account-reader-grid,.account-card,.account-stat,.hero-actions,.account-welcome-strip){
+  box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere
+}
+body[data-account-page="notifications"] main .hero-actions{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px
+}
+body[data-account-page="notifications"] main .hero-actions .btn{
+  box-sizing:border-box;width:100%;min-width:0;min-height:48px;white-space:normal;overflow-wrap:anywhere;text-align:center;justify-content:center
+}
+body[data-account-page="notifications"] main .account-welcome-strip{flex-wrap:wrap;gap:8px}
+body[data-account-page="notifications"] main .hero-actions .btn:focus-visible{outline:3px solid #ffb8a8;outline-offset:2px}
+@media(max-width:560px){
+  body[data-account-page="notifications"] main :is(.account-stats,.account-reader-grid){grid-template-columns:minmax(0,1fr)}
+}

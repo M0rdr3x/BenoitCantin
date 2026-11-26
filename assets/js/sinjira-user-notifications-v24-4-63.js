@@ -1,4 +1,5 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,setStatus} from './sinjira-supabase.js';
+import {safeSocialDestination} from './sinjira-social-navigation-guard.mjs?v=1.0.0';
 
 const s=getSupabase();
 const pageStatus=document.querySelector('[data-notifications-status]');
@@ -15,8 +16,9 @@ const typeLabel=type=>({
 }[type]||'SINJIRA™');
 
 function safeActionPath(value){
-  const path=String(value||'');
-  return path.startsWith('/compte/')||path.startsWith('/projets/sinjira/')?path:'';
+  return safeSocialDestination(value,{
+    origin:location.origin,scopes:['/compte/','/projets/sinjira/']
+  });
 }
 
 function notificationCard(item,{compact=false}={}){
@@ -46,16 +48,38 @@ async function markRead(user,id){
 async function loadFullPage(user){
   const box=document.querySelector('[data-notifications-list]');
   if(!box)return;
-  const {data=[],error}=await s.from('user_notifications')
-    .select('id,notification_type,title,body,action_path,read_at,created_at')
-    .eq('user_id',user.id)
-    .order('created_at',{ascending:false})
-    .limit(100);
-  if(error)throw error;
-
-  const unread=data.filter(item=>!item.read_at).length;
+  const all=document.querySelector('[data-notifications-read-all]');
   const unreadNode=document.querySelector('[data-notifications-unread-count]');
   const totalNode=document.querySelector('[data-notifications-total-count]');
+  if(all)all.disabled=true;
+  box.setAttribute('aria-busy','true');
+  let data,unread;
+  try{
+    const [recent,countResult]=await Promise.all([
+      s.from('user_notifications')
+        .select('id,notification_type,title,body,action_path,read_at,created_at')
+        .eq('user_id',user.id)
+        .order('created_at',{ascending:false})
+        .limit(100),
+      s.from('user_notifications')
+        .select('id',{count:'exact',head:true})
+        .eq('user_id',user.id)
+        .is('read_at',null)
+    ]);
+    if(recent.error||countResult.error||!Array.isArray(recent.data)||
+       !Number.isSafeInteger(countResult.count)||countResult.count<0){
+      throw new Error('Notifications indisponibles');
+    }
+    data=recent.data;
+    unread=countResult.count;
+  }catch(error){
+    if(unreadNode)unreadNode.textContent='—';
+    if(totalNode)totalNode.textContent='—';
+    box.innerHTML='<div class="notice"><strong>Les avis sont temporairement indisponibles.</strong><p>Rechargez la page pour réessayer.</p></div>';
+    throw error;
+  }finally{
+    box.setAttribute('aria-busy','false');
+  }
   if(unreadNode)unreadNode.textContent=String(unread);
   if(totalNode)totalNode.textContent=String(data.length);
 
@@ -67,11 +91,16 @@ async function loadFullPage(user){
     button.disabled=true;
     try{
       await markRead(user,button.dataset.notificationRead);
-      await loadFullPage(user);
-      setStatus(pageStatus,'Avis marqué comme lu.','success');
     }catch(_){
       button.disabled=false;
       setStatus(pageStatus,'Impossible de modifier cet avis pour le moment.','error');
+      return;
+    }
+    try{
+      await loadFullPage(user);
+      setStatus(pageStatus,'Avis marqué comme lu.','success');
+    }catch(_){
+      setStatus(pageStatus,'Avis marqué comme lu, mais actualisation indisponible. Rechargez la page.','error');
     }
   }));
 
@@ -84,22 +113,27 @@ async function loadFullPage(user){
     location.href=link.href;
   }));
 
-  const all=document.querySelector('[data-notifications-read-all]');
   if(all){
     all.disabled=unread===0;
     all.onclick=async()=>{
       all.disabled=true;
-      const {error:updateError}=await s.from('user_notifications')
-        .update({read_at:new Date().toISOString()})
-        .eq('user_id',user.id)
-        .is('read_at',null);
-      if(updateError){
+      try{
+        const {error:updateError}=await s.from('user_notifications')
+          .update({read_at:new Date().toISOString()})
+          .eq('user_id',user.id)
+          .is('read_at',null);
+        if(updateError)throw updateError;
+      }catch(_){
         all.disabled=false;
         setStatus(pageStatus,'Impossible de marquer tous les avis comme lus.','error');
         return;
       }
-      await loadFullPage(user);
-      setStatus(pageStatus,'Tous les avis sont maintenant marqués comme lus.','success');
+      try{
+        await loadFullPage(user);
+        setStatus(pageStatus,'Marquage terminé. Le compteur a été actualisé.','success');
+      }catch(_){
+        setStatus(pageStatus,'Marquage effectué, mais actualisation indisponible. Rechargez la page.','error');
+      }
     };
   }
 }

@@ -29,39 +29,82 @@ function entitlementCard(row){
 }
 
 if(form&&list){
+  const input=form.elements.code,button=form.querySelector('button[type="submit"]');
+  let ready=false,busy=false;
+  // Bloquer la soumission native avant toute opération asynchrone.
+  form.addEventListener('submit',event=>event.preventDefault());
+  try{
   const user=await requireUser();
   const s=getSupabase();
   const ownerResult=await s.rpc('is_sinjira_owner',{p_user_id:user.id});
-  const owner=!ownerResult.error&&ownerResult.data===true;
-  if(ownerResult.error){
+  const owner=ownerResult?.error===null&&ownerResult.data===true;
+  if(ownerResult?.error!==null){
     setStatus(status,'Le rôle du compte n’a pas pu être confirmé par le serveur. Les licences individuelles restent consultables.','info');
   }
 
   async function render(){
     const freeCard=freeModeCard();
     const roleCard=owner?ownerRoleCard():'';
-    const {data,error}=await s.from('user_entitlements').select('source,granted_at,products(slug,name,product_type)').eq('user_id',user.id).order('granted_at',{ascending:false});
-    if(error){
+    const result=await s.from('user_entitlements').select('source,granted_at,products(slug,name,product_type)').eq('user_id',user.id).order('granted_at',{ascending:false});
+    const data=result?.data,error=result?.error;
+    if(error!==null||!Array.isArray(data)){
       list.innerHTML=freeCard+roleCard+(serverMissing(error)?'<div class="v2433-server-note"><strong>Licences en préparation</strong><br>Le serveur des droits d’accès doit encore être synchronisé. Aucun droit existant n’est supprimé pendant cette attente.</div>':'<div class="v24-empty">Impossible de lire les licences pour le moment.</div>');
-      return;
+      return false;
     }
-    const rows=Array.isArray(data)?data:[];
+    const rows=data;
     const empty=owner
       ?'<div class="v24-empty">Aucun droit numérique explicite n’est attribué à ce compte pour le moment. Le rôle propriétaire reste actif pour les fonctions qui lui sont réservées, sans inventer de possession produit.</div>'
       :'<div class="v24-empty">Aucune licence liée à ce compte.</div>';
     list.innerHTML=freeCard+roleCard+(rows.length?rows.map(entitlementCard).join(''):empty);
+    return true;
   }
 
   form.addEventListener('submit',async e=>{
     e.preventDefault();
-    const code=String(new FormData(form).get('code')||'').trim();
-    if(!code){setStatus(status,'Entrez un code d’activation.','error');return}
-    const {data,error}=await s.functions.invoke('redeem-license-code',{body:{code}});
-    if(error||!data?.ok){
-      setStatus(status,error&&serverMissing(error)?'Le service d’activation n’est pas encore disponible.':data?.error||'Activation impossible pour le moment.','error');
-      return;
+    if(!ready||busy)return;
+    const code=String(input.value||'').trim();
+    if(code.length<12||code.length>80){
+      setStatus(status,'Entrez un code d’activation de 12 à 80 caractères.','error');
+      input.focus();return;
     }
-    form.reset();setStatus(status,'Produit activé sur votre Compte SINJIRA™.','success');await render();
+    busy=true;
+    let confirmed=false;
+    input.readOnly=true;button.disabled=true;
+    form.setAttribute('aria-busy','true');
+    button.textContent='Activation en cours…';
+    setStatus(status,'Vérification de votre code…','info');
+    try{
+      const result=await s.functions.invoke('redeem-license-code',{body:{code}});
+      if(result?.error!==null||result.data?.ok!==true){
+        setStatus(status,'Activation non confirmée. Vérifiez vos licences avant de réessayer ou contactez le support.','error');
+        try{ready=await render()}catch{ready=false}
+        return;
+      }
+      confirmed=true;
+      form.reset();
+      setStatus(status,'Produit activé sur votre Compte SINJIRA™.','success');
+      try{
+        if(!await render())throw Error('LIST_UNAVAILABLE');
+      }catch{
+        ready=false;
+        setStatus(status,'Produit activé. Rechargez la page pour actualiser vos licences.','success');
+      }
+    }catch{
+      setStatus(status,'Activation non confirmée. Votre saisie est conservée dans cet onglet. Vérifiez vos licences avant de réessayer.','error');
+      try{ready=await render()}catch{ready=false}
+    }finally{
+      busy=false;input.readOnly=false;input.disabled=!ready;button.disabled=!ready;
+      if(!ready&&!confirmed)setStatus(status,'Activation non confirmée. Actualisation des licences indisponible. Rechargez la page avant toute nouvelle activation.','error');
+      button.textContent='Activer';
+      form.setAttribute('aria-busy','false');
+    }
   });
-  await render();
+  if(!await render())throw Error('LIST_UNAVAILABLE');
+  ready=true;input.disabled=false;button.disabled=false;
+  form.setAttribute('aria-busy','false');
+  if(ownerResult?.error===null)setStatus(status,'Vous pouvez saisir votre code physique.','info');
+  }catch{
+    form.setAttribute('aria-busy','false');
+    setStatus(status,'Impossible de vérifier votre session ou vos licences. Rechargez la page avant de saisir un code.','error');
+  }
 }

@@ -14,7 +14,8 @@
 <link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=26.11.07">
 <link rel="stylesheet" href="/assets/css/site-ux-sinjira-v1.css?v=1.0.0">
 <link rel="stylesheet" href="/assets/css/sinjira-roman-iv-v1.css?v=1.0.0">
-</head><body class="account-page" data-v18-page="reads-v24-4-61" data-sinjira-ux="v1">
+<link rel="stylesheet" href="/assets/css/sinjira-reading-ux-v1.css?v=1.0.0">
+</head><body class="account-page" data-v18-page="reads-v24-4-61" data-reading-ux="v1" data-sinjira-ux="v1">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
 <header class="site-header"><div class="container nav-shell">
 <a class="brand" href="/projets/sinjira/"><img src="/assets/icons/sinjira-favicon.png" width="47" height="47" alt=""><span class="brand-text"><strong>SINJIRA™</strong><span>Bibliothèque personnelle</span></span></a>
@@ -26,7 +27,7 @@
 <a class="project-back" href="bibliotheque.html">← Ma bibliothèque</a>
 <h1>Mes romans</h1><p class="sinjira-library-intro">Les romans et la progression sont distincts des jeux et des autres ressources. Le Livre I complet reste réservé aux comptes autorisés.</p>
 <nav class="sinjira-library-tabs" aria-label="Catégories de ma bibliothèque"><a href="bibliotheque.html">Vue d’ensemble</a><a aria-current="page" href="bibliotheque-romans.html">Romans</a><a href="bibliotheque-jeux.html">Jeux</a><a href="bibliotheque-ressources.html">Ressources</a></nav>
-<div class="account-status" data-library-status data-v18-status role="status" aria-live="polite" hidden></div>
+<div class="account-status" data-library-status data-v18-status role="status" aria-live="polite" aria-atomic="true">Chargement des lectures…</div>
 </div></section>
 
 <section class="section section-tight"><div class="account-shell">
@@ -55,15 +56,16 @@
 <section class="section section-tight"><div class="account-shell">
 <div class="section-heading"><span class="eyebrow">Mes lectures enregistrées</span><h2>Ma collection de romans</h2>
 <p>Ajoutez ou retirez les romans que vous suivez. Le Livre II reste annoncé, sans diffusion de manuscrit non publié.</p></div>
-<div class="account-reader-grid" data-reader-library></div>
+<div class="account-reader-grid" data-reader-library aria-busy="true"></div>
 </div></section>
 
+<dialog class="reading-remove-dialog" data-reading-remove-dialog aria-labelledby="reading-remove-title" aria-describedby="reading-remove-help"><form method="dialog"><h2 id="reading-remove-title">Retirer ce roman ?</h2><p>Roman : <strong data-reading-remove-name></strong></p><p id="reading-remove-help">Votre progression enregistrée dans cette bibliothèque sera supprimée. Cette action ne retire pas vos licences ni vos droits d’accès.</p><div class="reading-remove-actions"><button type="submit" value="cancel" class="btn btn-secondary" autofocus>Annuler</button><button type="submit" value="remove" class="btn btn-primary">Retirer le roman</button></div></form></dialog>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom">© 2026 Benoit Cantin · SINJIRA™ · <a href="/compte/">Retour à mon compte</a></div></div></footer>
-<script defer src="/assets/js/site.js?v=24.4.101"></script>
+<script defer src="/assets/js/site.js?v=24.4.105"></script>
 <script type="module" src="/assets/js/sinjira-account.js?v=24.4"></script>
 
 <script type="module" src="/assets/js/sinjira-account-v18.js?v=24.4"></script>
-<script type="module" src="/assets/js/sinjira-reads-v24-4-61.js?v=26.11.07"></script>
+<script type="module" src="/assets/js/sinjira-reads-v24-4-61.js?v=26.11.25"></script>
 
 </body></html>
