@@ -13,7 +13,7 @@ need(WRAPPER.exists(),'wrapper admin-console absent')
 need(CORE.exists(),'moteur admin-console historique absent')
 if WRAPPER.exists():
     js=WRAPPER.read_text('utf-8')
-    need("import './sinjira-admin-console-core.js?v=4.1'" in js,'wrapper ne charge pas le moteur admin existant')
+    need("import './sinjira-admin-console-core.js?v=4.2'" in js,'wrapper ne charge pas le moteur admin existant')
     need("Identifiant de projet" in js,'nouveau libellé absent')
     need("Ex. Fracture du Réseau-Mère" in js,'exemple Fracture du Réseau-Mère absent')
     need("slugField.hidden=true" in js,'champ slug technique non masqué')

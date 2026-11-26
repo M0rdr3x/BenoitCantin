@@ -52,3 +52,7 @@
 .admin-sinjira-page [data-admin-license-output]{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;margin:10px 0;resize:vertical;overflow-wrap:anywhere;font-family:ui-monospace,monospace}
 .admin-sinjira-page :is([data-admin-license-download],[data-admin-license-next]){margin-block:6px;min-height:48px}
 @media(max-width:560px){.admin-sinjira-page :is([data-admin-license-download],[data-admin-license-next]){width:100%}}
+
+/* Statuts locaux de sauvegarde. */
+.admin-sinjira-page .admin-save-status{grid-column:1/-1;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.admin-sinjira-page form[aria-busy="true"] button[type="submit"]{cursor:wait}

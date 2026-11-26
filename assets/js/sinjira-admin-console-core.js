@@ -1,8 +1,10 @@
+import {createAdminSaveGuard} from './sinjira-admin-save-guard.mjs?v=1.0.0';
 import {prepareAdminNavigation,openAdminPanel} from './sinjira-admin-panel-nav.mjs?v=1.0.0';
 import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-admin-status]');
 let projects=[];
+let projectGuard;
 
 async function requireSinjiraAdmin(){
   const s=getSupabase();
@@ -27,7 +29,7 @@ function adminAvatarUrl(path){
 
 async function call(action,extra={}){
   const {data,error}=await getSupabase().functions.invoke('admin-console',{body:{action,...extra}});
-  if(error||!data?.ok)throw new Error(data?.error||error?.message||'Erreur administration');
+  if(error!==null||data?.ok!==true)throw new Error('Réponse administrative non confirmée');
   return data;
 }
 async function callReports(action,extra={}){
@@ -63,15 +65,23 @@ async function loadProjects(){
   const opts=projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   document.querySelectorAll('[data-project-select]').forEach(s=>{const old=s.value;s.innerHTML=opts;if(old)s.value=old});
   list.querySelectorAll('[data-edit-project]').forEach(b=>b.addEventListener('click',()=>{
-    const p=projects.find(x=>x.id===b.dataset.editProject),f=document.querySelector('[data-project-form]');if(!p)return;
+    const p=projects.find(x=>x.id===b.dataset.editProject),f=document.querySelector('[data-project-form]');if(!p||!projectGuard?.canReplace())return;
     Object.entries(p).forEach(([k,v])=>{if(f.elements[k]){if(f.elements[k].type==='checkbox')f.elements[k].checked=!!v;else f.elements[k].value=v??''}});
-    f.scrollIntoView({behavior:'smooth'});
+    projectGuard.markClean();
+    f.elements.name.focus({preventScroll:true});
+    f.scrollIntoView({behavior:'instant',block:'start'});
   }));
 }
 function bindProject(){
   const f=document.querySelector('[data-project-form]');
-  f.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(f),obj=Object.fromEntries(fd.entries());obj.allow_tester_requests=f.elements.allow_tester_requests.checked;
-    try{await call('save_project',{project:obj});setStatus(status,'Projet enregistré.','success');f.reset();await loadProjects();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
+  projectGuard=createAdminSaveGuard(f);
+  f.addEventListener('submit',e=>{
+    e.preventDefault();
+    const obj=Object.fromEntries(new FormData(f).entries());
+    obj.allow_tester_requests=f.elements.allow_tester_requests.checked;
+    projectGuard.run(async()=>{const result=await call('save_project',{project:obj});return result.project},
+      async()=>{await loadProjects();await dashboard()},'Projet enregistré.',obj.id);
+  });
 }
 async function loadDocs(){
   const rows=(await call('list_documents')).documents||[],box=document.querySelector('[data-admin-document-list]');
@@ -108,7 +118,13 @@ async function loadPlaytests(){
   box.querySelectorAll('[data-pt]').forEach(b=>b.addEventListener('click',async()=>{try{await call('review_playtest_participant',{playtest_id:b.dataset.pt,user_id:b.dataset.user,status:b.dataset.state});await loadPlaytests()}catch(x){setStatus(status,x.message,'error')}}));
 }
 function bindPlaytest(){
-  const f=document.querySelector('[data-playtest-form]');f.addEventListener('submit',async e=>{e.preventDefault();try{await call('save_playtest',{playtest:Object.fromEntries(new FormData(f).entries())});setStatus(status,'Playtest enregistré.','success');f.reset();await loadPlaytests();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
+  const f=document.querySelector('[data-playtest-form]'),guard=createAdminSaveGuard(f);
+  f.addEventListener('submit',e=>{
+    e.preventDefault();
+    const payload=Object.fromEntries(new FormData(f).entries());
+    guard.run(async()=>{const result=await call('save_playtest',{playtest:payload});return result.playtest},
+      async()=>{await loadPlaytests();await dashboard()},'Playtest enregistré.',payload.id);
+  });
 }
 async function loadExtensions(){
   const d=await call('list_extensions'),box=document.querySelector('[data-admin-extension-list]'),signals=document.querySelector('[data-extension-signals]');
@@ -116,7 +132,13 @@ async function loadExtensions(){
   signals.innerHTML=(d.signals||[]).slice(0,100).map(s=>`<article class="extension-signal"><strong>${escapeHtml(s.game_slug)}</strong>${s.idea?`<p><b>Extension :</b> ${escapeHtml(s.idea)}</p>`:''}${s.favorite?`<p><b>Mécanique appréciée :</b> ${escapeHtml(s.favorite)}</p>`:''}${s.unclear?`<p><b>À clarifier :</b> ${escapeHtml(s.unclear)}</p>`:''}</article>`).join('')||'<p>Aucun signal partagé.</p>';
 }
 function bindExtension(){
-  const f=document.querySelector('[data-extension-form]');f.addEventListener('submit',async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;try{await call('save_extension',{extension:o});setStatus(status,'Extension enregistrée.','success');f.reset();await loadExtensions()}catch(x){setStatus(status,x.message,'error')}})
+  const f=document.querySelector('[data-extension-form]'),guard=createAdminSaveGuard(f);
+  f.addEventListener('submit',e=>{
+    e.preventDefault();
+    const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;
+    guard.run(async()=>{const result=await call('save_extension',{extension:o});return result.extension},
+      loadExtensions,'Extension enregistrée.',o.id);
+  });
 }
 function reportModeLabel(v){return v==='solo'?'Solo':v==='duo'?'Duo':v==='multiplayer'?'Multijoueur':(v||'—')}
 function reportDate(v){try{return new Date(v).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'})}catch{return v||'—'}}
@@ -152,4 +174,4 @@ async function analytics(){
   const d=(await call('analytics')).analytics||{},box=document.querySelector('[data-admin-analytics]');
   box.innerHTML=Object.entries(d).map(([g,a])=>`<article class="admin-analytics-card"><h3>${escapeHtml(g)}</h3><dl><div><dt>Contributions</dt><dd>${a.count}</dd></div><div><dt>Joueurs moyens</dt><dd>${a.average_players??'—'}</dd></div><div><dt>Durée moyenne</dt><dd>${a.average_duration?`${a.average_duration} min`:'—'}</dd></div><div><dt>Note moyenne</dt><dd>${a.average_rating??'—'}</dd></div></dl></article>`).join('')||'<p>Aucune contribution.</p>';
 }
-(async()=>{try{await requireSinjiraAdmin();tabs();bindProject();bindUpload();bindPlaytest();bindExtension();await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){if(x?.message!=='AUTH_REQUIRED'&&x?.message!=='ADMIN_REQUIRED')setStatus(status,x.message||'Erreur de chargement de l’administration.','error')}})();
+(async()=>{try{await requireSinjiraAdmin();tabs();bindUpload();await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);bindProject();bindPlaytest();bindExtension();setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){if(x?.message!=='AUTH_REQUIRED'&&x?.message!=='ADMIN_REQUIRED')setStatus(status,x.message||'Erreur de chargement de l’administration.','error')}})();

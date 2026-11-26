@@ -765,6 +765,69 @@ def check_admin_license_generation(browser):
         ctx.close()
 
 
+def check_admin_form_saves(browser):
+    # Console réelle, réponses synthétiques uniquement, réseau externe bloqué.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        allowed={"/assets/js/"+name for name in ("sinjira-admin-console.js","sinjira-admin-console-core.js",
+                 "sinjira-admin-panel-nav.mjs","sinjira-admin-save-guard.mjs")}
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
+                  and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
+                  else route.abort())
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.saves=[];window.failRefresh=false;
+          export const requireUser=async()=>({id:'fixture'});
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export function setStatus(n,m,t){n.hidden=false;n.textContent=m;n.dataset.statusType=t}
+          const project={id:'fixture-project',name:'Projet fictif',slug:'projet-fictif',status:'development',visibility:'account'};
+          export function getSupabase(){return {auth:{getUser:async()=>({data:{user:{id:'fixture'}},error:null})},
+            rpc:async()=>({data:true,error:null}),functions:{async invoke(name,{body}){
+              const a=body.action;
+              if(a.startsWith('save_'))return new Promise(resolve=>window.saves.push({name,body,resolve}));
+              if(a==='dashboard')return {data:{ok:true,dashboard:{}},error:null};
+              if(a==='list_projects')return {data:{ok:true,projects:[project]},error:null};
+              if(a==='list_playtests'&&window.failRefresh)return {data:null,error:{message:'fixture'}};
+              return {data:{ok:true,documents:[],requests:[],users:[],playtests:[],extensions:[],signals:[],reports:[],analytics:{}},error:null};
+            }}}}
+          """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="domcontentloaded")
+        project=page.locator("[data-project-form]")
+        name=project.locator('[name="name"]')
+        submit=project.locator('button[type="submit"]')
+        status=project.locator("[data-admin-save-status]")
+        page.wait_for_function("!document.querySelector('[data-project-form] button[type=submit]').disabled")
+        name.fill("Nouveau projet fictif")
+        page.once("dialog",lambda d:d.dismiss())
+        page.locator("[data-edit-project]").click()
+        assert_true(name.input_value()=="Nouveau projet fictif","saisie remplacée sans confirmation")
+        submit.click()
+        page.wait_for_function("window.saves.length===1")
+        assert_true(name.is_disabled() and submit.is_disabled(),"formulaire non verrouillé")
+        project.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.saves.length===1 && window.saves[0].body.project.slug==='nouveau-projet-fictif'"),"double sauvegarde ou slug absent")
+        page.evaluate("window.saves[0].resolve({data:{ok:true},error:null})")
+        page.wait_for_function("document.querySelector('[data-project-form] [data-admin-save-status]').textContent.includes('non confirmé')")
+        assert_true(name.input_value()=="Nouveau projet fictif" and submit.is_disabled(),"saisie perdue ou relance incertaine")
+        page.locator('[data-admin-tab="playtests"]').click()
+        play=page.locator("[data-playtest-form]")
+        play.locator('[name="title"]').fill("Playtest fictif")
+        play.locator('button[type="submit"]').click()
+        page.wait_for_function("window.saves.length===2")
+        page.evaluate("window.failRefresh=true;window.saves[1].resolve({data:{ok:true,playtest:{id:'fixture-playtest'}},error:null})")
+        page.wait_for_function("document.querySelector('[data-playtest-form] [data-admin-save-status]').textContent.includes('Actualisation indisponible')")
+        assert_true(play.locator('button[type="submit"]').is_disabled() and play.locator('[name="title"]').input_value()=="","confirmation suivie d’un échec de lecture mal gérée")
+        page.locator('[data-admin-tab="extensions"]').click()
+        ext=page.locator("[data-extension-form]")
+        ext.locator('[name="title"]').fill("Extension fictive")
+        ext.locator('button[type="submit"]').click()
+        page.wait_for_function("window.saves.length===3")
+        page.evaluate("window.saves[2].resolve({data:{ok:true,extension:{id:'fixture-extension'}},error:null})")
+        page.wait_for_function("document.querySelector('[data-extension-form] [data-admin-save-status]').textContent==='Extension enregistrée.'")
+        assert_true(not ext.locator('button[type="submit"]').is_disabled() and ext.locator('[name="title"]').input_value()=="","sauvegarde confirmée non réinitialisée")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2612,6 +2675,7 @@ def run() -> None:
             check_admin_responsive_layout(browser)
             check_admin_panel_navigation(browser)
             check_admin_license_generation(browser)
+            check_admin_form_saves(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
