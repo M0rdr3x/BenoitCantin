@@ -20,6 +20,7 @@ BLOCKED = (
     "mobile-native/App.tsx",
     "scripts/build_netlify_public.py",
     "docs/README.md",
+    "security/candidates/registry-photo-budget.mjs",
     ".github/workflows/validate-site.yml",
     "netlify.toml",
     "vercel.json",
@@ -71,7 +72,7 @@ BLOCKED_EXTS = {
     ".7z", ".rar", ".tar", ".gz",
 }
 BLOCKED_DIRS = (
-    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/",
+    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/", "security/",
     ".github/", ".git/", "projets/projet-nova/official/versions/",
 )
 # Le Codex public possède une seule page HTML approuvée. Un futur export,
@@ -174,7 +175,7 @@ def validate_source() -> list[str]:
                     errors.append("JSON NOVA non approuvé inclus dans Jekyll : " + item)
     for key in (
         "exclude:", "include:", "- \"supabase\"", "- \"scripts\"",
-        "- \"tests\"", "- \"mobile-native\"", "- \"docs\"",
+        "- \"tests\"", "- \"mobile-native\"", "- \"docs\"", "- \"security\"",
         "- \"projets/projet-nova/official/versions\"",
         "- \"**/*.csv\"", "- \"**/*.ts\"", "- \"**/*.tsx\"",
         "- \"**/*.py\"", "- \"**/*.toml\"",
@@ -206,6 +207,16 @@ def self_test() -> None:
         safe = root / "index.html"
         safe.write_text("<!doctype html><title>Site test</title>", "utf-8")
         assert validate(root, require_all=False) == [], "Page de test légitime refusée"
+
+        # Le dossier security entier est interne, même pour des extensions Web.
+        for suffix in (".mjs", ".js", ".json", ".html", ".svg", ".txt", ".pdf"):
+            private = root / "security" / "future" / ("candidate" + suffix)
+            private.parent.mkdir(parents=True, exist_ok=True)
+            private.write_text("synthetic", "utf-8")
+            assert any("Répertoire technique publié : security/future/" in error
+                       for error in validate(root, require_all=False)), suffix
+            private.unlink()
+        assert validate(root, require_all=False) == []
 
         # La page publique du Codex doit rester accessible, mais pas une
         # future fiche HTML confidentielle placée dans son répertoire.

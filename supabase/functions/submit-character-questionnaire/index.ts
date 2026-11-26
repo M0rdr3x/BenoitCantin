@@ -54,20 +54,338 @@ function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|avif|gif)$/.test(raw.slice(prefix.length));
 }
 
+// Contrôle préliminaire de signature, pas un décodeur ni un antivirus.
+function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boolean{
+  const bytes=(offset:number,expected:number[])=>expected.every((v,i)=>header[offset+i]===v);
+  const ascii=(offset:number,value:string)=>bytes(offset,Array.from(value,c=>c.charCodeAt(0)));
+  // Budget de dimensions déclarées, pas une preuve de décodage complet.
+  const dimensions=(width:number,height:number)=>width>0&&height>0&&
+    width<=8192&&height<=8192&&width*height<=25_000_000;
+  const view=new DataView(header.buffer,header.byteOffset,header.byteLength);
+  if(ext==='jpg'){
+    // Parcours de tous les marqueurs, y compris entre les scans progressifs.
+    // Les données entropiques ne sont pas décodées.
+    if(header.length!==total||total<4||!bytes(0,[255,216]))return false;
+    let pos=2,count=0,sof=false,scan=false,inScan=false,jfif=false,adobe=false,components=0;
+    while(pos<total){
+      if(inScan){
+        if(header[pos++]!==255)continue;
+        while(pos<total&&header[pos]===255)pos++;
+        if(pos>=total)return false;
+        const marker=header[pos];
+        if(marker===0||(marker>=208&&marker<=215)){pos++;continue;}
+        pos--;inScan=false;
+      }
+      if(++count>4096||header[pos++]!==255)return false;
+      while(pos<total&&header[pos]===255)pos++;
+      if(pos>=total)return false;
+      const marker=header[pos++];
+      if(marker===217)return sof&&scan&&pos===total;
+      if(marker===0||marker===216||marker===1||(marker>=208&&marker<=215)||pos+2>total)return false;
+      const length=view.getUint16(pos,false),next=pos+length;
+      if(length<2||next>total)return false;
+      if(marker===224){
+        // JFIF fixe, sans vignette ; aucun APP libre.
+        if(jfif||sof||length!==16||!bytes(pos+2,[74,70,73,70,0])||header[pos+14]!==0||header[pos+15]!==0)return false;
+        jfif=true;
+      }else if(marker===238){
+        if(adobe||sof||length!==14||!ascii(pos+2,'Adobe'))return false;
+        adobe=true;
+      }else if(marker===192||marker===194){
+        if(sof||scan||length<11||header[pos+2]!==8)return false;
+        components=header[pos+7];
+        if(![1,3,4].includes(components)||length!==8+3*components||
+           !dimensions(view.getUint16(pos+5,false),view.getUint16(pos+3,false)))return false;
+        sof=true;
+      }else if(marker===218){
+        if(!sof||length<8)return false;
+        const n=header[pos+2];
+        if(n<1||n>components||length!==6+2*n)return false;
+        scan=true;inScan=true;
+      }else if(marker===196||marker===219){
+        if(length<=2)return false;
+      }else if(marker===221){
+        if(length!==4)return false;
+      }else return false; // APP1 EXIF/XMP, APP2 ICC, COM et marqueurs inconnus.
+      pos=next;
+    }
+    return false;
+  }
+  if(ext==='png'){
+    // Toute la structure est inspectée, jusqu'à IEND inclus.
+    if(header.length!==total||total<45||!bytes(0,[137,80,78,71,13,10,26,10])||
+       !bytes(8,[0,0,0,13])||!ascii(12,'IHDR')||
+       !dimensions(view.getUint32(16,false),view.getUint32(20,false)))return false;
+    // CRC-32 PNG (type + données), linéaire et borné par la taille du fichier.
+    const crcTable=new Uint32Array(256);
+    for(let i=0;i<256;i++){
+      let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);
+      crcTable[i]=c>>>0;
+    }
+    const color=header[25],depth=header[24];
+    if(!((color===0&&[1,2,4,8,16].includes(depth))||
+         (color===3&&[1,2,4,8].includes(depth))||
+         ([2,4,6].includes(color)&&[8,16].includes(depth)))||
+       header[26]!==0||header[27]!==0||![0,1].includes(header[28]))return false;
+    let count=0,idat=false,idatStarted=false,afterIdat=false,paletteEntries=0;
+    const seenAncillary=new Set<string>();
+    for(let pos=8;pos<total;){
+      if(++count>4096||total-pos<12)return false;
+      const length=view.getUint32(pos,false),type=pos+4,next=pos+12+length;
+      if(next>total||length>0x7fffffff)return false;
+      for(let i=type;i<type+4;i++){
+        const c=header[i];if(!((c>=65&&c<=90)||(c>=97&&c<=122)))return false;
+      }
+      // Réserver les types conformes et les seules métadonnées de rendu nécessaires.
+      // EXIF, texte, profils compressés et chunks inconnus sont refusés, pas effacés.
+      if((header[type+2]&32)!==0)return false;
+      let crc=0xffffffff;
+      for(let i=type;i<next-4;i++)crc=(crcTable[(crc^header[i])&255]^(crc>>>8))>>>0;
+      if(((crc^0xffffffff)>>>0)!==view.getUint32(next-4,false))return false;
+      if(ascii(type,'acTL')||ascii(type,'fcTL')||ascii(type,'fdAT'))return false;
+      if(ascii(type,'IHDR')){if(pos!==8||length!==13)return false;}
+      else if(ascii(type,'IDAT')){
+        if(afterIdat||(color===3&&!paletteEntries))return false;
+        idatStarted=true;
+        if(length>0)idat=true;
+      }else if(ascii(type,'IEND')){
+        return length===0&&idat&&next===total;
+      }else if(ascii(type,'PLTE')){
+        if(idatStarted||paletteEntries||color===0||color===4||length<3||length>768||length%3!==0)return false;
+        paletteEntries=length/3;
+        if(color===3&&paletteEntries>(1<<depth))return false;
+      }else{
+        // Liste fermée, avant IDAT, sans texte libre ni profil compressé.
+        if(idatStarted)afterIdat=true;
+        const kind=String.fromCharCode(...header.subarray(type,type+4));
+        if(idatStarted||seenAncillary.has(kind))return false;
+        const valid=kind==='sRGB'?length===1&&header[type+4]<=3&&!paletteEntries:
+          kind==='gAMA'?length===4&&view.getUint32(type+4,false)>0&&!paletteEntries:
+          kind==='cHRM'?length===32&&!paletteEntries:
+          kind==='pHYs'?length===9&&header[type+12]<=1:
+          kind==='tRNS'?(color===0?length===2:color===2?length===6:color===3&&paletteEntries>0&&length>0&&length<=paletteEntries):
+          false;
+        if(!valid)return false;
+        seenAncillary.add(kind);
+      }
+      pos=next;
+    }
+    return false;
+  }
+  if(ext==='gif'){
+    if(header.length!==total||total<14||!(ascii(0,'GIF87a')||ascii(0,'GIF89a')))return false;
+    const width=view.getUint16(6,true),height=view.getUint16(8,true);
+    if(!dimensions(width,height))return false;
+    let pos=13,blocks=0,frames=0,graphicControl=false;
+    const palette=(packed:number)=>3*(1<<((packed&7)+1));
+    if(header[10]&128)pos+=palette(header[10]);
+    if(pos>=total)return false;
+    const subBlocks=():boolean=>{
+      while(pos<total){
+        if(++blocks>65536)return false;
+        const n=header[pos++];
+        if(n===0)return true;
+        if(pos+n>total)return false;
+        pos+=n;
+      }
+      return false;
+    };
+    while(pos<total){
+      if(++blocks>65536)return false;
+      const tag=header[pos++];
+      if(tag===59)return frames===1&&pos===total&&!graphicControl;
+      if(tag===44){
+        if(++frames!==1||pos+9>total)return false;
+        const x=view.getUint16(pos,true),y=view.getUint16(pos+2,true);
+        const w=view.getUint16(pos+4,true),h=view.getUint16(pos+6,true),packed=header[pos+8];
+        if(!dimensions(w,h)||x+w>width||y+h>height)return false;
+        pos+=9;
+        if(packed&128)pos+=palette(packed);
+        if(pos>=total||header[pos]<2||header[pos]>8)return false;
+        pos++;
+        if(pos>=total||header[pos]===0||!subBlocks())return false;
+        graphicControl=false;
+      }else if(tag===33){
+        if(pos>=total)return false;
+        const label=header[pos++];
+        if(label===249){
+          if(graphicControl||pos+6>total||header[pos]!==4||header[pos+5]!==0)return false;
+          pos+=6;graphicControl=true;
+        }else{
+          // Commentaires et extensions d'application peuvent contenir
+          // des métadonnées libres ou des instructions d'animation.
+          return false;
+        }
+      }else return false;
+    }
+    return false;
+  }
+  if(ext==='webp'){
+    if(header.length!==total||total<20||!ascii(0,'RIFF')||!ascii(8,'WEBP')||
+       view.getUint32(4,true)+8!==total)return false;
+    let extended=false,alpha=false,alphaChunk=false,image=false,canvasW=0,canvasH=0,count=0;
+    for(let pos=12;pos<total;){
+      if(++count>4096||total-pos<8||image)return false;
+      const length=view.getUint32(pos+4,true),data=pos+8,next=data+length+(length%2);
+      if(next>total||(length%2!==0&&header[next-1]!==0))return false;
+      if(ascii(pos,'VP8X')){
+        if(pos!==12||length!==10||(header[data]&~16)!==0||
+           header[data+1]!==0||header[data+2]!==0||header[data+3]!==0)return false;
+        extended=true;alpha=(header[data]&16)!==0;
+        canvasW=1+header[data+4]+256*header[data+5]+65536*header[data+6];
+        canvasH=1+header[data+7]+256*header[data+8]+65536*header[data+9];
+        if(!dimensions(canvasW,canvasH))return false;
+      }else if(ascii(pos,'ALPH')){
+        if(!extended||!alpha||alphaChunk||length<2)return false;
+        alphaChunk=true;
+      }else if(ascii(pos,'VP8L')||ascii(pos,'VP8 ')){
+        let width=0,height=0;
+        if(ascii(pos,'VP8L')){
+          if(alphaChunk||length<5||header[data]!==47)return false;
+          const packed=view.getUint32(data+1,true);
+          if((packed>>>29)!==0||(extended&&alpha!==((packed&0x10000000)!==0)))return false;
+          width=1+(packed&16383);height=1+((packed>>>14)&16383);
+        }else{
+          if(length<10||(header[data]&1)!==0||!bytes(data+3,[157,1,42])||alpha!==alphaChunk)return false;
+          width=view.getUint16(data+6,true)&16383;height=view.getUint16(data+8,true)&16383;
+        }
+        if(!dimensions(width,height)||(extended&&(width!==canvasW||height!==canvasH)))return false;
+        image=true;
+      }else return false; // EXIF, XMP, ICCP, ANIM, ANMF et chunks inconnus.
+      pos=next;
+    }
+    return image;
+  }
+  if(ext==='avif'){
+    // Sous-ensemble conservateur : image fixe, boîtes 32 bits bornées.
+    // ispe décrit les dimensions du conteneur, pas celles du bitstream AV1.
+    if(header.length<16||!ascii(4,'ftyp'))return false;
+    const size=view.getUint32(0,false);
+    if(size<16||size>header.length||size>total||size%4!==0)return false;
+    let avif=ascii(8,'avif');
+    if(ascii(8,'avis'))return false;
+    for(let offset=16;offset+4<=size;offset+=4){
+      if(ascii(offset,'avis'))return false;
+      if(ascii(offset,'avif'))avif=true;
+    }
+    if(!avif)return false;
+    let count=0,extents=0,metaCount=0,mediaCount=0;
+    // Parcourir uniquement les conteneurs attendus, sans recherche brute
+    // de chaînes dans mdat ni récursion contrôlée par le fichier.
+    const boxes=(from:number,to:number,level:number):boolean=>{
+      let properties=0;
+      for(let pos=from;pos<to;){
+        if(++count>4096||to-pos<8||pos+8>header.length)return false;
+        const length=view.getUint32(pos,false),next=pos+length;
+        if(length<8||next>to)return false;
+        if(level===0){
+          if(ascii(pos+4,'moov')||ascii(pos+4,'ftyp'))return false;
+          if(ascii(pos+4,'meta')){
+            if(++metaCount!==1||length<12||next>header.length||view.getUint32(pos+8,false)!==0||
+               !boxes(pos+12,next,1))return false;
+          }else if(ascii(pos+4,'mdat')){
+            if(++mediaCount!==1||length<=8)return false;
+          }else if(!ascii(pos+4,'free')&&!ascii(pos+4,'skip'))return false;
+          // Une boîte non inspectée ne peut cacher la suite du conteneur.
+          if(next>header.length&&next!==to)return false;
+        }else{
+          if(next>header.length)return false;
+          if(level===1&&ascii(pos+4,'iprp')){
+            if(++properties!==1||!boxes(pos+8,next,2))return false;
+          }else if(level===2&&ascii(pos+4,'ipco')){
+            if(++properties!==1||!boxes(pos+8,next,3))return false;
+          }else if(level===3&&ascii(pos+4,'ispe')){
+            if(length!==20||view.getUint32(pos+8,false)!==0||
+               !dimensions(view.getUint32(pos+12,false),view.getUint32(pos+16,false)))return false;
+            extents++;
+          }
+        }
+        pos=next;
+      }
+      return (level!==1&&level!==2)||properties===1;
+    };
+    return boxes(size,total,0)&&metaCount===1&&mediaCount===1&&extents>0;
+  }
+  return false;
+}
+
+// Lire un flux borné, sans décoder ni décompresser les images.
+async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>{
+  const maxBytes=10*1024*1024;
+  if(!Number.isSafeInteger(expectedSize)||expectedSize<1||expectedSize>maxBytes)return false;
+  // JPEG/PNG/GIF/WebP : conteneur entier, borné à 10 Mio.
+  // AVIF : préfixe historique de 256 Kio.
+  const ext=photoPath.split('.').pop()||'';
+  const header=new Uint8Array(ext==='avif'?Math.min(256*1024,expectedSize):expectedSize);
+  let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
+  let complete=false,total=0,chunks=0,emptyChunks=0;
+  const controller=new AbortController();
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  const deadline=new Promise<never>((_,reject)=>{
+    timer=setTimeout(()=>{controller.abort();reject(new Error('PHOTO_READ_TIMEOUT'))},deadlineMs);
+  });
+  try{
+    const {data,error}=await Promise.race([file.download(photoPath,{}, {cache:'no-store',signal:controller.signal}).asStream(),deadline]);
+    if(error!==null||!data||typeof data.getReader!=='function')return false;
+    reader=data.getReader();
+    while(true){
+      const {done,value}=await Promise.race([reader.read(),deadline]);
+      if(done===true){complete=true;break;}
+      if(done!==false||!(value instanceof Uint8Array)||++chunks>65536)return false;
+      if(value.byteLength===0){if(++emptyChunks>32)return false;continue;}
+      emptyChunks=0;
+      if(value.byteLength>expectedSize-total)return false;
+      if(total<header.length)header.set(value.subarray(0,header.length-total),total);
+      total+=value.byteLength;
+    }
+    return total===expectedSize&&registryPhotoSignature(header,ext,total);
+  }catch{return false}
+  finally{
+    if(timer!==undefined)clearTimeout(timer);
+    if(!complete)controller.abort();
+    // Un fournisseur défaillant ne doit pas prolonger indéfiniment le nettoyage.
+    if(reader){if(!complete){try{void Promise.resolve(reader.cancel()).catch(()=>{})}catch{}}try{reader.releaseLock()}catch{}}
+  }
+}
+
+// Admission locale par instance Edge : budget mémoire et équité entre comptes.
+// Ne remplace pas un quota distribué et ne fait aucune écriture persistante.
+const registryPhotoActiveAccounts=new Set<string>();
+function reserveRegistryPhotoSlot(userId:string):(()=>void)|null{
+  if(registryPhotoActiveAccounts.size>=2||registryPhotoActiveAccounts.has(userId))return null;
+  registryPhotoActiveAccounts.add(userId);
+  let released=false;
+  return ()=>{
+    if(released)return;
+    released=true;
+    registryPhotoActiveAccounts.delete(userId);
+  };
+}
+
 // Le chemin seul ne prouve ni l'existence ni le type de l'objet.
-async function registryPhotoStored(service:any,photoPath:string):Promise<boolean>{
+async function registryPhotoStored(service:any,photoPath:string,metadataDeadlineMs=5000):Promise<boolean>{
   const bucketId='sinjira-character-sources';
   const maxBytes=10*1024*1024;
   const formats:Record<string,string>={jpg:'image/jpeg',png:'image/png',webp:'image/webp',avif:'image/avif',gif:'image/gif'};
   const ext=photoPath.split('.').pop()||'';
   if(!Object.prototype.hasOwnProperty.call(formats,ext))return false;
+  // Budget partagé pour les deux lectures de métadonnées. Le SDK ne reçoit
+  // pas de signal ici : le délai borne notre attente, pas forcément le réseau.
+  let metadataTimer:ReturnType<typeof setTimeout>|undefined;
+  const metadataDeadline=new Promise<never>((_,reject)=>{
+    metadataTimer=setTimeout(()=>reject(new Error('PHOTO_METADATA_TIMEOUT')),metadataDeadlineMs);
+  });
   try{
-    const {data:bucket,error:bucketError}=await service.storage.getBucket(bucketId);
-    if(bucketError||bucket?.id!==bucketId||bucket.public!==false)return false;
-    const {data:info,error:infoError}=await service.storage.from(bucketId).info(photoPath);
-    return !infoError&&typeof info?.size==='number'&&Number.isSafeInteger(info.size)
-      &&info.size>0&&info.size<=maxBytes&&info.contentType===formats[ext];
+    const {data:bucket,error:bucketError}=await Promise.race([service.storage.getBucket(bucketId),metadataDeadline]);
+    if(bucketError!==null||!bucket||typeof bucket!=='object'||Array.isArray(bucket)||bucket.id!==bucketId||bucket.public!==false)return false;
+    const file=service.storage.from(bucketId);
+    const {data:info,error:infoError}=await Promise.race([file.info(photoPath),metadataDeadline]);
+    if(infoError!==null||!info||typeof info!=='object'||Array.isArray(info)||typeof info.size!=='number'||!Number.isSafeInteger(info.size)
+      ||info.size<=0||info.size>maxBytes||info.contentType!==formats[ext])return false;
+    if(metadataTimer!==undefined)clearTimeout(metadataTimer);
+    return await registryPhotoBinaryVerified(file,photoPath,info.size);
   }catch{return false}
+  finally{if(metadataTimer!==undefined)clearTimeout(metadataTimer);}
 }
 
 // Une violation UNIQUE peut venir d'un autre onglet ayant inséré entre notre
@@ -118,7 +436,15 @@ Deno.serve(async(req)=>{
     const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
     // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
     if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
-    if(photo_path!==null && !(await registryPhotoStored(service,photo_path as string)))return privateJson({ok:false,error:'La photo privée ne peut pas être vérifiée. Veuillez la téléverser de nouveau.',code:'CHARACTER_PHOTO_UNVERIFIED',version:VERSION},422);
+    if(photo_path!==null){
+      const releasePhotoSlot=reserveRegistryPhotoSlot(user.id);
+      if(!releasePhotoSlot)return privateJson({ok:false,error:'Vérification des photos temporairement occupée. Réessayez dans quelques instants.',code:'CHARACTER_PHOTO_BUSY',version:VERSION},429);
+      try{
+        if(!(await registryPhotoStored(service,photo_path as string)))return privateJson({ok:false,error:'La photo privée ne peut pas être vérifiée. Veuillez la téléverser de nouveau.',code:'CHARACTER_PHOTO_UNVERIFIED',version:VERSION},422);
+      }finally{
+        releasePhotoSlot();
+      }
+    }
     const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),
