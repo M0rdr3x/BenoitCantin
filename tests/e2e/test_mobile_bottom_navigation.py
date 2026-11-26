@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.102"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.103"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
