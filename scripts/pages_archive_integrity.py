@@ -5,6 +5,8 @@ No extraction, symlink traversal, or network access.
 from __future__ import annotations
 import argparse
 import hashlib
+import os
+from contextlib import contextmanager
 from pathlib import Path
 import stat
 import tarfile
@@ -34,19 +36,75 @@ def check_public_path(name: str, is_directory: bool):
         if rel != RELEASE_METADATA_PATH and not relative_path_allowed(rel):
             raise ValueError("Unapproved public archive file")
 
-def digest(stream):
+def digest(stream, size):
     result = hashlib.sha256()
-    for block in iter(lambda: stream.read(1024 * 1024), b""):
+    remaining = size
+    while remaining:
+        block = stream.read(min(1024 * 1024, remaining))
+        if not block:
+            raise ValueError("Truncated public file")
         result.update(block)
+        remaining -= len(block)
+    if stream.read(1):
+        raise ValueError("Public file exceeds inventoried size")
     return result.hexdigest()
 
+def identity(st):
+    return (st.st_dev, st.st_ino, st.st_mode, st.st_nlink, st.st_size,
+            st.st_mtime_ns, st.st_ctime_ns)
+
+@contextmanager
+def open_root(root):
+    # Linux CI only; fail closed on platforms without these flags.
+    fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        yield fd
+    finally:
+        os.close(fd)
+
+@contextmanager
+def open_public_file(root_fd, name, expected=None):
+    """Open every component relative to a pinned directory descriptor."""
+    parts = name.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        raise ValueError("Invalid public path")
+    parent = os.dup(root_fd)
+    fd = None
+    try:
+        for part in parts[:-1]:
+            child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+            os.close(parent)
+            parent = child
+        # NONBLOCK avoids hanging on a FIFO substituted after the inventory.
+        fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        before = os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise ValueError("Non-regular or linked public file")
+        if expected is not None and identity(before) != expected:
+            raise ValueError("Public file changed before opening")
+        with os.fdopen(fd, "rb") as stream:
+            fd = None
+            yield stream, before
+            if identity(os.fstat(stream.fileno())) != identity(before):
+                raise ValueError("Public file changed while reading")
+    except OSError as exc:
+        raise ValueError("Public file cannot be opened safely") from exc
+    finally:
+        if fd is not None:
+            os.close(fd)
+        os.close(parent)
+
 def inventory(root: Path):
-    if root.is_symlink() or not root.is_dir():
-        raise ValueError("Invalid public root")
+    with open_root(root) as root_fd:
+        return _inventory(root, root_fd)
+
+def _inventory(root: Path, root_fd):
+    if identity(root.lstat())[:2] != identity(os.fstat(root_fd))[:2]:
+        raise ValueError("Public root changed")
     files = {}
     total = 0
     entries = 0
-    for p in sorted(root.rglob("*")):
+    for p in root.rglob("*"):
         entries += 1
         if entries > MAX_FILES:
             raise ValueError("Public inventory too large")
@@ -62,50 +120,68 @@ def inventory(root: Path):
         total += st.st_size
         if total > MAX_BYTES:
             raise ValueError("Public archive too large")
-        with p.open("rb") as src:
-            files[name] = (st.st_size, digest(src))
+        with open_public_file(root_fd, name, identity(st)) as (src, opened):
+            files[name] = (opened.st_size, digest(src, opened.st_size), identity(opened))
     if not files or "index.html" not in files:
         raise ValueError("Public entry point missing")
-    return files
+    if identity(root.lstat())[:2] != identity(os.fstat(root_fd))[:2]:
+        raise ValueError("Public root changed")
+    return dict(sorted(files.items()))
 
 def verify_archive(archive: Path, expected):
-    if archive.is_symlink() or not archive.is_file() or archive.stat().st_size > MAX_BYTES:
-        raise ValueError("Invalid archive")
-    seen = set()
-    with tarfile.open(archive, "r:") as tar:
-        for member in tar:
-            name = member.name
-            if not member.isfile() or member.issparse() or name in seen or name not in expected:
-                raise ValueError("Unexpected archive member")
-            size, sha = expected[name]
-            if member.size != size:
-                raise ValueError("Archive size mismatch")
-            with tar.extractfile(member) as stream:
-                if digest(stream) != sha:
-                    raise ValueError("Archive content mismatch")
-            seen.add(name)
-    if seen != set(expected):
-        raise ValueError("Incomplete archive")
+    with open_root(archive.parent) as parent_fd:
+        with open_public_file(parent_fd, archive.name) as (source, st):
+            if st.st_size > MAX_BYTES:
+                raise ValueError("Invalid archive")
+            seen = set()
+            with tarfile.open(fileobj=source, mode="r:") as tar:
+                for member in tar:
+                    name = member.name
+                    if not member.isfile() or member.issparse() or name in seen or name not in expected:
+                        raise ValueError("Unexpected archive member")
+                    size, sha, _ = expected[name]
+                    if member.size != size:
+                        raise ValueError("Archive size mismatch")
+                    with tar.extractfile(member) as stream:
+                        if digest(stream, size) != sha:
+                            raise ValueError("Archive content mismatch")
+                    seen.add(name)
+            if seen != set(expected):
+                raise ValueError("Incomplete archive")
 
 def create(root: Path, archive: Path):
-    expected = inventory(root)
     if archive.resolve().is_relative_to(root.resolve()) or archive.exists() or archive.is_symlink():
         raise ValueError("Archive output must be new and outside public tree")
+    owned = None
     try:
-        with archive.open("xb") as output:
-            with tarfile.open(fileobj=output, mode="w", format=tarfile.PAX_FORMAT) as tar:
-                for name,(size,_) in expected.items():
-                    info = tarfile.TarInfo(name)
-                    info.size = size
-                    info.mode = 0o644
-                    info.mtime = 0
-                    with (root / name).open("rb") as src:
-                        tar.addfile(info, src)
-        verify_archive(archive, expected)
-        if inventory(root) != expected:
-            raise ValueError("Public tree changed during packaging")
+        with open_root(root) as root_fd:
+            expected = _inventory(root, root_fd)
+            with archive.open("xb") as output:
+                created = os.fstat(output.fileno())
+                owned = (created.st_dev, created.st_ino)
+                with tarfile.open(fileobj=output, mode="w", format=tarfile.PAX_FORMAT) as tar:
+                    for name,(size,_,fingerprint) in expected.items():
+                        info = tarfile.TarInfo(name)
+                        info.size = size
+                        info.mode = 0o644
+                        info.mtime = 0
+                        with open_public_file(root_fd, name, fingerprint) as (src, _):
+                            tar.addfile(info, src)
+            verify_archive(archive, expected)
+            if _inventory(root, root_fd) != expected:
+                raise ValueError("Public tree changed during packaging")
+            current = archive.lstat()
+            if (current.st_dev, current.st_ino) != owned:
+                raise ValueError("Archive replaced during packaging")
     except BaseException:
-        archive.unlink(missing_ok=True)
+        # Never delete a competing output created before our exclusive open.
+        if owned is not None:
+            try:
+                current = archive.lstat()
+                if (current.st_dev, current.st_ino) == owned:
+                    archive.unlink()
+            except FileNotFoundError:
+                pass
         raise
 
 class Tests(unittest.TestCase):
@@ -139,7 +215,7 @@ class Tests(unittest.TestCase):
 
     def test_nested_technical_paths_are_excluded_by_builder_and_archive(self):
         from build_netlify_public import relative_path_allowed
-        for folder in ("scripts", "tests", "docs", "tools", "SUPABASE", ".git"):
+        for folder in ("scripts", "tests", "docs", "tools", "security", "SECURITY", "SUPABASE", ".git"):
             rel=Path("projets")/"projet-nova"/folder/"fixture.mjs"
             self.assertFalse(relative_path_allowed(rel), str(rel))
             with tempfile.TemporaryDirectory() as tmp:
@@ -181,6 +257,55 @@ class Tests(unittest.TestCase):
                 file.parent.mkdir(parents=True, exist_ok=True)
                 file.touch()
             self.assertEqual(len(inventory(root)), 5)
+
+    def test_reject_changes_between_inventory_and_archive(self):
+        from unittest.mock import patch
+        for mode in ("same-size", "symlink", "fifo", "parent-link", "hardlink"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
+                base = Path(tmp)
+                root = base / "_site"; root.mkdir()
+                (root / "index.html").write_bytes(b"public")
+                assets = root / "assets"; assets.mkdir()
+                file = assets / "fixture.js"; file.write_bytes(b"public")
+                private = base / "private.js"; private.write_bytes(b"secret")
+                archive = base / "out.tar"
+                original = _inventory
+                def changed(*args):
+                    result = original(*args)
+                    if mode == "same-size":
+                        file.write_bytes(b"change")
+                    elif mode == "parent-link":
+                        assets.rename(base / "old-assets")
+                        assets.symlink_to(base, target_is_directory=True)
+                    else:
+                        file.unlink()
+                        if mode == "symlink": file.symlink_to(private)
+                        elif mode == "fifo": os.mkfifo(file)
+                        else: os.link(private, file)
+                    return result
+                with patch(__name__ + "._inventory", side_effect=changed):
+                    with self.assertRaises(ValueError):
+                        create(root, archive)
+                self.assertFalse(archive.exists())
+                self.assertEqual(private.read_bytes(), b"secret")
+
+    def test_exclusive_output_collision_preserves_other_file(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "_site"; root.mkdir()
+            (root / "index.html").touch()
+            archive = base / "out.tar"
+            original = Path.open
+            def competing_open(path, mode="r", *args, **kwargs):
+                if path == archive and mode == "xb":
+                    with original(path, "wb") as competing:
+                        competing.write(b"other")
+                return original(path, mode, *args, **kwargs)
+            with patch.object(Path, "open", competing_open):
+                with self.assertRaises(FileExistsError):
+                    create(root, archive)
+            self.assertEqual(archive.read_bytes(), b"other")
 
     def test_reject_extra_missing_traversal_duplicate_members(self):
         with tempfile.TemporaryDirectory() as tmp:
