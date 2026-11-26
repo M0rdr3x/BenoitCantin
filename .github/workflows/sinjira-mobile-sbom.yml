@@ -9,6 +9,7 @@ on:
       - 'scripts/validate_mobile_locked_dependencies.py'
       - 'scripts/validate_mobile_lock_candidate.py'
       - 'scripts/validate_mobile_sbom.py'
+      - 'scripts/verify_mobile_sbom_output.py'
       - '.github/workflows/sinjira-mobile-sbom.yml'
   push:
     branches: [main]
@@ -18,6 +19,7 @@ on:
       - 'scripts/validate_mobile_locked_dependencies.py'
       - 'scripts/validate_mobile_lock_candidate.py'
       - 'scripts/validate_mobile_sbom.py'
+      - 'scripts/verify_mobile_sbom_output.py'
       - '.github/workflows/sinjira-mobile-sbom.yml'
   workflow_dispatch:
 
@@ -40,6 +42,7 @@ jobs:
         run: |
           python3 scripts/validate_mobile_locked_dependencies.py --manifest mobile-native/package.json --lock mobile-native/package-lock.json
           python3 scripts/validate_mobile_sbom.py --self-test
+          python3 scripts/verify_mobile_sbom_output.py --self-test
       - name: Générer le SBOM sans installation ni scripts
         shell: bash
         run: |
@@ -64,6 +67,31 @@ jobs:
             --normalized "$RUNNER_TEMP/mobile-sbom/mobile.cdx.json" \
             --receipt "$RUNNER_TEMP/mobile-sbom/receipt.json" \
             --source-sha "$GITHUB_SHA" --npm-version "$(npm --version)"
+          python3 "$GITHUB_WORKSPACE/scripts/verify_mobile_sbom_output.py" \
+            --manifest "$project/package.json" --lock "$project/package-lock.json" \
+            --raw "$workspace/npm-raw.cdx.json" --sbom "$RUNNER_TEMP/mobile-sbom/mobile.cdx.json" \
+            --receipt "$RUNNER_TEMP/mobile-sbom/receipt.json" --source-sha "$GITHUB_SHA"
+          # Independent second temporary directory, empty HOME and npm config.
+          second="$workspace/repeat/sinjira-mobile-native"
+          mkdir -p "$second" "$workspace/repeat-home"
+          cp "$project/package.json" "$project/package-lock.json" "$second/"
+          cd "$second"
+          env -i PATH="$PATH" HOME="$workspace/repeat-home" npm sbom \
+            --package-lock-only --sbom-format=cyclonedx --offline --ignore-scripts \
+            --include=dev --include=optional --include=peer \
+            --userconfig="$workspace/user.conf" --globalconfig="$workspace/global.conf" \
+            > "$workspace/repeat-raw.cdx.json"
+          python3 "$GITHUB_WORKSPACE/scripts/validate_mobile_sbom.py" \
+            --manifest "$second/package.json" --lock "$second/package-lock.json" \
+            --sbom "$workspace/repeat-raw.cdx.json" --normalized "$workspace/repeat.cdx.json" \
+            --receipt "$workspace/repeat-receipt.json" --source-sha "$GITHUB_SHA" --npm-version "$(npm --version)"
+          python3 "$GITHUB_WORKSPACE/scripts/verify_mobile_sbom_output.py" \
+            --manifest "$second/package.json" --lock "$second/package-lock.json" \
+            --raw "$workspace/repeat-raw.cdx.json" --sbom "$workspace/repeat.cdx.json" \
+            --receipt "$workspace/repeat-receipt.json" --source-sha "$GITHUB_SHA"
+          cmp "$RUNNER_TEMP/mobile-sbom/mobile.cdx.json" "$workspace/repeat.cdx.json"
+          echo "PASS: two isolated normalized SBOM generations are byte-identical."
+
       - name: Conserver uniquement les deux rapports d'inventaire
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
