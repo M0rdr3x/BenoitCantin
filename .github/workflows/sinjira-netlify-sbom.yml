@@ -50,9 +50,10 @@ jobs:
             --package-lock-only --sbom-format=cyclonedx --offline --ignore-scripts \
             --include=dev --include=optional --include=peer \
             --userconfig="$workspace/user.conf" --globalconfig="$workspace/global.conf" \
-            > "$RUNNER_TEMP/netlify-sbom/netlify.cdx.json"
+            > "$workspace/npm-raw.cdx.json"
           python3 "$GITHUB_WORKSPACE/scripts/validate_netlify_sbom.py" \
-            --lock "$workspace/package-lock.json" --sbom "$RUNNER_TEMP/netlify-sbom/netlify.cdx.json" \
+            --lock "$workspace/package-lock.json" --sbom "$workspace/npm-raw.cdx.json" \
+            --normalized "$RUNNER_TEMP/netlify-sbom/netlify.cdx.json" \
             --receipt "$RUNNER_TEMP/netlify-sbom/receipt.json" \
             --source-sha "$GITHUB_SHA" --npm-version "$(npm --version)"
       - name: Conserver uniquement les deux rapports d'inventaire
