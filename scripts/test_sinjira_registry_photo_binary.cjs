@@ -8,6 +8,7 @@ const code=src.slice(start,end)
  .replace('(offset:number,expected:number[])','(offset,expected)')
  .replace('(offset:number,value:string)','(offset,value)')
  .replace('(width:number,height:number)','(width,height)')
+ .replace('new Set<string>()','new Set()')
  .replace('(from:number,to:number,level:number):boolean','(from,to,level)')
  .replace('(packed:number)','(packed)')
  .replace('subBlocks=():boolean','subBlocks=()')
@@ -18,7 +19,11 @@ const code=src.slice(start,end)
 const ctx={Uint8Array,DataView,AbortSignal,AbortController,setTimeout,clearTimeout};vm.runInNewContext(code+'\nthis.verify=registryPhotoBinaryVerified;',ctx);
 const make=(n)=>new Uint8Array(n);
 const ascii=(buf,offset,s)=>buf.set(Buffer.from(s,'ascii'),offset);
-const png=make(58);png.set([137,80,78,71,13,10,26,10,0,0,0,13]);ascii(png,12,'IHDR');new DataView(png.buffer).setUint32(16,640);new DataView(png.buffer).setUint32(20,480);new DataView(png.buffer).setUint32(33,1);ascii(png,37,'IDAT');png[41]=1;ascii(png,50,'IEND');
+// CRC de référence indépendant, bit à bit (vecteur connu vérifié ci-dessous).
+const crc32=(data)=>{let crc=0xffffffff;for(const b of data){crc^=b;for(let i=0;i<8;i++)crc=(crc&1)?(0xedb88320^(crc>>>1)):(crc>>>1);}return (crc^0xffffffff)>>>0;};
+assert.equal(crc32(Buffer.from('123456789')),0xcbf43926);
+const sealChunk=(buf,pos)=>{const v=new DataView(buf.buffer,buf.byteOffset,buf.byteLength),n=v.getUint32(pos);v.setUint32(pos+8+n,crc32(buf.subarray(pos+4,pos+8+n)));return buf;};
+const png=make(58);png.set([137,80,78,71,13,10,26,10,0,0,0,13]);ascii(png,12,'IHDR');new DataView(png.buffer).setUint32(16,640);new DataView(png.buffer).setUint32(20,480);new DataView(png.buffer).setUint32(33,1);ascii(png,37,'IDAT');png[41]=1;ascii(png,50,'IEND');png[24]=8;png[25]=2;for(const pos of [8,33,46])sealChunk(png,pos);
 const jpg=Uint8Array.from([255,216,255,192,0,11,8,1,224,2,128,1,1,17,0,255,217]);
 const gif=make(28);ascii(gif,0,'GIF89a');new DataView(gif.buffer).setUint16(6,640,true);new DataView(gif.buffer).setUint16(8,480,true);gif[13]=44;new DataView(gif.buffer).setUint16(18,640,true);new DataView(gif.buffer).setUint16(20,480,true);gif.set([2,1,1,0,59],23);
 const webp=make(30);ascii(webp,0,'RIFF');new DataView(webp.buffer).setUint32(4,22,true);ascii(webp,8,'WEBPVP8X');new DataView(webp.buffer).setUint32(16,10,true);webp.set([127,2,0,223,1,0],24);
@@ -49,16 +54,16 @@ async function check(ext,buf,want,{size=buf.length,error=null,throwRead=false,sp
  }
  // Dimensions déclarées : zéro, côté excessif et produit excessif.
  for(const [width,height] of [[0,480],[8193,1],[5001,5000]]){
-   const p=png.slice();new DataView(p.buffer).setUint32(16,width);new DataView(p.buffer).setUint32(20,height);await check('png',p,false);
+   const p=png.slice();new DataView(p.buffer).setUint32(16,width);new DataView(p.buffer).setUint32(20,height);sealChunk(p,8);await check('png',p,false);
    const j=jpg.slice();new DataView(j.buffer).setUint16(9,width);new DataView(j.buffer).setUint16(7,height);await check('jpg',j,false);
    const g=gif.slice();new DataView(g.buffer).setUint16(6,width,true);new DataView(g.buffer).setUint16(8,height,true);await check('gif',g,false);
  }
  for(const [width,height] of [[8193,1],[5001,5000]]){
    const w=webp.slice();const v=new DataView(w.buffer);v.setUint16(24,width-1,true);v.setUint16(27,height-1,true);await check('webp',w,false);
  }
- const exact=png.slice();new DataView(exact.buffer).setUint32(16,5000);new DataView(exact.buffer).setUint32(20,5000);await check('png',exact,true);
+ const exact=png.slice();new DataView(exact.buffer).setUint32(16,5000);new DataView(exact.buffer).setUint32(20,5000);sealChunk(exact,8);await check('png',exact,true);
  // Le parcours doit continuer après les premiers en-têtes.
- const chunk=(type,data=make(0))=>{const c=make(12+data.length);new DataView(c.buffer).setUint32(0,data.length);ascii(c,4,type);c.set(data,8);return c;};
+ const chunk=(type,data=make(0))=>{const c=make(12+data.length);new DataView(c.buffer).setUint32(0,data.length);ascii(c,4,type);c.set(data,8);return sealChunk(c,0);};
  for(const type of ['acTL','fcTL','fdAT'])await check('png',concat(png.slice(0,33),chunk(type,make(8)),png.slice(33)),false);
  await check('png',concat(png,Uint8Array.of(1)),false);
  await check('png',png.slice(0,-1),false);
@@ -67,15 +72,32 @@ async function check(ext,buf,want,{size=buf.length,error=null,throwRead=false,sp
  await check('png',concat(png.slice(0,33),chunk('ABCD'),png.slice(33)),false);
  await check('png',concat(png.slice(0,46),chunk('tEXt'),chunk('IDAT',make(1)),png.slice(46)),false);
  const oversizedChunk=png.slice();new DataView(oversizedChunk.buffer).setUint32(33,0xffffffff);await check('png',oversizedChunk,false);
- await check('png',concat(png.slice(0,33),chunk('tEXt',make(270000)),png.slice(33)),true,{split:4096});
- await check('png',concat(png.slice(0,33),chunk('tEXt',make(270000)),chunk('acTL',make(8)),png.slice(33)),false,{split:4096});
+ await check('png',concat(png.slice(0,33),chunk('IDAT',make(270000)),png.slice(33)),true,{split:4096});
+ await check('png',concat(png.slice(0,33),chunk('IDAT',make(270000)),chunk('acTL',make(8)),png.slice(33)),false,{split:4096});
+ // Corruptions CRC dans chacun des trois chunks, y compris leur contenu.
+ for(const offset of [29,41,42,54]){const p=png.slice();p[offset]^=1;await check('png',p,false);}
+ for(const kind of ['eXIf','tEXt','zTXt','iTXt','iCCP','vpAg','pHys'])await check('png',concat(png.slice(0,33),chunk(kind,make(16)),png.slice(33)),false);
+ for(const [offset,value] of [[24,3],[25,1],[26,1],[27,1],[28,2]]){const p=png.slice();p[offset]=value;sealChunk(p,8);await check('png',p,false);}
+ const srgb=chunk('sRGB',Uint8Array.of(0));
+ const phys=chunk('pHYs',Uint8Array.of(0,0,0,1,0,0,0,1,1));
+ await check('png',concat(png.slice(0,33),srgb,phys,png.slice(33)),true);
+ await check('png',concat(png.slice(0,33),srgb,srgb,png.slice(33)),false);
+ await check('png',concat(png.slice(0,33),chunk('sRGB',Uint8Array.of(4)),png.slice(33)),false);
+ const indexed=png.slice();indexed[25]=3;indexed[24]=1;sealChunk(indexed,8);
+ await check('png',indexed,false);
+ await check('png',concat(indexed.slice(0,33),chunk('PLTE',Uint8Array.of(0,0,0,255,255,255)),indexed.slice(33)),true);
+ await check('png',concat(indexed.slice(0,33),chunk('PLTE',make(9)),indexed.slice(33)),false);
+ // Vrai PNG 1x1 RGB : données zlib générées localement.
+ const ihdr=make(13);new DataView(ihdr.buffer).setUint32(0,1);new DataView(ihdr.buffer).setUint32(4,1);ihdr[8]=8;ihdr[9]=2;
+ const real=concat(png.slice(0,8),chunk('IHDR',ihdr),chunk('IDAT',require('node:zlib').deflateSync(Buffer.from([0,255,0,0]))),chunk('IEND'));
+ await check('png',real,true);
  await check('gif',concat(gif.slice(0,-1),gif.slice(13,-1),gif.slice(-1)),false);
  await check('gif',concat(gif,Uint8Array.of(1)),false);
  await check('gif',gif.slice(0,-1),false);
  const frame=gif.slice();new DataView(frame.buffer).setUint16(18,641,true);await check('gif',frame,false);
  const empty=gif.slice();empty[24]=0;await check('gif',empty,false);
  await check('gif',concat(gif.slice(0,13),Uint8Array.of(33,255,0),gif.slice(13)),false);
- await check('gif',concat(gif.slice(0,13),Uint8Array.of(33,254,1,65,0),gif.slice(13)),true);
+ await check('gif',concat(gif.slice(0,13),Uint8Array.of(33,254,1,65,0),gif.slice(13)),false);
  const lossless=make(26);ascii(lossless,0,'RIFF');new DataView(lossless.buffer).setUint32(4,18,true);ascii(lossless,8,'WEBPVP8L');new DataView(lossless.buffer).setUint32(16,5,true);lossless[20]=47;new DataView(lossless.buffer).setUint32(21,639|(479<<14),true);await check('webp',lossless,true);
  const lossy=make(30);ascii(lossy,0,'RIFF');new DataView(lossy.buffer).setUint32(4,22,true);ascii(lossy,8,'WEBPVP8 ');new DataView(lossy.buffer).setUint32(16,10,true);lossy.set([157,1,42],23);new DataView(lossy.buffer).setUint16(26,640,true);new DataView(lossy.buffer).setUint16(28,480,true);await check('webp',lossy,true);
  const oversizedLossless=lossless.slice();new DataView(oversizedLossless.buffer).setUint32(21,8192|(479<<14),true);await check('webp',oversizedLossless,false);

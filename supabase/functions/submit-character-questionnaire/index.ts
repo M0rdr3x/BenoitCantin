@@ -91,7 +91,19 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
     if(header.length!==total||total<45||!bytes(0,[137,80,78,71,13,10,26,10])||
        !bytes(8,[0,0,0,13])||!ascii(12,'IHDR')||
        !dimensions(view.getUint32(16,false),view.getUint32(20,false)))return false;
-    let count=0,idat=false,afterIdat=false;
+    // CRC-32 PNG (type + données), linéaire et borné par la taille du fichier.
+    const crcTable=new Uint32Array(256);
+    for(let i=0;i<256;i++){
+      let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);
+      crcTable[i]=c>>>0;
+    }
+    const color=header[25],depth=header[24];
+    if(!((color===0&&[1,2,4,8,16].includes(depth))||
+         (color===3&&[1,2,4,8].includes(depth))||
+         ([2,4,6].includes(color)&&[8,16].includes(depth)))||
+       header[26]!==0||header[27]!==0||![0,1].includes(header[28]))return false;
+    let count=0,idat=false,idatStarted=false,afterIdat=false,paletteEntries=0;
+    const seenAncillary=new Set<string>();
     for(let pos=8;pos<total;){
       if(++count>4096||total-pos<12)return false;
       const length=view.getUint32(pos,false),type=pos+4,next=pos+12+length;
@@ -99,17 +111,37 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
       for(let i=type;i<type+4;i++){
         const c=header[i];if(!((c>=65&&c<=90)||(c>=97&&c<=122)))return false;
       }
+      // Réserver les types conformes et les seules métadonnées de rendu nécessaires.
+      // EXIF, texte, profils compressés et chunks inconnus sont refusés, pas effacés.
+      if((header[type+2]&32)!==0)return false;
+      let crc=0xffffffff;
+      for(let i=type;i<next-4;i++)crc=(crcTable[(crc^header[i])&255]^(crc>>>8))>>>0;
+      if(((crc^0xffffffff)>>>0)!==view.getUint32(next-4,false))return false;
       if(ascii(type,'acTL')||ascii(type,'fcTL')||ascii(type,'fdAT'))return false;
       if(ascii(type,'IHDR')){if(pos!==8||length!==13)return false;}
       else if(ascii(type,'IDAT')){
-        if(afterIdat)return false;
+        if(afterIdat||(color===3&&!paletteEntries))return false;
+        idatStarted=true;
         if(length>0)idat=true;
       }else if(ascii(type,'IEND')){
         return length===0&&idat&&next===total;
+      }else if(ascii(type,'PLTE')){
+        if(idatStarted||paletteEntries||color===0||color===4||length<3||length>768||length%3!==0)return false;
+        paletteEntries=length/3;
+        if(color===3&&paletteEntries>(1<<depth))return false;
       }else{
-        if(idat)afterIdat=true;
-        // Type critique inconnu : aucun repli permissif.
-        if((header[type]&32)===0&&!ascii(type,'PLTE'))return false;
+        // Liste fermée, avant IDAT, sans texte libre ni profil compressé.
+        if(idatStarted)afterIdat=true;
+        const kind=String.fromCharCode(...header.subarray(type,type+4));
+        if(idatStarted||seenAncillary.has(kind))return false;
+        const valid=kind==='sRGB'?length===1&&header[type+4]<=3&&!paletteEntries:
+          kind==='gAMA'?length===4&&view.getUint32(type+4,false)>0&&!paletteEntries:
+          kind==='cHRM'?length===32&&!paletteEntries:
+          kind==='pHYs'?length===9&&header[type+12]<=1:
+          kind==='tRNS'?(color===0?length===2:color===2?length===6:color===3&&paletteEntries>0&&length>0&&length<=paletteEntries):
+          false;
+        if(!valid)return false;
+        seenAncillary.add(kind);
       }
       pos=next;
     }
@@ -154,12 +186,11 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
         if(label===249){
           if(graphicControl||pos+6>total||header[pos]!==4||header[pos+5]!==0)return false;
           pos+=6;graphicControl=true;
-        }else if(label===254){
-          if(!subBlocks())return false;
-        }else if(label===255){
-          // Refuser les extensions d'application, dont les boucles animées.
+        }else{
+          // Commentaires et extensions d'application peuvent contenir
+          // des métadonnées libres ou des instructions d'animation.
           return false;
-        }else return false;
+        }
       }else return false;
     }
     return false;
