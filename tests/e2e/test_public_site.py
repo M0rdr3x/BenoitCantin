@@ -455,8 +455,8 @@ def check_cost_summary_feedback(browser):
     try:
         ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
         ctx.route("**/cost-summary-fixture.html*",lambda route:route.fulfill(content_type="text/html",body="""<!doctype html><html lang="fr-CA"><meta name="viewport" content="width=device-width,initial-scale=1"><main data-preorder-fulfillment></main>
-          <script type="module" src="/assets/js/sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.2"></script>
-          <script type="module" src="/assets/js/sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46.2"></script></html>"""))
+          <script type="module" src="/assets/js/sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.3"></script>
+          <script type="module" src="/assets/js/sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46.3"></script></html>"""))
         ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.ship=[];window.tax=[];
           export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
           export const isSinjiraBackendConfigured=()=>true;
@@ -507,7 +507,7 @@ def check_cost_summary_feedback(browser):
         assert_true(not zone.is_visible() and zone.is_disabled(),"zone inutile visible")
         assert_true(tax.input_value()=="","zone fiscale présélectionnée")
         tax.select_option("fixture-tax")
-        assert_true("Profil fictif" in tax.locator("xpath=following-sibling::small[1]").inner_text(),
+        assert_true("Profil fictif" in tax.locator("xpath=../following-sibling::small[1]").text_content(),
                     "libellé fiscal complet absent hors contrôle natif")
         page.wait_for_function("window.tax.length===1")
         page.evaluate("window.taxResult(0,100,200,4100,4200)")
@@ -517,22 +517,40 @@ def check_cost_summary_feedback(browser):
         assert_true("Calcul" in tax_total.inner_text() and "Source fictive" not in page.locator("[data-ptax-tax-note]").inner_text(),"ancienne information fiscale conservée")
         page.evaluate("window.taxResult(1,-100,200,4900,5200)")
         page.wait_for_function("document.querySelector('[data-ptax-tax]').textContent.includes('incomplète')")
-        # Tester aussi les textes serveur longs et le libellé sélectionné
-        # sans masquer le débordement de la carte ou du document.
-        page.evaluate("""() => {
-          const select=document.querySelector('[data-ptax-public]');
-          select.selectedOptions[0].textContent='Profil fiscal fictif très long '+ 'X'.repeat(100);
-          select.dispatchEvent(new Event('change'));
-        }""")
-        for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(768,"100%"),(1440,"100%")):
-            page.set_viewport_size({"width":width,"height":760})
-            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
-            state=page.locator("[data-preorder-cost-summary]").evaluate("""el=>({overflow:el.scrollWidth>el.clientWidth+2,width:el.clientWidth,scrollWidth:el.scrollWidth,outside:[...el.querySelectorAll('*')].filter(n=>n.getClientRects().length&&n.getBoundingClientRect().right>el.getBoundingClientRect().right+2).slice(0,8).map(n=>[n.tagName,String(n.className),Math.round(n.getBoundingClientRect().width)]),controls:[...el.querySelectorAll('select')].filter(n=>n.getClientRects().length).every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})})""")
-            assert_true(not state["overflow"] and state["controls"],f"résumé coût hors écran {width}/{zoom}: {state}")
-            assert_true(page.evaluate("document.documentElement.scrollWidth<=innerWidth+2"),
-                        f"débordement du document coût {width}/{zoom}")
-            assert_true("X"*100 in tax.locator("xpath=following-sibling::small[1]").inner_text(),
-                        "libellé long tronqué hors contrôle")
+        # Tester le libellé ordinaire puis le libellé serveur sans espace.
+        for long_label in (False,True):
+            if long_label:
+                page.evaluate("""() => {
+                  const select=document.querySelector('[data-ptax-public]');
+                  select.selectedOptions[0].textContent='Profil fiscal fictif très long '+ 'X'.repeat(100);
+                  select.dispatchEvent(new Event('change'));
+                }""")
+            for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(768,"100%"),(1440,"100%")):
+                page.set_viewport_size({"width":width,"height":760})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+                state=page.locator("[data-preorder-cost-summary]").evaluate("""el=>{
+                  const edge=el.getBoundingClientRect().right;
+                  const visible=[...el.querySelectorAll('*')].filter(n=>n.getClientRects().length);
+                  const overflowing=visible.filter(n=>n.scrollWidth>n.clientWidth+2).slice(0,12)
+                    .map(n=>({tag:n.tagName,cls:String(n.className),client:n.clientWidth,scroll:n.scrollWidth}));
+                  const textOutside=[];
+                  for(const n of el.querySelectorAll('.sinjira-selected-option')){
+                    const range=document.createRange();range.selectNodeContents(n);
+                    if([...range.getClientRects()].some(r=>r.right>edge+2))textOutside.push(n.textContent.slice(0,40));
+                  }
+                  return {overflow:el.scrollWidth>el.clientWidth+2,width:el.clientWidth,scrollWidth:el.scrollWidth,
+                    overflowing,textOutside,
+                    outside:visible.filter(n=>n.getBoundingClientRect().right>edge+2).slice(0,8).map(n=>[n.tagName,String(n.className)]),
+                    controls:visible.filter(n=>n.tagName==='SELECT').every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})};
+                }""")
+                assert_true(not state["overflow"] and not state["textOutside"] and state["controls"],
+                            f"résumé coût hors écran {width}/{zoom}, long={long_label}: {state}")
+                assert_true(page.evaluate("document.documentElement.scrollWidth<=innerWidth+2"),
+                            f"débordement du document coût {width}/{zoom}")
+                if long_label:
+                    assert_true("X"*100 in tax.locator("xpath=../following-sibling::small[1]").text_content(),
+                                "libellé long tronqué hors contrôle")
     finally:
         ctx.close()
 

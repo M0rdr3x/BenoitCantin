@@ -4,6 +4,21 @@ const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
 const s = getSupabase();
 const initialized = new WeakSet();
 
+// Les opportunités de coupure explicites restent compatibles avec le texte
+// agrandi et ne changent ni la valeur du contrôle ni le texte copié.
+function setSelectionText(node, value) {
+  const pieces = String(value || '').split(/(\s+)/u);
+  const fragment = document.createDocumentFragment();
+  for (const piece of pieces) {
+    const chars = Array.from(piece);
+    for (let i = 0; i < chars.length; i += 8) {
+      if (i) fragment.append(document.createElement('wbr'));
+      fragment.append(document.createTextNode(chars.slice(i, i + 8).join('')));
+    }
+  }
+  node.replaceChildren(fragment);
+}
+
 function money(cents, currency) {
   if (cents === null || cents === undefined || cents === '' || (typeof cents !== 'number' && (typeof cents !== 'string' || !/^\d+$/.test(cents))) || !Number.isSafeInteger(Number(cents)) || Number(cents) < 0 || !/^[A-Z]{3}$/.test(currency || '')) return null;
   try { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency }).format(Number(cents) / 100); }
@@ -157,8 +172,12 @@ async function init(summary) {
   const selected = document.createElement('small');
   selected.className = 'sinjira-selected-option';
   selected.setAttribute('aria-hidden', 'true');
-  const showSelection = () => { selected.textContent = n.select.selectedOptions[0]?.textContent || ''; };
-  n.select.after(selected);
+  const showSelection = () => { setSelectionText(selected, n.select.selectedOptions[0]?.textContent); };
+  const shell = document.createElement('span');
+  shell.className = 'sinjira-select-shell';
+  n.select.before(shell);
+  shell.append(n.select);
+  shell.after(selected);
   showSelection();
   n.select.addEventListener('change', () => { showSelection(); calculate(); });
   summary.querySelectorAll('[data-pcs-format],[data-pcs-quantity],[data-pcs-method],[data-pcs-zone]').forEach(el => el.addEventListener('change', calculate));

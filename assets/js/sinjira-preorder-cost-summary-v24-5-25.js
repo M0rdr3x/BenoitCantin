@@ -5,11 +5,26 @@ const roots = [...document.querySelectorAll('[data-preorder-fulfillment]')];
 const s = getSupabase();
 let styleLoaded = false;
 
+// Les opportunités de coupure explicites restent compatibles avec le texte
+// agrandi et ne changent ni la valeur du contrôle ni le texte copié.
+function setSelectionText(node, value) {
+  const pieces = String(value || '').split(/(\s+)/u);
+  const fragment = document.createDocumentFragment();
+  for (const piece of pieces) {
+    const chars = Array.from(piece);
+    for (let i = 0; i < chars.length; i += 8) {
+      if (i) fragment.append(document.createElement('wbr'));
+      fragment.append(document.createTextNode(chars.slice(i, i + 8).join('')));
+    }
+  }
+  node.replaceChildren(fragment);
+}
+
 function ensureStyle() {
   if (styleLoaded || document.querySelector('link[data-preorder-cost-summary-style]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = new URL('../css/sinjira-preorder-cost-summary-v24-5-25.css?v=24.5.46.2', import.meta.url).href;
+  link.href = new URL('../css/sinjira-preorder-cost-summary-v24-5-25.css?v=24.5.46.3', import.meta.url).href;
   link.dataset.preorderCostSummaryStyle = 'true';
   document.head.appendChild(link);
   styleLoaded = true;
@@ -157,8 +172,8 @@ async function init(root) {
     n.zoneWrap.hidden = !(includesPhysical && method === 'shipping' && zones.length > 0);
     n.zone.disabled = n.zoneWrap.hidden;
     if (n.zoneWrap.hidden) n.zone.value = '';
-    const zoneLabel = n.zone.nextElementSibling;
-    if (zoneLabel?.classList.contains('sinjira-selected-option')) zoneLabel.textContent = n.zone.selectedOptions[0]?.textContent || '';
+    const zoneLabel = n.zone.closest('.sinjira-select-shell')?.nextElementSibling;
+    if (zoneLabel?.classList.contains('sinjira-selected-option')) setSelectionText(zoneLabel, n.zone.selectedOptions[0]?.textContent);
 
     if (subtotal === null) {
       n.book.textContent = commercial ? 'Prix non disponible pour ce choix' : 'Prix pas encore annoncé';
@@ -250,8 +265,12 @@ async function init(root) {
     const selected = document.createElement('small');
     selected.className = 'sinjira-selected-option';
     selected.setAttribute('aria-hidden', 'true');
-    const showSelection = () => { selected.textContent = control.selectedOptions[0]?.textContent || ''; };
-    control.after(selected);
+    const showSelection = () => { setSelectionText(selected, control.selectedOptions[0]?.textContent); };
+    const shell = document.createElement('span');
+    shell.className = 'sinjira-select-shell';
+    control.before(shell);
+    shell.append(control);
+    shell.after(selected);
     control.disabled = false;
     control.addEventListener('change', () => { showSelection(); calculate(); });
     showSelection();

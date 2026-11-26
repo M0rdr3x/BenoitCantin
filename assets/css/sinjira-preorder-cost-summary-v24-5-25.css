@@ -35,7 +35,16 @@
 .sinjira-cost-summary{display:block;width:100%;min-inline-size:0;max-inline-size:100%}
 .sinjira-cost-summary :is(.sinjira-cost-summary-controls,.sinjira-cost-summary-grid,.sinjira-cost-summary-head,.sinjira-cost-summary-guard){min-inline-size:0;max-inline-size:100%}
 .sinjira-cost-summary :is(h3,p,span,strong,small){white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-inline-size:0;max-inline-size:100%}
-.sinjira-cost-summary-controls select{contain:inline-size;min-inline-size:0;inline-size:100%;max-inline-size:100%;overflow:hidden;text-overflow:ellipsis}
+.sinjira-cost-summary-controls select{contain:inline-size paint;min-inline-size:0;inline-size:100%;max-inline-size:100%;overflow:hidden;text-overflow:ellipsis}
 .sinjira-cost-summary-controls .sinjira-selected-option{display:block;font-weight:400;font-size:.85em;line-height:1.4}
 @media(max-width:360px){.sinjira-cost-summary-controls select{padding-inline:6px}.sinjira-cost-summary-controls,.sinjira-cost-summary-grid{gap:10px}.sinjira-cost-summary-head h3{font-size:1.1rem}}
 @media(forced-colors:active){.sinjira-cost-summary-controls select:focus-visible{outline-color:Highlight}}
+
+/* Safari : les fragments de texte sans espace doivent eux aussi pouvoir
+   se répartir sur plusieurs lignes à 200 %. Ne pas clipper le texte de la carte. */
+.sinjira-cost-summary-controls .sinjira-selected-option{box-sizing:border-box;width:100%;min-width:0;max-width:100%;white-space:normal;overflow-wrap:break-word;word-break:break-all}
+.sinjira-cost-summary-controls label{min-inline-size:0;max-inline-size:100%}
+.sinjira-cost-summary-controls select:focus-visible{outline-offset:-3px}
+
+/* Confiner le rendu interne du contrôle natif, pas son libellé ni la carte. */
+.sinjira-cost-summary-controls .sinjira-select-shell{display:block;box-sizing:border-box;min-width:0;max-width:100%;width:100%;contain:paint;overflow:hidden;border-radius:10px}

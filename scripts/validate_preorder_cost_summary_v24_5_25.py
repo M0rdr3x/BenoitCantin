@@ -44,7 +44,7 @@ def main():
     for marker in required_js:
         if marker not in low: errors.append(f'Contrat JS absent: {marker}')
 
-    if "import './sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.2';" not in loader:
+    if "import './sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.3';" not in loader:
         errors.append('Le module V24.5.25 doit être chargé par le module de livraison existant.')
 
     forbidden=['stripe','paypal','canada post','canadapost','ups.com','fedex','purolator','shippo','easypost','twilio','api.resend.com']
