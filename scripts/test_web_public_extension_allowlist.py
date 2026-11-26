@@ -7,6 +7,10 @@ secrets or modification of production files. Run with Python 3.12.
 from __future__ import annotations
 
 import importlib.util
+import os
+import tempfile
+from unittest.mock import patch
+import re
 from pathlib import Path
 import unittest
 
@@ -19,6 +23,53 @@ spec.loader.exec_module(builder)
 
 
 class PublicArtifactExtensionAllowlist(unittest.TestCase):
+    def test_security_directory_is_never_public(self):
+        for folder in ("security", "SECURITY", "assets/security", "projets/sinjira/security",
+                       "compte/SECURITY", "projets/projet-nova/security", "admin/tools"):
+            for suffix in (".mjs", ".js", ".html", ".json", ".pdf", ".svg", ".txt"):
+                with self.subTest(folder=folder, suffix=suffix):
+                    self.assertFalse(builder.relative_path_allowed(Path(folder) / ("candidate" + suffix)))
+
+    def test_final_artifact_rejects_links_and_special_files_before_reading(self):
+        with tempfile.TemporaryDirectory(prefix="public-output-boundary-") as tmp:
+            base = Path(tmp)
+            root = base / "artifact"
+            root.mkdir()
+            private = base / "synthetic-private.txt"
+            private.write_text("synthetic only", encoding="utf-8")
+            (root / "index.html").write_text("public", encoding="utf-8")
+            self.assertEqual(builder.public_output_entry_errors(root), [])
+            for rel in ("_headers", "_redirects", ".well-known/release.json",
+                        "projets/projet-nova/data/actualites.json", "unknown/private.js"):
+                entry = root / rel
+                entry.parent.mkdir(parents=True, exist_ok=True)
+                entry.symlink_to(private)
+                with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                    errors = builder.validate_output(root)
+                self.assertTrue(any(rel in err for err in errors), rel)
+                entry.unlink()
+            for rel in ("linked-dir", "broken-dir"):
+                entry = root / rel
+                entry.symlink_to(base if rel == "linked-dir" else base / "missing", target_is_directory=True)
+                self.assertTrue(builder.public_output_entry_errors(root))
+                entry.unlink()
+            hardlink = root / "hardlink.html"
+            os.link(private, hardlink)
+            with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                self.assertTrue(builder.validate_output(root))
+            hardlink.unlink()
+            if hasattr(os, "mkfifo"):
+                fifo = root / "special.html"
+                os.mkfifo(fifo)
+                with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                    self.assertTrue(builder.validate_output(root))
+                fifo.unlink()
+            alias = base / "alias"
+            alias.symlink_to(root, target_is_directory=True)
+            with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                self.assertTrue(builder.validate_output(alias))
+            self.assertEqual(builder.public_output_entry_errors(root), [])
+
     def test_hidden_root_files_never_inherit_browser_extension_allowlist(self):
         # A dotfile is not public simply because it ends in .html/.js/.css.
         # Check the real policy used by both build and preflight.
@@ -105,6 +156,64 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
         ):
             with self.subTest(path=name):
                 self.assertFalse(builder.relative_path_allowed(Path(name)))
+
+    def test_restricted_catalog_pdfs_are_not_publicly_published(self):
+        # Les quatre URL recoupees en lecture seule avec le catalogue prive
+        # sont exclues, y compris celle dont le document reste "approved".
+        quarantine = builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS
+        self.assertEqual(len(quarantine), 4)
+        self.assertEqual(quarantine & builder.PUBLIC_APPROVED_PDFS, set())
+        self.assertTrue(all(path.suffix == ".pdf" for path in quarantine))
+        for path in sorted(quarantine):
+            with self.subTest(path=path.name):
+                self.assertFalse(builder.relative_path_allowed(path))
+        # La cinquieme fiche publique, sans correspondance restreinte dans
+        # l'inventaire du 2026-11-21, demeure utilisable.
+        public_copy = Path(
+            "projets/sinjira/jeux/fracture-du-reseau-mere/documents/"
+            "SINJIRA_Fiche_Joueur_1_Copie_Interactive.pdf"
+        )
+        self.assertTrue(builder.relative_path_allowed(public_copy))
+        self.assertTrue(builder.relative_path_allowed(Path("compte/index.html")))
+
+    def test_readding_quarantined_pdf_to_public_allowlist_fails_closed(self):
+        old = builder.PUBLIC_APPROVED_PDFS
+        try:
+            builder.PUBLIC_APPROVED_PDFS = set(old)
+            builder.PUBLIC_APPROVED_PDFS.add(
+                sorted(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS)[0]
+            )
+            self.assertFalse(builder.relative_path_allowed(
+                sorted(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS)[0]
+            ))
+            errors = builder.validate_plan()
+            self.assertTrue(any("Conflit entre PDF publics" in item for item in errors))
+        finally:
+            builder.PUBLIC_APPROVED_PDFS = old
+
+    def test_p0_sql_preflight_is_read_only_and_matches_pdf_inventory(self):
+        sql_path = ROOT / "scripts/audits/sinjira_restricted_static_document_preflight.sql"
+        sql = sql_path.read_text(encoding="utf-8", errors="strict")
+        query = re.sub(r"(?m)^--[^\n]*", "", sql)
+        self.assertEqual(query.count(";"), 2, "Deux requêtes agrégées uniquement")
+        self.assertIsNone(re.search(
+            r"\b(?:insert|update|delete|drop|alter|create|truncate|grant|revoke|"
+            r"copy|call|execute)\b", query, flags=re.IGNORECASE
+        ))
+        self.assertIn("public.documents", query)
+        self.assertIn("public.projects", query)
+        self.assertIn("count(*)", query)
+        inspected = {
+            Path(path) for path in re.findall(
+                r"\('/(projets/sinjira/jeux/[^']+\.pdf)'\)", query
+            )
+        }
+        expected = set(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS) | {
+            path for path in builder.PUBLIC_APPROVED_PDFS
+            if path.parts[:3] == ("projets", "sinjira", "jeux")
+        }
+        self.assertEqual(len(inspected), 5)
+        self.assertEqual(inspected, expected, "La requête SQL doit suivre la vraie liste publique")
 
     def test_only_public_document_extensions_are_privileged(self):
         self.assertEqual(builder.PUBLIC_APPROVED_PDFS & builder.SINJIRA_PUBLIC_DOCUMENTS,

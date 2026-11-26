@@ -32,15 +32,22 @@ concurrency:
 jobs:
   build:
     name: Construire l’artefact de confinement Pages
-    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' && inputs.expected_sha == github.sha
     permissions:
       contents: read
+      id-token: write
+      attestations: write
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    outputs:
+      archive_sha256: ${{ steps.archive.outputs.sha256 }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      artifact_zip_sha256: ${{ steps.upload.outputs.artifact-digest }}
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Configurer Python
@@ -58,6 +65,7 @@ jobs:
             echo "ERREUR: expected_sha doit être un SHA Git complet de 40 caractères." >&2
             exit 1
           fi
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           if [ "$EXPECTED_SHA" != "$GITHUB_SHA" ]; then
             echo "ERREUR: le SHA approuvé ne correspond pas au SHA exécuté." >&2
             exit 1
@@ -85,17 +93,40 @@ jobs:
               exit 1
             fi
           done
-          for forbidden in .github docs mobile-native scripts supabase tests; do
+          for forbidden in .github docs mobile-native scripts security supabase tests tools; do
             test ! -e "_site/$forbidden"
           done
           file_count="$(find _site -type f | wc -l | tr -d ' ')"
           test "$file_count" -gt 0
           echo "PAGES_PUBLIC_FILE_COUNT=$file_count" >> "$GITHUB_ENV"
 
-      - name: Téléverser uniquement l’artefact public Pages
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+      - name: Construire et vérifier l'archive publique
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/pages_archive_integrity.py create _site "$RUNNER_TEMP/artifact.tar"
+          sha="$(sha256sum "$RUNNER_TEMP/artifact.tar" | cut -d ' ' -f1)"
+          [[ "$sha" =~ ^[0-9a-f]{64}$ ]]
+          printf 'sha256=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Attester la provenance du TAR public approuvé
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
         with:
-          path: _site
+          subject-path: ${{ runner.temp }}/artifact.tar
+          push-to-registry: false
+          create-storage-record: false
+
+      - name: Téléverser uniquement l’artefact public Pages
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
+          overwrite: false
+          archive: true
 
       - name: Résumer la frontière de publication
         shell: bash
@@ -112,11 +143,64 @@ jobs:
             echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  verify:
+    name: Vérifier l'archive téléversée avant publication
+    needs: build
+    if: needs.build.result == 'success' && github.run_attempt == '1'
+    permissions:
+      contents: read
+      actions: read
+      attestations: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer uniquement le code du SHA approuvé
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Vérifier identité et empreinte de l'artefact du run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          ARTIFACT_ZIP_SHA256: ${{ needs.build.outputs.artifact_zip_sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$ARTIFACT_ZIP_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" | jq -e --arg id "$ARTIFACT_ID" --arg run "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" --arg repo "$GITHUB_REPOSITORY_ID" --arg digest "sha256:$ARTIFACT_ZIP_SHA256" '
+            (.id|tostring)==$id and .name=="github-pages" and .expired==false and
+            (.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha and
+            (.workflow_run.repository_id|tostring)==$repo and (.workflow_run.head_repository_id|tostring)==$repo and
+            .workflow_run.head_branch=="main" and .digest==$digest and
+            (.size_in_bytes|type)=="number" and .size_in_bytes>0 and .size_in_bytes<=1100000000
+          ' >/dev/null
+          # deploy-pages resolves by name: require a unique matching ID in this run.
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages&per_page=100" | jq -e --arg id "$ARTIFACT_ID" '
+            .total_count==1 and (.artifacts|length)==1 and (.artifacts[0].id|tostring)==$id and
+            .artifacts[0].name=="github-pages" and .artifacts[0].expired==false
+          ' >/dev/null
+          dest="$(mktemp -d)"
+          trap 'rm -rf "$dest"' EXIT
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$dest/artifact.zip"
+          printf '%s  %s\n' "$ARTIFACT_ZIP_SHA256" "$dest/artifact.zip" | sha256sum --check --status
+          python3 scripts/verify_pages_artifact_zip.py "$dest/artifact.zip" "$ARTIFACT_ZIP_SHA256" "$ARCHIVE_SHA256" --tar-output "$dest/artifact.tar"
+          gh attestation verify "$dest/artifact.tar" --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/deploy-github-pages-isolated.yml" \
+            --signer-digest "$GITHUB_SHA" --source-digest "$GITHUB_SHA" --source-ref refs/heads/main \
+            --predicate-type https://slsa.dev/provenance/v1 --deny-self-hosted-runners
+          echo "Archive Pages vérifiée : SHA-256 $ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     name: Publier le confinement Pages
-    needs: build
-    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    needs: [build, verify]
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' && inputs.expected_sha == github.sha && needs.build.result == 'success' && needs.verify.result == 'success'
     permissions:
+      contents: read
+      actions: read
       pages: write
       id-token: write
     environment:
@@ -125,6 +209,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - name: Revalider main et l'identité de l'artefact après autorisation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+          ARTIFACT_ZIP_SHA256: ${{ needs.build.outputs.artifact_zip_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$EXPECTED_SHA" = "$GITHUB_SHA"
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARTIFACT_ZIP_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" | jq -e --arg sha "$EXPECTED_SHA" '
+            .ref=="refs/heads/main" and .object.type=="commit" and .object.sha==$sha
+          ' >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages&per_page=100" | jq -e --arg id "$ARTIFACT_ID" --arg run "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" --arg repo "$GITHUB_REPOSITORY_ID" --arg digest "sha256:$ARTIFACT_ZIP_SHA256" '
+            .total_count==1 and (.artifacts|length)==1 and
+            (.artifacts[0] | (.id|tostring)==$id and .name=="github-pages" and .expired==false and .digest==$digest and
+              (.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha and
+              (.workflow_run.repository_id|tostring)==$repo and (.workflow_run.head_repository_id|tostring)==$repo and .workflow_run.head_branch=="main")
+          ' >/dev/null
+
       - name: Déployer sur GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+        with:
+          artifact_name: github-pages

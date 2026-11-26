@@ -7,6 +7,7 @@ import hashlib
 import os
 import re
 import shutil
+import stat
 import tempfile
 import tomllib
 from pathlib import Path
@@ -125,6 +126,17 @@ SINJIRA_PUBLIC_DOCUMENTS = {
 # PDF publies : liste positive sur TOUT le site, pas uniquement les
 # documents de roman. Un nouveau manuscrit, reçu ou document interne ne doit
 # jamais devenir public par son extension ou son emplacement.
+# Quarantaine P0: quatre URL de catalogue a niveau restreint, recoupees
+# avec les fichiers publics du depot (audit Supabase en lecture seule 2026-11-21).
+# AVERTISSEMENT: exclure _site ne retire pas les copies du GitHub PUBLIC,
+# de son historique ou des caches CDN. Migration/reclassification indispensable.
+PUBLIC_QUARANTINED_RESTRICTED_PDFS = frozenset({
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Feuille_de_fin_de_partie_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Mode_Solo_3_Joueurs_Interactive.pdf"),
+})
+
 PUBLIC_APPROVED_PDFS = SINJIRA_PUBLIC_DOCUMENTS | {
     Path("projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf"),
@@ -138,11 +150,7 @@ PUBLIC_APPROVED_PDFS = SINJIRA_PUBLIC_DOCUMENTS | {
     Path("projets/projet-nova/documents/09_Dossier_de_Presse_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/11_Charte_Visuelle_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/12_Resume_Executif_Officiel_Systeme_Nova.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Feuille_de_fin_de_partie_Interactive.pdf"),
     Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_1_Copie_Interactive.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_Interactive.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Mode_Solo_3_Joueurs_Interactive.pdf"),
 }
 
 SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
@@ -161,8 +169,10 @@ FORBIDDEN_DIRS = (
     "docs",
     "mobile-native",
     "scripts",
+    "security",
     "supabase",
     "tests",
+    "tools",
 )
 
 RESTRICTED_RUNTIME_DIRS = {
@@ -443,6 +453,24 @@ def public_data_payload_violations(data: object) -> list[str]:
     return sorted(set(errors))
 
 
+def strict_public_json(raw: str) -> object:
+    """Refuser les ambiguïtés JSON avant le contrôle de confidentialité."""
+    def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                # Ne pas inclure la clé ni sa valeur dans les journaux.
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    def reject_constant(_value: str) -> object:
+        raise ValueError("non-standard JSON constant")
+
+    return json.loads(raw, object_pairs_hook=unique_object,
+                      parse_constant=reject_constant)
+
+
 def public_data_json_errors(root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     for rel in sorted(PROJECT_NOVA_PUBLIC_DATA_JSON):
@@ -454,8 +482,8 @@ def public_data_json_errors(root: Path = ROOT) -> list[str]:
             if file.stat().st_size > NOVA_PUBLIC_JSON_MAX_BYTES:
                 errors.append(f"JSON public trop volumineux: {rel.as_posix()}")
                 continue
-            data = json.loads(file.read_text(encoding="utf-8", errors="strict"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            data = strict_public_json(file.read_text(encoding="utf-8", errors="strict"))
+        except (OSError, UnicodeError, ValueError, RecursionError) as error:
             errors.append(f"JSON public illisible: {rel.as_posix()} ({type(error).__name__})")
             continue
         for violation in public_data_payload_violations(data):
@@ -485,6 +513,14 @@ def relative_path_allowed(rel: Path) -> bool:
     if not parts:
         return False
 
+    # Refuser les répertoires techniques à toute profondeur, même si
+    # leurs fichiers ont une extension runtime autorisée (.mjs, .html).
+    # Cette frontière précède toutes les exceptions PDF/JSON.
+    if any(part.casefold() in {".git", ".github", "supabase", "scripts", "docs",
+                               "tests", "mobile-native", "tools", "security"}
+           for part in parts[:-1]):
+        return False
+
     # Un nouveau document dans data/ n'est jamais public par extension,
     # y compris PDF/HTML/JS/SVG : seuls les 12 JSON explicites le sont.
     if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
@@ -492,6 +528,8 @@ def relative_path_allowed(rel: Path) -> bool:
 
     # Defense globale, aussi pour le repertoire racine, assets, jeux, comptes
     # et tout futur dossier de manuscrits. Une extension .pdf n'accorde rien.
+    if rel in PUBLIC_QUARANTINED_RESTRICTED_PDFS:
+        return False
     if rel.suffix.lower() == ".pdf":
         return rel in PUBLIC_APPROVED_PDFS
 
@@ -758,12 +796,28 @@ def validate_netlify_staging_workflow() -> list[str]:
         "confirmation:",
         "STAGING_ONLY",
         "permissions:\n  contents: read",
-        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "github.ref == 'refs/heads/a1/web-release-transparency'",
+        "github.ref_protected == true",
+        "ref: ${{ github.sha }}",
+        "Rejeter checkout différent du SHA déclencheur",
+        "github.rest.repos.getBranch({ owner, repo, branch: 'a1/web-release-transparency' })",
+        "branch.protected !== true",
+        "branch.commit?.sha !== context.sha",
+        "uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd",
+        "    environment: netlify-staging",
+        'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then',
+        "Refuser tout staging depuis une branche non protégée",
+        "Installer Netlify CLI sans identifiants",
+        "python3 scripts/validate_netlify_cli_lock.py",
+        'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"',
+        'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"',
+        "npm ci --ignore-scripts --no-audit --no-fund",
+        '--userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf"',
+        "--registry=https://registry.npmjs.org/",
+        "NPM_CONFIG_OFFLINE: 'true'",
         "secrets.NETLIFY_AUTH_TOKEN",
         "secrets.NETLIFY_SITE_ID",
-        "netlify-cli@27.10.2 deploy",
-        "--auth \"$NETLIFY_AUTH_TOKEN\"",
-        "--site \"$NETLIFY_SITE_ID\"",
+        '"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy',
         "--dir _preview_site",
         "--dir _site",
         "--no-build",
@@ -786,12 +840,17 @@ def validate_netlify_staging_workflow() -> list[str]:
         "--prod-if-unlocked",
         "netlify deploy --prod",
         "github.ref == 'refs/heads/main'",
+        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "npx --yes netlify-cli@",
+        "npm install --no-save",
+        '--auth "$NETLIFY_AUTH_TOKEN"',
+        '--site "$NETLIFY_SITE_ID"',
     )
     for marker in forbidden_markers:
         if marker in text:
             errors.append(f"Workflow staging Netlify: comportement interdit détecté: {marker.strip()}")
 
-    deploy_count = text.count("netlify-cli@27.10.2 deploy")
+    deploy_count = text.count('"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy')
     if deploy_count != 2:
         errors.append(
             f"Workflow staging Netlify: exactement 2 deploys brouillon requis, observé={deploy_count}."
@@ -1007,6 +1066,31 @@ def public_symlink_errors(root: Path = ROOT) -> list[str]:
     return sorted(set(errors))
 
 
+def public_output_entry_errors(root: Path) -> list[str]:
+    """Inspecter les types d'entrées avant toute lecture de contenu.
+    
+    Contrairement au contrôle des sources, aucun lien n'est admissible
+    dans l'artefact final, même hors des sous-arbres publics approuvés.
+    """
+    errors: list[str] = []
+    try:
+        if not stat.S_ISDIR(root.lstat().st_mode):
+            return ["Racine du publish non régulière ou symbolique."]
+        pending = [root]
+        while pending:
+            directory = pending.pop()
+            for entry in directory.iterdir():
+                info = entry.lstat()
+                rel = entry.relative_to(root).as_posix()
+                if stat.S_ISDIR(info.st_mode):
+                    pending.append(entry)
+                elif not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    errors.append(f"Entrée non régulière ou liée dans le publish: {rel}")
+    except OSError as exc:
+        errors.append(f"Inspection du publish impossible: {type(exc).__name__}")
+    return sorted(set(errors))
+
+
 # Ces quatre dossiers sont explicitement réservés aux builds éphémères dans
 # les workflows CI, Netlify et Pages. Ne jamais assouplir ce garde-fou en
 # autorisant indistinctement les dossiers commençant par un underscore.
@@ -1055,6 +1139,47 @@ def self_test_public_filesystem_boundary() -> list[str]:
         if not public_data_payload_violations(fixture):
             errors.append(f"Auto-test JSON: divulgation synthétique non refusée #{index}")
 
+    # Le parseur standard conserve seulement la dernière valeur d'une clé.
+    # Refuser tout doublon, y compris les clés imbriquées et échappées, avant
+    # de copier le JSON brut vers le site public.
+    ambiguous_json = (
+        '{"label":"synthetic@example.org","label":"public"}',
+        '{"nested":{"label":"first","label":"second"}}',
+        r'{"label":"first","\u006cabel":"second"}',
+        '{"value":NaN}',
+        '{"value":Infinity}',
+        '{"value":-Infinity}',
+        '{"invalid":}',
+    )
+    for index, raw in enumerate(ambiguous_json, 1):
+        try:
+            strict_public_json(raw)
+        except ValueError:
+            pass
+        else:
+            errors.append(f"Auto-test JSON: document ambigu non refusé #{index}")
+    if strict_public_json('{"label":"public","nested":{"label":"other"}}') != {
+        "label": "public", "nested": {"label": "other"}
+    }:
+        errors.append("Auto-test JSON: objets distincts légitimes refusés")
+
+    # Recontrôler les fichiers produits, pas uniquement les objets en mémoire.
+    with tempfile.TemporaryDirectory(prefix="sinjira-public-json-") as tmp:
+        artifact = Path(tmp)
+        for rel in PROJECT_NOVA_PUBLIC_DATA_JSON:
+            file = artifact / rel
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_text('{"label":"public"}', encoding="utf-8")
+        if public_data_json_errors(artifact):
+            errors.append("Auto-test JSON: artefact public valide refusé")
+        target = artifact / sorted(PROJECT_NOVA_PUBLIC_DATA_JSON)[0]
+        target.write_text('{"label":"synthetic@example.org","label":"public"}', encoding="utf-8")
+        issues = public_data_json_errors(artifact)
+        if len(issues) != 1 or "JSON public illisible" not in issues[0]:
+            errors.append("Auto-test JSON: artefact ambigu non refusé")
+        if any("synthetic@example.org" in issue for issue in issues):
+            errors.append("Auto-test JSON: contenu confidentiel dans le diagnostic")
+
     rejected = (
         # Les extensions Web légitimes ne rendent jamais un dotfile public.
         # Cette règle s'applique aussi à la racine du dépôt, où l'ancienne
@@ -1094,6 +1219,10 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "projets/sinjira/jeux/Makefile",
         "assets/sources/app.ts",
         "assets/private.json",
+        "security/candidates/private.mjs",
+        "assets/security/private.js",
+        "projets/sinjira/SECURITY/private.html",
+        "projets/sinjira/jeux/tools/private.js",
         "assets/fichier-archives.zip",
         "projets/autre-projet/notes-interne.md",
         "projets/autre-projet/sauvegarde.csv",
@@ -1179,13 +1308,22 @@ def self_test_public_filesystem_boundary() -> list[str]:
 
 def validate_plan() -> list[str]:
     errors: list[str] = []
+    # Interdire la restauration accidentelle d'un PDF restreint dans la publication.
+    if PUBLIC_APPROVED_PDFS & PUBLIC_QUARANTINED_RESTRICTED_PDFS:
+        errors.append("Conflit entre PDF publics et ressources restreintes en quarantaine")
+    if not PUBLIC_QUARANTINED_RESTRICTED_PDFS:
+        errors.append("Inventaire de quarantaine P0 vide")
+
     release_sha = configured_release_sha()
     if release_sha and not re_full_git_sha(release_sha):
         errors.append(f"{RELEASE_SHA_ENV} doit être un SHA Git complet de 40 caractères hexadécimaux.")
+    # Ne jamais poursuivre vers les lecteurs de contenu après un rejet de lien.
+    source_errors = public_symlink_errors()
+    if source_errors:
+        return errors + source_errors
     errors.extend(validate_netlify_config())
     errors.extend(validate_vercel_config())
     errors.extend(validate_netlify_staging_workflow())
-    errors.extend(public_symlink_errors())
     errors.extend(public_data_json_errors())
 
     robots_path = ROOT / "robots.txt"
@@ -1469,7 +1607,10 @@ def validate_output(
     deploy_context: str | None = None,
     standalone_netlify: bool = False,
 ) -> list[str]:
-    errors: list[str] = []
+    # Refuser la racine et chaque entrée AVANT resolve(), read_text() et parse().
+    errors = public_output_entry_errors(output)
+    if errors:
+        return errors
     output = output.resolve()
     context = (
         deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
@@ -1486,11 +1627,11 @@ def validate_output(
         errors.append("Marqueur .well-known/release.json requis absent du publish.")
     else:
         try:
-            observed_release_metadata = json.loads(
+            observed_release_metadata = strict_public_json(
                 release_path.read_text(encoding="utf-8", errors="strict")
             )
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            errors.append(f"Marqueur release.json illisible: {exc}")
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            errors.append(f"Marqueur release.json illisible: {type(exc).__name__}")
         else:
             if observed_release_metadata != expected_release_metadata:
                 errors.append("Marqueur release.json incohérent avec le SHA/contexte de build.")
@@ -1518,7 +1659,7 @@ def validate_output(
     elif redirects_path.exists():
         errors.append("Fichier _redirects inattendu hors artefact Netlify autonome.")
 
-    errors.extend(public_symlink_errors(output))
+    errors.extend(public_data_json_errors(output))
 
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():

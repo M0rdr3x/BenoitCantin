@@ -27,3 +27,17 @@ updates:
           - "*"
         update-types:
           - "patch"
+
+  # Dépendances de l'outil de staging. PR uniquement, pas d'auto-merge.
+  # Les mises à jour sont validées par la CI d'isolation des secrets Netlify.
+  - package-ecosystem: "npm"
+    directory: "/tools/netlify-cli"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      netlify-cli-security-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"

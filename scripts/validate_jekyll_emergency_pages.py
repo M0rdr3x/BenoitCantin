@@ -20,10 +20,13 @@ BLOCKED = (
     "mobile-native/App.tsx",
     "scripts/build_netlify_public.py",
     "docs/README.md",
+    "security/candidates/registry-photo-budget.mjs",
     ".github/workflows/validate-site.yml",
     "netlify.toml",
     "vercel.json",
     "package.json",
+    "tools/netlify-cli/package.json",
+    "tools/netlify-cli/package-lock.json",
     "_config.yml",
     "projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "projets/projet-nova/official/versions/V316/README.md",
@@ -71,7 +74,7 @@ BLOCKED_EXTS = {
     ".7z", ".rar", ".tar", ".gz",
 }
 BLOCKED_DIRS = (
-    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/",
+    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/", "tools/", "security/",
     ".github/", ".git/", "projets/projet-nova/official/versions/",
 )
 # Le Codex public possède une seule page HTML approuvée. Un futur export,
@@ -101,7 +104,11 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
             continue
         if candidate.suffix.lower() in BLOCKED_EXTS:
             errors.append("Extension technique publiée : " + rel)
-        if any(rel.startswith(prefix) for prefix in BLOCKED_DIRS) or (
+        technical_parts = {".git", ".github", "supabase", "scripts", "docs",
+                           "tests", "mobile-native", "tools", "security"}
+        if any(part.casefold() in technical_parts
+               for part in candidate.relative_to(root).parts[:-1]) or any(
+                   rel.startswith(prefix) for prefix in BLOCKED_DIRS) or (
             rel.startswith(CODEX_PREFIX) and rel != CODEX_PUBLIC_PAGE
         ):
             errors.append("Répertoire technique publié : " + rel)
@@ -137,6 +144,24 @@ def unexpected_against_approved(jekyll: Path, approved: Path) -> list[str]:
     return [f"Fichier hors allowlist isolée: {path}" for path in unexpected]
 
 
+def quarantine_jekyll_exclusion_errors(source: str, paths: set[str]) -> list[str]:
+    """The legacy Pages Jekyll build must exclude quarantined PDFs."""
+    parts = source.split("\nexclude:\n", 1)
+    if len(parts) != 2:
+        return ["Bloc exclude Jekyll absent pour les PDF restreints"]
+    include_blocks = parts[0].split("include:\n", 1)
+    include_text = include_blocks[1] if len(include_blocks) == 2 else ""
+    excluded = re.findall(r'(?m)^\s+-\s+"([^"]+)"\s*$', parts[1])
+    included = re.findall(r'(?m)^\s+-\s+"([^"]+)"\s*$', include_text)
+    errors: list[str] = []
+    for path in sorted(paths):
+        if excluded.count(path) != 1:
+            errors.append("PDF restreint sans exclusion Jekyll exacte")
+        if path in included:
+            errors.append("PDF restreint reintroduit dans include Jekyll")
+    return errors
+
+
 def validate_source() -> list[str]:
     errors = []
     if (ROOT / ".nojekyll").exists():
@@ -160,6 +185,10 @@ def validate_source() -> list[str]:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             expected = {p.as_posix() for p in module.PROJECT_NOVA_PUBLIC_DATA_JSON}
+            errors.extend(quarantine_jekyll_exclusion_errors(
+                source,
+                {p.as_posix() for p in module.PUBLIC_QUARANTINED_RESTRICTED_PDFS},
+            ))
             include_block = source.split("include:\n", 1)
             include_text = include_block[1].split("\nexclude:", 1)[0] if len(include_block) == 2 else ""
             included = set()
@@ -173,9 +202,13 @@ def validate_source() -> list[str]:
                 for item in sorted(included - expected):
                     errors.append("JSON NOVA non approuvé inclus dans Jekyll : " + item)
     for key in (
-        "exclude:", "include:", "- \"supabase\"", "- \"scripts\"",
-        "- \"tests\"", "- \"mobile-native\"", "- \"docs\"",
+        "exclude:", "include:", "- \"supabase\"", "- \"scripts\"", "- \"tools\"",
+        "- \"tests\"", "- \"mobile-native\"", "- \"docs\"", "- \"security\"",
         "- \"projets/projet-nova/official/versions\"",
+        '- "projets/projet-nova/scripts"', '- "projets/projet-nova/tests"',
+        '- "**/scripts/**"', '- "**/tests/**"', '- "**/docs/**"',
+        '- "**/tools/**"', '- "**/security/**"', '- "**/supabase/**"', '- "**/mobile-native/**"',
+        '- "**/.git/**"', '- "**/.github/**"',
         "- \"**/*.csv\"", "- \"**/*.ts\"", "- \"**/*.tsx\"",
         "- \"**/*.py\"", "- \"**/*.toml\"",
         '- "projets/projet-nova/data/*"',
@@ -192,6 +225,16 @@ def validate_source() -> list[str]:
     return errors
 
 def self_test() -> None:
+    sentinel = "projets/sinjira/jeux/example-private.pdf"
+    fixture = 'include:\n  - "index.html"\nexclude:\n  - "' + sentinel + '"\n'
+    assert quarantine_jekyll_exclusion_errors(fixture, {sentinel}) == []
+    assert quarantine_jekyll_exclusion_errors(
+        fixture.replace('  - "' + sentinel + '"\n', ''), {sentinel}
+    )
+    assert quarantine_jekyll_exclusion_errors(
+        fixture.replace('include:\n', 'include:\n  - "' + sentinel + '"\n'),
+        {sentinel},
+    )
     with tempfile.TemporaryDirectory(prefix="sinjira-jekyll-boundary-") as folder:
         root = Path(folder)
         for item in BLOCKED:
@@ -203,9 +246,30 @@ def self_test() -> None:
             errors = validate(root, require_all=False)
             assert any(item in x for x in errors), ("Exposition non détectée", item)
             path.unlink()
+        for folder in ("scripts", "tests", "docs", "tools", "security", "SECURITY", "SUPABASE", ".git"):
+            nested = root / "projets" / "fixture" / folder / "synthetic.mjs"
+            nested.parent.mkdir(parents=True, exist_ok=True)
+            nested.write_text("synthetic", "utf-8")
+            assert any("Répertoire technique publié" in err
+                       for err in validate(root, require_all=False)), folder
+            nested.unlink()
+        staged_tool = root / "tools/netlify-cli/fake-public.html"
+        staged_tool.parent.mkdir(parents=True, exist_ok=True)
+        staged_tool.write_text("synthetic", "utf-8")
+        assert any("Répertoire technique publié : tools/netlify-cli/fake-public.html" in err
+                   for err in validate(root, require_all=False))
+        staged_tool.unlink()
         safe = root / "index.html"
         safe.write_text("<!doctype html><title>Site test</title>", "utf-8")
         assert validate(root, require_all=False) == [], "Page de test légitime refusée"
+
+        for suffix in (".mjs", ".js", ".json", ".html", ".svg", ".txt", ".pdf"):
+            private = root / "security" / "future" / ("candidate" + suffix)
+            private.parent.mkdir(parents=True, exist_ok=True)
+            private.write_text("synthetic", "utf-8")
+            assert any("Répertoire technique publié : security/future/" in error
+                       for error in validate(root, require_all=False)), suffix
+            private.unlink()
 
         # La page publique du Codex doit rester accessible, mais pas une
         # future fiche HTML confidentielle placée dans son répertoire.

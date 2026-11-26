@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { privateDocumentLocationValid, privateSignedDownloadUrlValid } from '../_shared/private-document-storage.mjs';
 
 const PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 const SIGNED_URL_SECONDS=300;
@@ -66,13 +67,14 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
     }
 
+    if(!privateDocumentLocationValid(storage.bucket,storage.storagePath))return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:bucket,error:bucketError}=await service.storage.getBucket(storage.bucket);
-    if(bucketError||bucket?.id!==storage.bucket||bucket.public!==false)return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    if(bucketError!==null||bucket?.id!==storage.bucket||bucket.public!==false)return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
 
     const {data:signed,error:signedError}=await service.storage
       .from(storage.bucket)
       .createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS,{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'});
-    if(signedError||!signed?.signedUrl){
+    if(signedError!==null||typeof signed?.signedUrl!=='string'||!privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),storage.bucket,storage.storagePath,'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf')){
       console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});
       return privateJson({ok:false,error:'Impossible de préparer le téléchargement sécurisé.'},500);
     }

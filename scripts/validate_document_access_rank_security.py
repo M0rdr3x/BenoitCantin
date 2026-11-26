@@ -38,10 +38,38 @@ REQUIRED = {
         "optionalUser(req)",
     "rang côté serveur":
         "service.rpc('project_access_rank'",
+    "rangs non-admin canoniques":
+        "const CANONICAL_PROJECT_RANKS=new Set([0,1,10,20,30]);",
+    "réponse admin explicite":
+        "adminCheck.error!==null||typeof adminCheck.data!=='boolean'",
+    "administrateur booléen strict":
+        "if(adminCheck.data===true)userRank=100;",
+    "erreur RPC rang et type":
+        "rankCheck.error!==null||typeof rankCheck.data!=='number'",
+    "rang integer sûr":
+        "!Number.isSafeInteger(rankCheck.data)",
+    "niveau RPC confirmé parmi les rangs canoniques":
+        "!CANONICAL_PROJECT_RANKS.has(rankCheck.data)",
+    "refus sans URL des RPC invalides":
+        "return privateJson({ok:false,error:'Vérification des droits indisponible.'},503);",
     "lien externe après accès":
         "if(doc.external_url){",
+    "lien statique uniquement lorsque document et projet sont publics":
+        "if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){",
+    "chemin de Storage strict avant signature":
+        "privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)",
+    "lecture du statut réel du bucket":
+        "service.storage.getBucket(doc.storage_bucket)",
+    "identité et statut privé du bucket":
+        "!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)",
+    "refus d'erreur API Storage":
+        "if(bucketMetadataError!==null||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))",
+    "erreur de stockage sans URL":
+        "return privateJson({ok:false,error:'Stockage privé indisponible.'},503);",
     "lien signé après accès":
         "createSignedUrl(doc.storage_path,600)",
+    "destination signée exacte":
+        "privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),doc.storage_bucket,doc.storage_path)",
     "cache privé":
         "'Cache-Control':'private, no-store, max-age=0'",
 }
@@ -58,8 +86,16 @@ def audit(source: str, config: str) -> list[str]:
 
     checks = [
         "const service=serviceClient(),user=await optionalUser(req);",
+        "const adminCheck=await service.rpc('is_sinjira_admin'",
+        "if(adminCheck.data===true)userRank=100;",
+        "const rankCheck=await service.rpc('project_access_rank'",
+        "!CANONICAL_PROJECT_RANKS.has(rankCheck.data)",
         "if(!documentAccessAllowed(doc.access_level,userRank))",
         "if(doc.external_url){",
+        "if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){",
+        "privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)",
+        "service.storage.getBucket(doc.storage_bucket)",
+        "!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)",
         "createSignedUrl(doc.storage_path,600)",
     ]
     pos = [source.find(x) for x in checks]
@@ -97,10 +133,40 @@ def self_test(source: str, config: str) -> None:
             ("doc.projects?.status!=='active'", "false"),
         "signature avant autorisation":
             ("if(doc.external_url){", "if(false){"),
+        "liens privés statiques acceptés":
+            ("if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){", "if(false){"),
+        "projet privé seul accepté":
+            ("if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){", "if(doc.access_level!=='public'&&doc.projects?.visibility!=='public'){"),
+        "chemin de stockage non contrôlé":
+            ("privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)", "true"),
+        "bucket non consulté":
+            ("service.storage.getBucket(doc.storage_bucket)", "Promise.resolve({data:{public:false}})"),
+        "bucket public admis":
+            ("!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)", "false"),
+        "erreur de lecture bucket ignorée":
+            ("if(bucketMetadataError!==null||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))", "if(false)"),
         "lien signé trop long":
             ("createSignedUrl(doc.storage_path,600)", "createSignedUrl(doc.storage_path,3600)"),
+        "destination signée non contrôlée":
+            ("privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),doc.storage_bucket,doc.storage_path)", "true"),
         "cache privé retiré":
             ("'Cache-Control':'private, no-store, max-age=0'", "'Cache-Control':'public, max-age=3600'"),
+        "erreur admin ignorée":
+            ("adminCheck.error!==null", "false"),
+        "type admin ignoré":
+            ("typeof adminCheck.data!=='boolean'", "false"),
+        "valeur admin truthy acceptée":
+            ("if(adminCheck.data===true)userRank=100;", "if(adminCheck.data)userRank=100;"),
+        "erreur rang ignorée":
+            ("rankCheck.error!==null", "false"),
+        "type rang ignoré":
+            ("typeof rankCheck.data!=='number'", "false"),
+        "rang fractionnaire accepté":
+            ("!Number.isSafeInteger(rankCheck.data)", "false"),
+        "rangs hors liste admis":
+            ("!CANONICAL_PROJECT_RANKS.has(rankCheck.data)", "false"),
+        "rangs admin non confirmés admis":
+            ("const CANONICAL_PROJECT_RANKS=new Set([0,1,10,20,30]);", "const CANONICAL_PROJECT_RANKS=new Set([0,1,10,20,30,100]);"),
         "ancien contrôle réintroduit":
             ("if(!documentAccessAllowed(doc.access_level,userRank))", "if(userRank<(ranks[doc.access_level]||999))"),
     }

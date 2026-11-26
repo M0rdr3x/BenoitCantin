@@ -6,11 +6,17 @@ on:
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
+      - 'scripts/pages_archive_integrity.py'
+      - 'scripts/verify_pages_artifact_zip.py'
+      - 'scripts/build_netlify_public.py'
   push:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
+      - 'scripts/pages_archive_integrity.py'
+      - 'scripts/verify_pages_artifact_zip.py'
+      - 'scripts/build_netlify_public.py'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +25,7 @@ permissions:
 jobs:
   pages-isolated-scope:
     runs-on: ubuntu-24.04
-    timeout-minutes: 6
+    timeout-minutes: 12
     steps:
       - name: Checkout sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -31,5 +37,108 @@ jobs:
           python-version: '3.12.14'
       - name: Refuser les mutations Pages dangereuses
         run: python3 scripts/validate_pages_artifact_boundary.py --self-test
+      - name: Tester les archives déterministes et les membres hostiles
+        run: python3 scripts/pages_archive_integrity.py self-test
+      - name: Vérifier les enveloppes ZIP sans extraction
+        run: python3 scripts/verify_pages_artifact_zip.py --self-test
       - name: Valider tous les workflows de publication
         run: python3 scripts/validate_pages_artifact_boundary.py
+      - name: Construire et vérifier la vraie archive publique sans publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _site --security-containment
+          python3 scripts/pages_archive_integrity.py create _site "$RUNNER_TEMP/artifact.tar"
+          python3 scripts/pages_archive_integrity.py create _site "$RUNNER_TEMP/second.tar"
+          cmp -s "$RUNNER_TEMP/artifact.tar" "$RUNNER_TEMP/second.tar"
+          sha256sum "$RUNNER_TEMP/artifact.tar"
+
+  artifact-roundtrip:
+    name: Vérifier le vrai transport GitHub sur un artefact fictif
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Construire uniquement une page fictive
+        id: fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/pages-fixture"
+          printf '%s\n' '<!doctype html><title>Security fixture only</title>' > "$RUNNER_TEMP/pages-fixture/index.html"
+          python3 scripts/pages_archive_integrity.py create "$RUNNER_TEMP/pages-fixture" "$RUNNER_TEMP/artifact.tar"
+          sha="$(sha256sum "$RUNNER_TEMP/artifact.tar" | cut -d ' ' -f1)"
+          [[ "$sha" =~ ^[0-9a-f]{64}$ ]]
+          printf 'sha256=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+      - name: Téléverser uniquement le TAR fictif
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pages-integrity-fixture-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
+          overwrite: false
+          archive: true
+      - name: Vérifier les métadonnées et télécharger par identifiant exact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_ZIP_SHA256: ${{ steps.upload.outputs.artifact-digest }}
+          ARCHIVE_SHA256: ${{ steps.fixture.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARTIFACT_ZIP_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$GITHUB_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          name="pages-integrity-fixture-$GITHUB_RUN_ATTEMPT"
+          dest="$(mktemp -d)"
+          trap 'rm -rf "$dest"' EXIT
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > "$dest/run.json"
+          jq -e --arg run "$GITHUB_RUN_ID" --arg repo "$GITHUB_REPOSITORY_ID" '
+            (.id|tostring)==$run and (.repository.id|tostring)==$repo and
+            (.head_repository.id|tostring)==$repo and
+            (.head_sha|type)=="string" and (.head_sha|test("^[0-9a-f]{40}$")) and
+            (.head_branch|type)=="string" and (.head_branch|length)>0
+          ' "$dest/run.json" >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" | jq -e \
+            --arg id "$ARTIFACT_ID" --arg name "$name" --arg run "$GITHUB_RUN_ID" \
+            --arg repo "$GITHUB_REPOSITORY_ID" --arg digest "sha256:$ARTIFACT_ZIP_SHA256" \
+            --slurpfile origin "$dest/run.json" '
+            (.id|tostring)==$id and .name==$name and .expired==false and .digest==$digest and
+            (.workflow_run.id|tostring)==$run and
+            (.workflow_run.repository_id|tostring)==$repo and (.workflow_run.head_repository_id|tostring)==$repo and
+            .workflow_run.head_sha==$origin[0].head_sha and .workflow_run.head_branch==$origin[0].head_branch and
+            (.size_in_bytes|type)=="number" and .size_in_bytes>0 and .size_in_bytes<=1048576
+          ' >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=$name&per_page=100" | jq -e \
+            --arg id "$ARTIFACT_ID" --arg name "$name" --arg digest "sha256:$ARTIFACT_ZIP_SHA256" \
+            --arg run "$GITHUB_RUN_ID" --arg repo "$GITHUB_REPOSITORY_ID" --slurpfile origin "$dest/run.json" '
+            .total_count==1 and (.artifacts|length)==1 and
+            (.artifacts[0] | (.id|tostring)==$id and .name==$name and .expired==false and .digest==$digest and
+              (.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$origin[0].head_sha and
+              (.workflow_run.repository_id|tostring)==$repo and (.workflow_run.head_repository_id|tostring)==$repo and
+              .workflow_run.head_branch==$origin[0].head_branch)
+          ' >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$dest/artifact.zip"
+          test "$(stat -c %s "$dest/artifact.zip")" -le 1048576
+          python3 scripts/verify_pages_artifact_zip.py "$dest/artifact.zip" "$ARTIFACT_ZIP_SHA256" "$ARCHIVE_SHA256"
+          if python3 scripts/verify_pages_artifact_zip.py "$dest/artifact.zip" "$ARTIFACT_ZIP_SHA256" "$(printf '%064d' 0)" >/dev/null 2>&1; then
+            echo "ERREUR: empreinte TAR incorrecte acceptée" >&2
+            exit 1
+          fi
+          echo "PASS: vrai transport d'artefact GitHub, métadonnées et doubles empreintes vérifiés."
+

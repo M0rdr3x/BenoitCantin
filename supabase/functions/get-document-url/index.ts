@@ -1,10 +1,12 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket, privateSignedDownloadUrlValid } from '../_shared/private-document-storage.mjs';
 
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
+const CANONICAL_PROJECT_RANKS=new Set([0,1,10,20,30]);
 // Les propriétés héritées de Object.prototype ne sont pas des niveaux d'accès.
 // Même un rang RPC inattendu (NaN/Infinity) ne doit jamais autoriser de lien.
 function documentAccessAllowed(accessLevel:unknown,userRank:number){
@@ -36,7 +38,8 @@ function externalUrlAllowed(value:string){
     if(relative&&value.startsWith('//'))return false;
     const parsed=relative?new URL(value,DOCUMENT_URL_BASE):new URL(value);
     if(parsed.protocol!=='https:'||parsed.username||parsed.password)return false;
-    if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;
+    // Interdire tout renvoi de document public vers un domaine tiers.
+    if(parsed.origin!==DOCUMENT_URL_BASE)return false;
     return true;
   }catch{return false}
 }
@@ -73,13 +76,22 @@ Deno.serve(async(req)=>{
 
     let userRank=0;
     if(user){
-      const {data:isAdmin,error:adminError}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(adminError||typeof isAdmin!=='boolean')return privateJson({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);
-      if(isAdmin===true)userRank=100;
+      const adminCheck=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
+      // Une RPC en erreur ou un résultat non booléen ne confère jamais
+      // des privilèges, même lorsque sa valeur est truthy.
+      if(!adminCheck||adminCheck.error!==null||typeof adminCheck.data!=='boolean'){
+        return privateJson({ok:false,error:'Vérification des droits indisponible.'},503);
+      }
+      if(adminCheck.data===true)userRank=100;
       else{
-        const {data:accessRank,error:rankError}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        if(rankError||typeof accessRank!=='number'||![0,1,10,20,30,100].includes(accessRank))return privateJson({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);
-        userRank=accessRank;
+        const rankCheck=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        // Ce SQL retourne un entier 0,1,10,20,30 pour les non-admins.
+        // Le niveau 100 exigerait une confirmation admin déjà obtenue.
+        if(!rankCheck||rankCheck.error!==null||typeof rankCheck.data!=='number'||
+          !Number.isSafeInteger(rankCheck.data)||!CANONICAL_PROJECT_RANKS.has(rankCheck.data)){
+          return privateJson({ok:false,error:'Vérification des droits indisponible.'},503);
+        }
+        userRank=rankCheck.data;
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
@@ -88,16 +100,28 @@ Deno.serve(async(req)=>{
     }
 
     if(doc.external_url){
+      // Une autorisation API ne peut pas rendre confidentielle une URL statique.
+      // Les fichiers restreints exigent un bucket privé et une URL signée.
+      if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){
+        return privateJson({ok:false,error:'Document privé sans stockage sécurisé.'},500);
+      }
       const url=String(doc.external_url).trim();
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    // Ne jamais signer un chemin douteux ni un objet situé dans un bucket public.
+    // La vérification Storage suit la décision d'autorisation, sans repli permissif.
+    if(!privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)){
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
+    const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(doc.storage_bucket);
+    if(bucketMetadataError!==null||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)){
+      console.error('[get-document-url]',{code:'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED'});
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
 
-    const {data:bucket,error:bucketError}=await service.storage.getBucket(doc.storage_bucket);
-    if(bucketError||bucket?.id!==doc.storage_bucket||bucket.public!==false)return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
-    if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
+    if(signedError!==null||typeof signed?.signedUrl!=='string'||!privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),doc.storage_bucket,doc.storage_path))return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
   }catch{
     console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});

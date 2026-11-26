@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { privateDocumentLocationValid, privateSignedDownloadUrlValid } from '../_shared/private-document-storage.mjs';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const MAX_REQUEST_BYTES=2048;
@@ -52,10 +53,11 @@ Deno.serve(async(req)=>{
     if(!entitled)return json({ok:false,error:'Votre compte ne possède pas le droit de lecture intégrale de ce roman.'},403);
     if(!novel.file_ready)return json({ok:false,error:'Le fichier intégral de cette édition n’est pas encore activé dans le stockage privé.',code:'FILE_NOT_READY',metadata:{page_count:novel.page_count,file_version:novel.file_version}},409);
     if(!novel.private_storage_bucket||!novel.private_storage_path)return json({ok:false,error:'Fichier privé non configuré.'},500);
+    if(!privateDocumentLocationValid(novel.private_storage_bucket,novel.private_storage_path))return json({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:bucket,error:bucketError}=await service.storage.getBucket(novel.private_storage_bucket);
-    if(bucketError||bucket?.id!==novel.private_storage_bucket||bucket.public!==false)return json({ok:false,error:'Stockage privé indisponible.'},503);
+    if(bucketError!==null||bucket?.id!==novel.private_storage_bucket||bucket.public!==false)return json({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:signed,error:signedError}=await service.storage.from(novel.private_storage_bucket).createSignedUrl(novel.private_storage_path,600,{download:novel.slug+'.pdf'});
-    if(signedError||!signed?.signedUrl)return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
+    if(signedError!==null||typeof signed?.signedUrl!=='string'||!privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),novel.private_storage_bucket,novel.private_storage_path,novel.slug+'.pdf'))return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return json({ok:true,url:signed.signedUrl,protected:true,expires_in:600,novel:{slug:novel.slug,title:novel.title,page_count:novel.page_count,file_version:novel.file_version,file_sha256:novel.file_sha256,file_size_bytes:novel.file_size_bytes}});
   }catch(error){
     const message=String(error?.message||'');
