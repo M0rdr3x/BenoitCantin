@@ -35,7 +35,7 @@ def check_page(path, expected):
         "compte/connexion.html", "compte/inscription.html",
         "compte/mot-de-passe-oublie.html", "compte/reinitialiser-mot-de-passe.html",
     }
-    css_version = "1.0.1" if auth_nav else "1.0.0"
+    css_version = "1.0.1" if auth_nav else "1.0.2"
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
     if auth_nav and 'sinjira-auth-nav-v1.js?v=1.0.0' not in text:
