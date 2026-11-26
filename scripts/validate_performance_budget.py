@@ -72,7 +72,7 @@ def main() -> int:
     if '/assets/js/home-assistant-lazy-v24-5-2.js' in home or '/assets/js/sinjira-assistant.js' in home:
         errors.append("index.html: aucun runtime assistant ne doit être chargé sur l’accueil désactivé.")
     session_loader = ROOT / "assets" / "js" / "home-session-lazy-v24-5-1.js"
-    if '/assets/js/home-session-lazy-v24-5-1.js?v=24.5.1' not in home:
+    if '/assets/js/home-session-lazy-v24-5-1.js?v=24.5.2' not in home:
         errors.append("index.html: loader session différé absent.")
     if not session_loader.exists():
         errors.append("Loader session accueil V24.5.1 absent.")
