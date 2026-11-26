@@ -14,15 +14,32 @@
     processing.setAttribute('aria-atomic','true');
     form.insertAdjacentElement('afterend',processing);
     var result=document.querySelector('[data-account-status]');
-    var pending=false;
+    var pending=false,slow=false,slowTimer=null;
     function busy(){return form.getAttribute('aria-busy')==='true';}
-    function finishProcessing(){pending=false;processing.textContent='';}
+    function finishProcessing(){
+      pending=false;slow=false;
+      if(slowTimer!==null){window.clearTimeout(slowTimer);slowTimer=null;}
+      processing.textContent='';
+    }
     function syncProcessing(){
       if(!busy()){finishProcessing();return;}
-      if(pending&&processing.textContent!=='Traitement en cours… Veuillez patienter.'){
-        processing.textContent='Traitement en cours… Veuillez patienter.';
+      if(!pending)return;
+      // L'état réseau est indicatif : aucune relance, aucun déverrouillage.
+      var text=navigator.onLine===false
+        ?'Votre appareil semble hors ligne. Attendez le résultat avant de réessayer.'
+        :slow
+          ?'Le traitement prend plus de temps que prévu. Attendez le résultat avant de réessayer.'
+          :'Traitement en cours… Veuillez patienter.';
+      if(processing.textContent!==text)processing.textContent=text;
+      if(!slow&&slowTimer===null){
+        slowTimer=window.setTimeout(function(){
+          slowTimer=null;slow=true;syncProcessing();
+        },10000);
       }
     }
+    window.addEventListener('online',syncProcessing);
+    window.addEventListener('offline',syncProcessing);
+    window.addEventListener('pagehide',finishProcessing);
     form.addEventListener('submit',function(event){
       if(busy()){
         event.preventDefault();
@@ -30,7 +47,7 @@
         return;
       }
       // Laisser les gestionnaires Auth effectuer leurs validations normales.
-      pending=true;
+      pending=true;slow=false;
       window.setTimeout(syncProcessing,0);
     },true);
     if(typeof MutationObserver!=='undefined'){

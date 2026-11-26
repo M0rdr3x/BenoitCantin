@@ -129,8 +129,19 @@ def run():
                         else:
                             check(all(not b["displayed"] for b in state["buttons"]),
                                   f"flèches inutiles visibles {path} {width}px: {state}")
+                    # Les redimensionnements ont déjà été vérifiés ci-dessus.
+                    # Tester les commandes sur un chargement à largeur fixe :
+                    # WebKit peut encore recentrer l'onglet actif après resize.
                     page.set_viewport_size({"width":320,"height":800})
-                    page.wait_for_timeout(100)
+                    page.goto(urljoin(BASE,path),wait_until="load",timeout=30_000)
+                    page.wait_for_function("""() => {
+                      const nav=document.querySelector('.universe-subnav');
+                      const track=nav?.querySelector('.container');
+                      return nav?.hasAttribute('data-sinjira-auth-nav-ready') &&
+                        nav.classList.contains('is-scrollable') &&
+                        track.scrollWidth>track.clientWidth+2;
+                    }""",timeout=12_000)
+                    page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
                     track=page.locator(".universe-subnav .container")
                     prev=page.get_by_role("button",name="Liens précédents de connexion")
                     nxt=page.get_by_role("button",name="Liens suivants de connexion")

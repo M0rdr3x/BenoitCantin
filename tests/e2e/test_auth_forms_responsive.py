@@ -178,6 +178,23 @@ def assert_processing_feedback(context):
             <label for="email">Courriel</label><input id="email" type="email">
             <button type="submit">Continuer</button>
           </form><div data-account-status hidden></div></body></html>""")
+        # Contrôler les transitions réseau et la temporisation sans réseau réel.
+        page.evaluate("""() => {
+          window.fakeOnline=true;
+          Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>window.fakeOnline});
+          const set=window.setTimeout.bind(window), clear=window.clearTimeout.bind(window);
+          window.slowCallbacks=new Map();
+          let next=-100;
+          window.setTimeout=(cb,ms,...args)=>{
+            if(ms!==10000)return set(cb,ms,...args);
+            const id=next--;window.slowCallbacks.set(id,()=>cb(...args));return id;
+          };
+          window.clearTimeout=id=>{if(window.slowCallbacks.has(id))window.slowCallbacks.delete(id);else clear(id);};
+          window.simulateSlow=()=>{
+            const callbacks=[...window.slowCallbacks.values()];
+            window.slowCallbacks.clear();callbacks.forEach(cb=>cb());
+          };
+        }""")
         page.add_script_tag(url=urljoin(BASE, "assets/js/sinjira-form-feedback-v1.js"))
         page.evaluate("""() => {
           const form=document.querySelector('form');
@@ -199,6 +216,13 @@ def assert_processing_feedback(context):
         page.wait_for_function("() => document.querySelector('.sinjira-form-processing').textContent.includes('Traitement')")
         form.evaluate(submit)
         assert_ok(page.evaluate("window.attempts") == 1, "soumission répétée non bloquée")
+        page.evaluate("() => {window.fakeOnline=false;window.dispatchEvent(new Event('offline'));}")
+        assert_ok("hors ligne" in feedback.inner_text(), "interruption réseau non annoncée")
+        page.evaluate("() => window.simulateSlow()")
+        page.evaluate("() => {window.fakeOnline=true;window.dispatchEvent(new Event('online'));}")
+        assert_ok("plus de temps" in feedback.inner_text(), "attente prolongée non annoncée")
+        assert_ok(page.evaluate("window.attempts") == 1, "relance automatique interdite")
+        assert_ok(form.get_attribute("aria-busy") == "true", "verrou levé par le réseau")
         form.evaluate("el => el.setAttribute('aria-busy','false')")
         page.wait_for_function("() => !document.querySelector('.sinjira-form-processing').textContent")
         form.evaluate(submit)
@@ -207,6 +231,9 @@ def assert_processing_feedback(context):
         page.locator("[data-account-status]").evaluate("el => {el.textContent='Terminé';el.hidden=false;}")
         page.wait_for_function("() => !document.querySelector('.sinjira-form-processing').textContent")
         assert_ok(form.get_attribute("aria-busy") == "true", "verrou Auth modifié par l'UX")
+        assert_ok(page.evaluate("window.slowCallbacks.size") == 0, "temporisation résiduelle après résultat")
+        page.evaluate("() => {window.fakeOnline=false;window.dispatchEvent(new Event('offline'));}")
+        assert_ok(feedback.inner_text() == "", "ancienne requête réaffichée après résultat")
     finally:
         page.close()
 
