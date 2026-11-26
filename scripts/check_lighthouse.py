@@ -60,6 +60,27 @@ def validate(report, emit=print):
     return failures
 
 
+def diagnostic_metrics(report, emit=print):
+    """Diagnostics numériques bornés, sans URL, DOM ou contenu utilisateur."""
+    audits = report.get("audits", {})
+    if not isinstance(audits, dict):
+        return
+    for audit_id in ("mainthread-work-breakdown", "bootup-time", "long-tasks",
+                     "render-blocking-insight", "image-delivery-insight"):
+        audit = audits.get(audit_id)
+        if not isinstance(audit, dict):
+            continue
+        value = audit.get("numericValue")
+        if valid_number(value, float("inf")):
+            emit(f"DIAGNOSTIC {audit_id}: {value:.2f}")
+        savings = audit.get("metricSavings")
+        if isinstance(savings, dict):
+            for metric in ("LCP", "FCP", "TBT", "CLS", "INP"):
+                value = savings.get(metric)
+                if valid_number(value, float("inf")):
+                    emit(f"DIAGNOSTIC {audit_id} {metric}: {value:.2f}")
+
+
 def self_test():
     def good():
         return {
@@ -91,6 +112,12 @@ def self_test():
     report["runtimeError"] = {"code": "TEST_ERROR"}
     assert validate(report, quiet), "Erreur d'exécution non détectée."
     assert validate({}, quiet) and validate([], quiet)
+    diagnostics = []
+    diagnostic_metrics({"audits": {"bootup-time": {
+        "numericValue": 300, "metricSavings": {"TBT": 100, "secret": 9},
+        "details": {"url": "https://example.invalid/?secret=1"}}}}, diagnostics.append)
+    assert diagnostics == ["DIAGNOSTIC bootup-time: 300.00",
+                           "DIAGNOSTIC bootup-time TBT: 100.00"]
     print("OK auto-tests du contrat Lighthouse : limites, mesures absentes et rapports invalides.")
 
 
@@ -108,6 +135,8 @@ def main() -> int:
         return 1
     failures = validate(report)
     if failures:
+        if isinstance(report, dict):
+            diagnostic_metrics(report)
         print("ECHEC Lighthouse mobile:")
         for item in failures:
             print("- " + item)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 
@@ -84,8 +85,8 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
 
     if 'class="skip-link"' not in html or 'href="#contenu"' not in html:
         errors.append(f"{rel}: lien d’évitement vers #contenu absent.")
-    if not re.search(r'<main\b[^>]*\bid=[\"\']contenu[\"\']', html, re.I):
-        errors.append(f"{rel}: main#contenu absent.")
+    if '<main id="contenu" tabindex="-1">' not in html:
+        errors.append(f"{rel}: cible de lien d’évitement non focalisable.")
 
     header = re.search(r"<header\b[\s\S]*?</header>", html, re.I)
     if not header:
@@ -140,12 +141,72 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
             errors.append(f"{rel}: annonce accessible de reprise réseau absente.")
         if "location.reload()" not in runtime or "data-error-retry hidden" not in html:
             errors.append(f"{rel}: action de nouvelle tentative absente.")
+        if 'data-error-status' not in html or 'aria-atomic="true"' not in html:
+            errors.append(f"{rel}: annonce réseau dynamique incomplète.")
+        if "actualisez la page dans votre navigateur" not in html:
+            errors.append(f"{rel}: solution de repli sans JavaScript absente.")
+
+
+def validate_offline_runtime(errors: list[str]) -> None:
+    # Exécute le vrai script dans un DOM minimal, sans réseau ni données privées.
+    harness = r"""
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync('assets/js/error-pages-ux-v1.js', 'utf8');
+function run(path, online, missing = false) {
+  const events = {}, clicks = {};
+  let reloads = 0;
+  const button = { hidden: true, addEventListener: (name, fn) => { clicks[name] = fn; } };
+  const status = { textContent: '' };
+  const navigator = { onLine: online };
+  vm.runInNewContext(source, {
+    document: { body: {dataset: {errorPage: 'offline'}},
+      querySelector: selector => selector === '[data-error-retry]' ? button : (missing ? null : status) },
+    window: {addEventListener: (name, fn) => { events[name] = fn; }},
+    location: {pathname: path, reload: () => { reloads++; }},
+    navigator
+  });
+  return {events, clicks, button, status, navigator, reloads: () => reloads};
+}
+const a = run('/compte/profil.html', false);
+assert.equal(a.button.hidden, false);
+assert.match(a.status.textContent, /semble déconnecté/);
+a.navigator.onLine = true;
+a.events.online();
+assert.match(a.status.textContent, /connexion possible/);
+assert.match(a.status.textContent, /encore être indisponible/);
+assert.equal(a.reloads(), 0);
+a.navigator.onLine = false;
+a.events.offline();
+assert.match(a.status.textContent, /semble déconnecté/);
+a.clicks.click();
+assert.equal(a.reloads(), 1);
+const b = run('/offline.html', true);
+assert.equal(b.button.hidden, true);
+assert.equal(b.clicks.click, undefined);
+assert.match(b.status.textContent, /Revenez à l’accueil/);
+assert.equal(b.reloads(), 0);
+const c = run('/compte/', true, true);
+assert.equal(c.button.hidden, true);
+assert.deepEqual(Object.keys(c.events), []);
+"""
+    try:
+        result = subprocess.run(
+            ["node", "-e", harness], cwd=ROOT, capture_output=True,
+            text=True, timeout=15, check=False,
+        )
+        if result.returncode:
+            errors.append("Runtime hors ligne: " + result.stderr.strip())
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        errors.append(f"Runtime hors ligne non testé: {exc}")
 
 
 def main() -> int:
     errors: list[str] = []
     for rel, cfg in ERROR_PAGES.items():
         validate_page(rel, cfg, errors)
+    validate_offline_runtime(errors)
 
     if errors:
         print(f"ECHEC pages de résilience: {len(errors)} problème(s).")

@@ -8,12 +8,26 @@
   }
   if (kind !== 'offline') return;
   const retry = document.querySelector('[data-error-retry]');
-  if (!retry) return;
-  retry.addEventListener('click', () => {
-    // Une ouverture directe de la page de secours ne doit pas la recharger
-    // indéfiniment. Une navigation interrompue reprend son URL d'origine.
-    if (location.pathname === '/offline.html') location.assign('/');
-    else location.reload();
-  });
-  retry.hidden = false;
+  const status = document.querySelector('[data-error-status]');
+  if (!retry || !status) return;
+  const direct = location.pathname === '/offline.html';
+  const updateStatus = () => {
+    // onLine est un indice local, pas une preuve que le serveur répond.
+    const network = navigator.onLine === false
+      ? 'Votre appareil semble déconnecté. Vérifiez votre réseau.'
+      : 'Votre appareil signale une connexion possible. Le site peut encore être indisponible.';
+    const action = direct
+      ? ' Revenez à l’accueil pour reprendre la navigation.'
+      : ' Réessayez la connexion pour retrouver la page demandée.';
+    const message = network + action;
+    if (status.textContent !== message) status.textContent = message;
+  };
+  // Ne pas afficher deux commandes qui mènent toutes deux à l’accueil.
+  if (!direct) {
+    retry.addEventListener('click', () => location.reload());
+    retry.hidden = false;
+  }
+  window.addEventListener('online', updateStatus);
+  window.addEventListener('offline', updateStatus);
+  updateStatus();
 })();
