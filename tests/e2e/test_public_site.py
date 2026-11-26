@@ -115,6 +115,189 @@ def check_legal_navigation(browser):
             ctx.close()
 
 
+def check_message_layout(browser):
+    # HTML/CSS réels, contenus synthétiques; tous les scripts de compte et
+    # services externes sont bloqués. Aucun message réel ni envoi.
+    ctx = browser.new_context(locale="fr-CA", service_workers="block",
+                              reduced_motion="reduce")
+    ctx.route("**/*", lambda route: route.continue_() if
+              urlparse(route.request.url).netloc == urlparse(BASE_URL).netloc
+              and route.request.resource_type != "script" else route.abort())
+    try:
+        page = ctx.new_page()
+        for path, search_label, message_label in (
+            ("compte/messages-reels.html", "Rechercher un membre", "Votre message"),
+            ("compte/messages-personnage.html", "Rechercher un personnage",
+             "Votre message en personnage"),
+        ):
+            response = page.goto(urljoin(BASE_URL, path), wait_until="load", timeout=30_000)
+            assert_true(response is not None and response.ok, f"{path}: page inaccessible")
+            search = page.get_by_role("textbox", name=search_label)
+            form = page.locator("[data-chat-form]")
+            assert_true(search.count() == 1 and form.is_hidden(),
+                        f"{path}: recherche inaccessible ou formulaire ouvert avant sélection")
+            page.evaluate("""() => {
+              const long = 'Fictif'.repeat(60);
+              const list = document.querySelector('[data-contact-list]');
+              const chat = document.querySelector('[data-chat-log]');
+              for (let i=0; i<20; i++) {
+                const contact=document.createElement('button');
+                contact.className='v20-contact';
+                const span=document.createElement('span');
+                span.textContent=long;
+                contact.append(span); list.append(contact);
+              }
+              const bubble=document.createElement('div');
+              bubble.className='v20-bubble';
+              bubble.textContent=long; chat.append(bubble);
+              document.querySelector('[data-chat-form]').hidden=false;
+            }""")
+            field = page.get_by_role("textbox", name=message_label)
+            assert_true(field.count() == 1, f"{path}: zone de message sans nom")
+            field.fill("Brouillon fictif")
+            for width in (240, 320, 390, 768, 1440):
+                page.set_viewport_size({"width":width,"height":720})
+                metrics = page.evaluate("""() => {
+                  const shell=document.querySelector('.v20-message-shell');
+                  const list=document.querySelector('.v20-contact-list');
+                  const log=document.querySelector('.v20-chat-log');
+                  const form=document.querySelector('.v20-chat-form');
+                  const field=form.querySelector('textarea');
+                  const button=form.querySelector('button');
+                  const sr=shell.getBoundingClientRect();
+                  const inside=e=>{const r=e.getBoundingClientRect();
+                    return r.left>=sr.left-2 && r.right<=sr.right+2;};
+                  return {inside:[list,log,field,button].every(inside),
+                    listOverflow:list.scrollWidth>list.clientWidth+2,
+                    logOverflow:log.scrollWidth>log.clientWidth+2,
+                    fieldFont:parseFloat(getComputedStyle(field).fontSize),
+                    buttonHeight:button.getBoundingClientRect().height,
+                    mobileListHeight:list.getBoundingClientRect().height};
+                }""")
+                assert_true(metrics["inside"] and not metrics["listOverflow"] and
+                            not metrics["logOverflow"] and metrics["fieldFont"]>=16 and
+                            metrics["buttonHeight"]>=47.5 and
+                            (width>900 or metrics["mobileListHeight"]<=241),
+                            f"{path} à {width}px: {metrics}")
+                assert_true(field.input_value()=="Brouillon fictif",
+                            f"{path}: brouillon perdu au redimensionnement")
+            form.evaluate("(el) => el.hidden=true")
+            assert_true(form.is_hidden(), f"{path}: attribut hidden ignoré")
+    finally:
+        ctx.close()
+
+
+def check_conversation_isolation(browser):
+    # Données entièrement fictives. Les modules officiels sont chargés sur
+    # le serveur local; aucun compte ni trafic backend réel.
+    for kind in ("real","character"):
+        ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":844})
+        try:
+            ctx.route("**/*",lambda route: route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+            source=(Path(__file__).resolve().parents[2]/("compte/messages-reels.html" if kind=="real" else "compte/messages-personnage.html")).read_text("utf-8")
+            moderation=source[source.index('<dialog class="message-moderation-dialog"'):source.index("</dialog>")+len("</dialog>")]
+            ctx.route("**/messages-race-fixture.html*",lambda route: route.fulfill(
+                content_type="text/html",body=f"""<link rel="stylesheet" href="/assets/css/sinjira-message-moderation-v1.css"><input data-contact-search><div data-contact-list></div>
+                <header data-chat-title></header><div data-chat-log></div><p data-social-status></p>
+                <form data-chat-form hidden><textarea name="body"></textarea><button type="submit">Envoyer</button></form>
+                {moderation}<script type="module" src="/assets/js/sinjira-messages-{kind}.js"></script>"""))
+            ctx.route("**/assets/js/sinjira-message-read-state.js*",lambda route: route.fulfill(
+                content_type="text/javascript",body="""export async function unreadCounts(){return new Map()}
+                export async function markConversationRead(table,user,filters){window.reads.push({table,user,filters})}"""))
+            ctx.route("**/assets/js/sinjira-social-common.js*",lambda route: route.fulfill(
+                content_type="text/javascript",body="""window.requests=[];window.sends=[];window.reads=[];window.reports=[];window.blocks=[];
+                const contacts=['a','b'].map(id=>({user_id:id,character_id:'char-'+id,pseudo:id,public_name:id}));
+                export async function requireCommunityUser(){return {id:'self',email:'fixture@example.invalid'}}
+                export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+                export const formatDate=()=>'';export const avatarUrl=()=>'/assets/icons/sinjira-favicon.png';
+                export const reportContent=async(payload)=>{window.reports.push(payload);return {ok:true}};export const socialStatus=(node,msg)=>{node.textContent=msg};
+                export const socialErrorStatus=(node,error,msg)=>{node.textContent=msg};
+                export function getSupabase(){return {
+                  from(table){return {
+                    select(){let filter='';return {neq(){return this},eq(){return this},
+                      maybeSingle:async()=>({data:{user_id:'self',character_id:'char-self'},error:null}),
+                      or(value){filter=value;return this},
+                      order(){return table.endsWith('_messages')?new Promise(resolve=>window.requests.push({filter,resolve})):Promise.resolve({data:contacts,error:null})}}},
+                    insert(payload){return new Promise(resolve=>window.sends.push({payload,resolve}))},
+                    async upsert(payload){window.blocks.push(payload);return {error:{message:'fixture'}}}
+                  }},
+                  channel(){return {on(){return this},subscribe(){return this}}}
+                }}
+                window.resolveRead=(index,id)=>{const other=id==='a'?'b':'a';window.requests[index].resolve({error:null,data:[
+                  {id:'msg-'+id,body:'Message '+id,sender_user_id:id,recipient_user_id:'self',sender_character_id:'char-'+id,recipient_character_id:'char-self'},
+                  {id:'wrong',body:'Hors conversation',sender_user_id:other,recipient_user_id:'self',sender_character_id:'char-'+other,recipient_character_id:'char-self'}
+                ]})};"""))
+            page=ctx.new_page()
+            page.goto(urljoin(BASE_URL,"messages-race-fixture.html"),wait_until="domcontentloaded")
+            attr="data-user" if kind=="real" else "data-character"
+            prefix="" if kind=="real" else "char-"
+            a=page.locator(f'[{attr}="{prefix}a"]')
+            b=page.locator(f'[{attr}="{prefix}b"]')
+            log=page.locator("[data-chat-log]")
+            composer=page.locator('textarea[name="body"]')
+            a.click()
+            composer.fill("Brouillon A")
+            b.click()
+            assert_true(composer.input_value()=="","brouillon transféré au mauvais contact")
+            assert_true("Chargement" in log.inner_text(),"ancien contenu non effacé")
+            page.wait_for_function("window.requests.length===2")
+            page.evaluate("window.resolveRead(1,'b')")
+            page.wait_for_function("window.reads.length===1")
+            page.evaluate("window.resolveRead(0,'a')")
+            page.evaluate("() => new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))")
+            assert_true("Message b" in log.inner_text() and "Message a" not in log.inner_text() and "Hors conversation" not in log.inner_text(),"réponse périmée affichée")
+            assert_true(page.evaluate("window.reads.length")==1,"ancienne conversation marquée lue")
+            assert_true(page.evaluate("Object.values(window.reads[0].filters)[0]")==prefix+"b","marquage du mauvais contact")
+            report=log.locator("[data-report-message]")
+            dialog=page.locator("[data-message-moderation]")
+            for width,height,zoom in ((240,420,"100%"),(320,760,"200%"),(390,360,"100%"),(1440,760,"100%")):
+                page.set_viewport_size({"width":width,"height":height})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                report.click()
+                dialog.wait_for(state="visible")
+                assert_true(dialog.locator('[value="cancel"]').evaluate("(el)=>document.activeElement===el"),"focus initial")
+                state=dialog.evaluate("""el=>{const r=el.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.top>=-2&&r.bottom<=innerHeight+2&&el.scrollWidth<=el.clientWidth+2&&[...el.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=47.5)}""")
+                assert_true(state,f"dialogue hors écran {width}/{zoom}")
+                if width==240:
+                    page.keyboard.press("Escape")
+                else:
+                    dialog.locator('[value="cancel"]').click()
+                dialog.wait_for(state="hidden")
+                page.wait_for_function("window.reports.length===0&&document.activeElement===document.querySelector('[data-report-message]')")
+            page.evaluate("document.documentElement.style.fontSize=''")
+            report.click()
+            dialog.locator('[name="reason"]').select_option("harassment")
+            dialog.locator('[name="details"]').fill("Texte fictif")
+            dialog.locator('[value="confirm"]').click()
+            page.wait_for_function("window.reports.length===1")
+            assert_true(page.evaluate("window.reports[0].target_id==='msg-b'&&window.reports[0].reason==='harassment'&&window.reports[0].details==='Texte fictif'"),"signalement mal ciblé")
+            if kind=="real":
+                page.locator("[data-block-peer]").click()
+                dialog.locator('[value="cancel"]').click()
+                dialog.wait_for(state="hidden")
+                assert_true(page.evaluate("window.blocks.length===0"),"blocage annulé transmis")
+                page.locator("[data-block-peer]").click()
+                dialog.locator('[value="confirm"]').click()
+                page.wait_for_function("window.blocks.length===1")
+                assert_true(page.evaluate("window.blocks[0].blocked_user_id==='b'"),"mauvais compte bloqué")
+            composer.fill("Brouillon B")
+            a.click()
+            assert_true(composer.input_value()=="Brouillon A","brouillon A perdu")
+            page.locator('[data-chat-form] button[type="submit"]').click()
+            page.evaluate("document.querySelector('[data-chat-form]').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+            assert_true(page.evaluate("window.sends.length")==1,"double envoi")
+            b.click()
+            assert_true(composer.input_value()=="Brouillon B","brouillon B perdu")
+            page.evaluate("window.sends[0].resolve({error:null})")
+            page.wait_for_function("!document.querySelector('[data-chat-form] button').disabled")
+            assert_true(composer.input_value()=="Brouillon B","envoi précédent efface le brouillon courant")
+            assert_true(page.evaluate("window.sends[0].payload.recipient_user_id")=="a","mauvais destinataire")
+            a.click()
+            assert_true(composer.input_value()=="","brouillon envoyé encore présent")
+        finally:
+            ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -1953,6 +2136,8 @@ def run() -> None:
         context.close()
         if IS_LOCAL:
             check_legal_navigation(browser)
+            check_message_layout(browser)
+            check_conversation_isolation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
