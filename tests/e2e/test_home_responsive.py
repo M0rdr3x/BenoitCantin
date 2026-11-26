@@ -81,6 +81,31 @@ def test_initial_navigation_geometry(browser):
                 context.close()
 
 
+def test_native_navigation_without_styles(browser):
+    """Les liens HTML doivent pouvoir revenir à la ligne avant le CSS."""
+    for width in (320, 390):
+        context = browser.new_context(
+            java_script_enabled=False, viewport={"width": width, "height": 844},
+            locale="fr-CA", service_workers="block",
+        )
+        try:
+            context.route("**/*.css*", lambda route: route.abort())
+            page = context.new_page()
+            response = page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+            verify(response is not None and response.ok, "accueil natif inaccessible")
+            links = page.locator("[data-main-nav] a")
+            verify(links.count() == 7, "navigation native incomplète")
+            geometry = links.evaluate_all("""elements => elements.map(a => {
+              const rects = Array.from(a.getClientRects());
+              return rects.every(r => r.left >= -2 && r.right <= innerWidth + 2);
+            })""")
+            verify(all(geometry), f"liens natifs hors écran sans CSS à {width}px")
+            verify(links.last.is_visible() and links.last.get_attribute("href") == "/compte/",
+                   "accès natif au compte perdu")
+        finally:
+            context.close()
+
+
 def test_home(page):
     response = page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
     verify(response is not None and response.status < 400, "accueil local inaccessible")
@@ -578,6 +603,7 @@ def run():
             finally:
                 context.close()
             test_initial_navigation_geometry(browser)
+            test_native_navigation_without_styles(browser)
             test_install_offer(browser)
             test_responsive_images(browser)
             test_without_javascript(browser)
