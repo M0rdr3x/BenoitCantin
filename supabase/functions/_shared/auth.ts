@@ -74,10 +74,16 @@ async function authenticatedContext(req: Request) {
 
 async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { service, token } = context;
-  const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
-  if (aalError || !aal || !['aal1', 'aal2'].includes(aal.currentLevel ?? '') ||
-      !['aal1', 'aal2'].includes(aal.nextLevel ?? '')) throw new Error('MFA_STATE_UNAVAILABLE');
-  return aal;
+  // Une exception réseau/SDK est traitée comme un état MFA indisponible.
+  // Ne jamais propager un message fournisseur ni accepter une réponse ambiguë.
+  try {
+    const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
+    if (aalError || !aal || !['aal1', 'aal2'].includes(aal.currentLevel ?? '') ||
+        !['aal1', 'aal2'].includes(aal.nextLevel ?? '')) throw new Error('MFA_STATE_UNAVAILABLE');
+    return aal;
+  } catch {
+    throw new Error('MFA_STATE_UNAVAILABLE');
+  }
 }
 
 async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
