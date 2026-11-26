@@ -2,8 +2,7 @@
 """Fail-closed manifest policy for SINJIRA mobile-native direct npm dependencies.
 
 Exact versions are required to avoid silently selecting a newer direct
-dependency on a later npm install. A lockfile is still necessary for fully
-reproducible transitives; this guard does NOT certify those dependencies.
+dependency on a later npm install. The exact reviewed lockfile is also checked by SHA-256.
 No npm execution, network requests or production secrets are used here.
 """
 from __future__ import annotations
@@ -12,6 +11,8 @@ import argparse
 import json
 from pathlib import Path
 import re
+from validate_mobile_locked_dependencies import OVERRIDE, verified_bytes
+from validate_mobile_lock_candidate import load
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "mobile-native" / "package.json"
@@ -56,9 +57,9 @@ def inspect(data: object) -> list[str]:
 
     for group in OVERRIDE_GROUPS:
         overrides = data.get(group)
-        if overrides is not None:
-            # Nested npm override syntax is difficult to audit with a narrow
-            # static policy; require a separate dependency review before adding.
+        if group == "overrides" and overrides == OVERRIDE:
+            continue
+        if group in data:
             errors.append(f"{group} requires a reviewed security policy")
 
     scripts = data.get("scripts", {})
@@ -86,6 +87,10 @@ def self_test() -> None:
         "scripts": {"typecheck": "tsc --noEmit"},
     }
     assert inspect(healthy) == [], "Exact pinned manifest rejected"
+    assert inspect({**healthy, "overrides": OVERRIDE}) == [], "Reviewed override rejected"
+    assert inspect({**healthy, "overrides": {"@expo/fingerprint@0.20.17": {"minimatch": "10.2.6"}}})
+    assert inspect({**healthy, "resolutions": OVERRIDE})
+    assert inspect({**healthy, "overrides": None})
     mutants = {
         "caret": ("expo", "^57.0.9"),
         "tilde": ("expo", "~57.0.9"),
@@ -117,7 +122,7 @@ def self_test() -> None:
     }.items():
         if not inspect(broken):
             raise AssertionError(f"Manifest guard failed: {name}")
-    print(f"PASS: {len(mutants) + 4} mobile dependency and lifecycle regressions rejected")
+    print(f"PASS: {len(mutants) + 7} mobile dependency and lifecycle regressions rejected")
 
 
 def main() -> int:
@@ -128,7 +133,7 @@ def main() -> int:
         self_test()
         return 0
     try:
-        data = json.loads(MANIFEST.read_text(encoding="utf-8", errors="strict"))
+        data = load(MANIFEST.read_bytes())
     except (OSError, UnicodeError, ValueError):
         print("FAIL: mobile manifest is missing or not strict JSON")
         return 1
@@ -139,8 +144,15 @@ def main() -> int:
         return 1
     count = sum(len(data.get(key, {})) for key in DIRECT_GROUPS)
     print(f"PASS: {count} reviewed exact npm dependency pins; no implicit lifecycle scripts.")
-    print("NOTE: A reviewed package-lock.json and npm ci are still required "
-          "to lock transitive dependencies; pinning direct versions is not enough.")
+    try:
+        lock = MANIFEST.with_name("package-lock.json")
+        if MANIFEST.is_symlink() or lock.is_symlink():
+            raise ValueError("Symlink not allowed")
+        verified_bytes(MANIFEST.read_bytes(), lock.read_bytes())
+    except (OSError, ValueError, KeyError, TypeError):
+        print("FAIL: reviewed mobile dependency snapshot invalid")
+        return 1
+    print("PASS: exact reviewed transitive lock and targeted override.")
     return 0
 
 
