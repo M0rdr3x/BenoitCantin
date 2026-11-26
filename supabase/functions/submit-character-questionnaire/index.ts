@@ -58,13 +58,64 @@ function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
 function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boolean{
   const bytes=(offset:number,expected:number[])=>expected.every((v,i)=>header[offset+i]===v);
   const ascii=(offset:number,value:string)=>bytes(offset,Array.from(value,c=>c.charCodeAt(0)));
-  if(ext==='jpg')return total>=4&&bytes(0,[255,216,255]);
-  if(ext==='png')return total>=33&&bytes(0,[137,80,78,71,13,10,26,10])&&bytes(8,[0,0,0,13])&&ascii(12,'IHDR');
-  if(ext==='gif')return total>=14&&(ascii(0,'GIF87a')||ascii(0,'GIF89a'));
+  // Budget de dimensions déclarées, pas une preuve de décodage complet.
+  const dimensions=(width:number,height:number)=>width>0&&height>0&&
+    width<=8192&&height<=8192&&width*height<=25_000_000;
+  const view=new DataView(header.buffer,header.byteOffset,header.byteLength);
+  if(ext==='jpg'){
+    if(header.length<4||!bytes(0,[255,216]))return false;
+    // Parcours borné des segments avant les données compressées. Le SOF
+    // doit être présent dans le préfixe inspecté, jamais deviné.
+    let pos=2;
+    while(pos<header.length){
+      if(header[pos++]!==255)return false;
+      while(pos<header.length&&header[pos]===255)pos++;
+      if(pos>=header.length)return false;
+      const marker=header[pos++];
+      if(marker===0||marker===216||marker===217||marker===218||
+         marker===1||(marker>=208&&marker<=215)||pos+2>header.length)return false;
+      const length=view.getUint16(pos,false);
+      if(length<2||pos+length>header.length)return false;
+      if([192,193,194,195,197,198,199,201,202,203,205,206,207].includes(marker)){
+        if(length<11)return false;
+        const components=header[pos+7];
+        if(components<1||components>4||length!==8+3*components)return false;
+        return dimensions(view.getUint16(pos+5,false),view.getUint16(pos+3,false));
+      }
+      pos+=length;
+    }
+    return false;
+  }
+  if(ext==='png'){
+    return header.length>=33&&bytes(0,[137,80,78,71,13,10,26,10])&&
+      bytes(8,[0,0,0,13])&&ascii(12,'IHDR')&&
+      dimensions(view.getUint32(16,false),view.getUint32(20,false));
+  }
+  if(ext==='gif'){
+    return header.length>=14&&(ascii(0,'GIF87a')||ascii(0,'GIF89a'))&&
+      dimensions(view.getUint16(6,true),view.getUint16(8,true));
+  }
   if(ext==='webp'){
-    if(total<20||!ascii(0,'RIFF')||!ascii(8,'WEBP'))return false;
-    const size=new DataView(header.buffer,header.byteOffset,header.byteLength).getUint32(4,true);
-    return size+8===total&&(ascii(12,'VP8 ')||ascii(12,'VP8L')||ascii(12,'VP8X'));
+    if(header.length<20||!ascii(0,'RIFF')||!ascii(8,'WEBP'))return false;
+    const size=view.getUint32(4,true),chunkSize=view.getUint32(16,true);
+    if(size+8!==total||20+chunkSize+(chunkSize%2)>total)return false;
+    if(ascii(12,'VP8X')){
+      if(chunkSize!==10||header.length<30)return false;
+      const width=1+header[24]+256*header[25]+65536*header[26];
+      const height=1+header[27]+256*header[28]+65536*header[29];
+      return dimensions(width,height);
+    }
+    if(ascii(12,'VP8L')){
+      if(chunkSize<5||header.length<25||header[20]!==47)return false;
+      const packed=view.getUint32(21,true);
+      if((packed>>>29)!==0)return false;
+      return dimensions(1+(packed&16383),1+((packed>>>14)&16383));
+    }
+    if(ascii(12,'VP8 ')){
+      if(chunkSize<10||header.length<30||(header[20]&1)!==0||!bytes(23,[157,1,42]))return false;
+      return dimensions(view.getUint16(26,true)&16383,view.getUint16(28,true)&16383);
+    }
+    return false;
   }
   if(ext==='avif'){
     if(header.length<16||!ascii(4,'ftyp'))return false;
@@ -80,7 +131,8 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
 async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>{
   const maxBytes=10*1024*1024;
   if(!Number.isSafeInteger(expectedSize)||expectedSize<1||expectedSize>maxBytes)return false;
-  const header=new Uint8Array(Math.min(256,expectedSize));
+  // JPEG peut contenir plusieurs segments de métadonnées avant son SOF.
+  const header=new Uint8Array(Math.min(256*1024,expectedSize));
   let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
   let complete=false,total=0,chunks=0,emptyChunks=0;
   const controller=new AbortController();
