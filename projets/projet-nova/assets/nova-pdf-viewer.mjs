@@ -50,7 +50,7 @@ async function dispose(){
 }
 async function draw(ticket){
   if(!pdf || ticket!==generation) return;
-  busy=true; controls();
+  busy=true; select.disabled=true; controls();
   try {
     const page=await pdf.getPage(pageNum);
     if(ticket!==generation) return;
@@ -69,7 +69,7 @@ async function draw(ticket){
   } catch {
     if(ticket===generation){ await dispose(); if(ticket===generation){pages.replaceChildren();fallback();} }
   } finally {
-    if(ticket===generation){ render=null;busy=false;controls(); }
+    if(ticket===generation){ render=null;busy=false;select.disabled=false;controls(); }
   }
 }
 async function choose(id){

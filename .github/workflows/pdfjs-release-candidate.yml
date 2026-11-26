@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/verify_pdfjs_release_candidate.py'
       - 'scripts/test_pdfjs_candidate_browser.py'
+      - 'scripts/test_nova_pdf_viewer_local.py'
       - 'scripts/stage_pdfjs_runtime.py'
       - 'projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf'
       - 'projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf'
@@ -108,3 +109,4 @@ jobs:
           python3 scripts/verify_pdfjs_release_candidate.py --archive "$work/release.zip" \
             --receipt "$work/receipt.json" --source-sha "$GITHUB_SHA"
           timeout 180s python3 scripts/test_pdfjs_candidate_browser.py --archive "$work/release.zip" --browser "$BROWSER"
+          timeout 180s python3 scripts/test_nova_pdf_viewer_local.py --archive "$work/release.zip" --browser "$BROWSER"
