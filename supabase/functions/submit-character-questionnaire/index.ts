@@ -87,13 +87,82 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
     return false;
   }
   if(ext==='png'){
-    return header.length>=33&&bytes(0,[137,80,78,71,13,10,26,10])&&
-      bytes(8,[0,0,0,13])&&ascii(12,'IHDR')&&
-      dimensions(view.getUint32(16,false),view.getUint32(20,false));
+    // Toute la structure est inspectée, jusqu'à IEND inclus.
+    if(header.length!==total||total<45||!bytes(0,[137,80,78,71,13,10,26,10])||
+       !bytes(8,[0,0,0,13])||!ascii(12,'IHDR')||
+       !dimensions(view.getUint32(16,false),view.getUint32(20,false)))return false;
+    let count=0,idat=false,afterIdat=false;
+    for(let pos=8;pos<total;){
+      if(++count>4096||total-pos<12)return false;
+      const length=view.getUint32(pos,false),type=pos+4,next=pos+12+length;
+      if(next>total||length>0x7fffffff)return false;
+      for(let i=type;i<type+4;i++){
+        const c=header[i];if(!((c>=65&&c<=90)||(c>=97&&c<=122)))return false;
+      }
+      if(ascii(type,'acTL')||ascii(type,'fcTL')||ascii(type,'fdAT'))return false;
+      if(ascii(type,'IHDR')){if(pos!==8||length!==13)return false;}
+      else if(ascii(type,'IDAT')){
+        if(afterIdat)return false;
+        if(length>0)idat=true;
+      }else if(ascii(type,'IEND')){
+        return length===0&&idat&&next===total;
+      }else{
+        if(idat)afterIdat=true;
+        // Type critique inconnu : aucun repli permissif.
+        if((header[type]&32)===0&&!ascii(type,'PLTE'))return false;
+      }
+      pos=next;
+    }
+    return false;
   }
   if(ext==='gif'){
-    return header.length>=14&&(ascii(0,'GIF87a')||ascii(0,'GIF89a'))&&
-      dimensions(view.getUint16(6,true),view.getUint16(8,true));
+    if(header.length!==total||total<14||!(ascii(0,'GIF87a')||ascii(0,'GIF89a')))return false;
+    const width=view.getUint16(6,true),height=view.getUint16(8,true);
+    if(!dimensions(width,height))return false;
+    let pos=13,blocks=0,frames=0,graphicControl=false;
+    const palette=(packed:number)=>3*(1<<((packed&7)+1));
+    if(header[10]&128)pos+=palette(header[10]);
+    if(pos>=total)return false;
+    const subBlocks=():boolean=>{
+      while(pos<total){
+        if(++blocks>65536)return false;
+        const n=header[pos++];
+        if(n===0)return true;
+        if(pos+n>total)return false;
+        pos+=n;
+      }
+      return false;
+    };
+    while(pos<total){
+      if(++blocks>65536)return false;
+      const tag=header[pos++];
+      if(tag===59)return frames===1&&pos===total&&!graphicControl;
+      if(tag===44){
+        if(++frames!==1||pos+9>total)return false;
+        const x=view.getUint16(pos,true),y=view.getUint16(pos+2,true);
+        const w=view.getUint16(pos+4,true),h=view.getUint16(pos+6,true),packed=header[pos+8];
+        if(!dimensions(w,h)||x+w>width||y+h>height)return false;
+        pos+=9;
+        if(packed&128)pos+=palette(packed);
+        if(pos>=total||header[pos]<2||header[pos]>8)return false;
+        pos++;
+        if(pos>=total||header[pos]===0||!subBlocks())return false;
+        graphicControl=false;
+      }else if(tag===33){
+        if(pos>=total)return false;
+        const label=header[pos++];
+        if(label===249){
+          if(graphicControl||pos+6>total||header[pos]!==4||header[pos+5]!==0)return false;
+          pos+=6;graphicControl=true;
+        }else if(label===254){
+          if(!subBlocks())return false;
+        }else if(label===255){
+          // Refuser les extensions d'application, dont les boucles animées.
+          return false;
+        }else return false;
+      }else return false;
+    }
+    return false;
   }
   if(ext==='webp'){
     if(header.length<20||!ascii(0,'RIFF')||!ascii(8,'WEBP'))return false;
@@ -170,12 +239,14 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
   return false;
 }
 
-// Lire un flux borné, sans décoder l'image ni conserver le fichier en mémoire.
+// Lire un flux borné, sans décoder ni décompresser les images.
 async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>{
   const maxBytes=10*1024*1024;
   if(!Number.isSafeInteger(expectedSize)||expectedSize<1||expectedSize>maxBytes)return false;
-  // JPEG peut contenir plusieurs segments de métadonnées avant son SOF.
-  const header=new Uint8Array(Math.min(256*1024,expectedSize));
+  // PNG/GIF : conteneur entier en mémoire bornée (10 Mio maximum).
+  // Autres formats : conserver uniquement le préfixe historique de 256 Kio.
+  const ext=photoPath.split('.').pop()||'';
+  const header=new Uint8Array(ext==='png'||ext==='gif'?expectedSize:Math.min(256*1024,expectedSize));
   let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
   let complete=false,total=0,chunks=0,emptyChunks=0;
   const controller=new AbortController();
@@ -197,7 +268,7 @@ async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSiz
       if(total<header.length)header.set(value.subarray(0,header.length-total),total);
       total+=value.byteLength;
     }
-    return total===expectedSize&&registryPhotoSignature(header,photoPath.split('.').pop()||'',total);
+    return total===expectedSize&&registryPhotoSignature(header,ext,total);
   }catch{return false}
   finally{
     if(timer!==undefined)clearTimeout(timer);
