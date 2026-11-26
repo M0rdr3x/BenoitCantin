@@ -29,7 +29,8 @@ WITH CHECK (
     AND (SELECT auth.jwt()->>'aal') = 'aal2'
     AND COALESCE((SELECT auth.jwt()->>'is_anonymous'), 'false') = 'false'
     AND split_part(name, '/', 1) = (SELECT auth.uid())::text
-    AND length(name) = length((SELECT auth.uid())::text) + 41
+    AND length(name) - length((SELECT auth.uid())::text) IN (41,42)
+    AND name = (SELECT auth.uid())::text || '/' || split_part(name, '/', 2)
     AND split_part(name, '/', 2) COLLATE "C" ~ '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}[.](jpg|png|webp|avif|gif)$'
   )
 );

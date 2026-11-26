@@ -14,7 +14,8 @@ def valid(s):
         "(SELECT auth.uid()) IS NOT NULL", "(SELECT auth.jwt()->>'aal') = 'aal2'",
         "COALESCE((SELECT auth.jwt()->>'is_anonymous'), 'false') = 'false'",
         "split_part(name, '/', 1) = (SELECT auth.uid())::text",
-        "length(name) = length((SELECT auth.uid())::text) + 41",
+        "length(name) - length((SELECT auth.uid())::text) IN (41,42)",
+        "name = (SELECT auth.uid())::text || '/' || split_part(name, '/', 2)",
         """split_part(name, '/', 2) COLLATE "C" ~ '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}[.](jpg|png|webp|avif|gif)$'""",
         "permissive='RESTRICTIVE' AND cmd='INSERT'"
     ]
@@ -29,7 +30,8 @@ for old,new in [
     ('AS RESTRICTIVE','AS PERMISSIVE'),
     ("= 'aal2'","= 'aal1'"),
     ("bucket_id <>","bucket_id ="),
-    ("+ 41","+ 42"),
+    ("IN (41,42)","IN (41,43)"),
+    ("AND name =","AND name <>"),
     ("[89ab]","[0-9a-f]"),
     ("AND c.relrowsecurity","AND true"),
     ("AND public IS FALSE","AND public IS TRUE"),
@@ -39,4 +41,4 @@ for old,new in [
     assert old in s and not valid(s.replace(old,new,1)), old
 edge=EDGE.read_text(encoding='utf-8')
 assert r'\.(?:jpg|png|webp|avif|gif)$' in edge
-print('PASS registry source policy: 10 static mutations rejected; SQL staging required.')
+print('PASS registry source policy: 11 static mutations rejected; SQL staging required.')
