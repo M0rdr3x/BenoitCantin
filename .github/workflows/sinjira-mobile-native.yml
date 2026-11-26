@@ -6,13 +6,21 @@ on:
     paths:
       - 'mobile-native/**'
       - 'scripts/validate_mobile_native_root_workflow_security.py'
+      - 'scripts/validate_mobile_locked_dependencies.py'
+      - 'scripts/validate_mobile_lock_candidate.py'
       - '.github/workflows/sinjira-mobile-native.yml'
   push:
     branches: [ main ]
     paths:
       - 'mobile-native/**'
       - 'scripts/validate_mobile_native_root_workflow_security.py'
+      - 'scripts/validate_mobile_locked_dependencies.py'
+      - 'scripts/validate_mobile_lock_candidate.py'
       - '.github/workflows/sinjira-mobile-native.yml'
+
+  schedule:
+    - cron: '31 9 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -47,15 +55,86 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22.23.2'
+          package-manager-cache: false
 
-      - name: Installer les dépendances sans scripts de cycle de vie
-        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Valider le snapshot et auditer avant installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(npm --version)" = 10.9.8
+          test ! -e .npmrc && test ! -L .npmrc
+          test ! -e node_modules && test ! -L node_modules
+          python3 ../scripts/validate_mobile_lock_candidate.py --self-test
+          python3 ../scripts/validate_mobile_locked_dependencies.py --self-test
+          python3 ../scripts/validate_mobile_locked_dependencies.py --manifest package.json --lock package-lock.json
+          audit_dir="$(mktemp -d)"
+          trap 'rm -rf "$audit_dir"' EXIT
+          touch "$audit_dir/user.conf" "$audit_dir/global.conf"
+          status=0
+          env -i PATH="$PATH" HOME="$audit_dir" CI=true npm audit --json --package-lock-only --ignore-scripts \
+            --registry=https://registry.npmjs.org/ --userconfig="$audit_dir/user.conf" --globalconfig="$audit_dir/global.conf" \
+            > "$audit_dir/audit.json" || status=$?
+          python3 ../scripts/validate_mobile_locked_dependencies.py --manifest package.json --lock package-lock.json --audit "$audit_dir/audit.json" --audit-exit "$status"
+
+      - name: Installer les dépendances verrouillées sans scripts de cycle de vie
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm_dir="$(mktemp -d)"
+          trap 'rm -rf "$npm_dir"' EXIT
+          touch "$npm_dir/user.conf" "$npm_dir/global.conf"
+          env -i PATH="$PATH" HOME="$npm_dir" CI=true npm ci --ignore-scripts --no-audit --no-fund \
+            --registry=https://registry.npmjs.org/ --userconfig="$npm_dir/user.conf" --globalconfig="$npm_dir/global.conf"
+          python3 ../scripts/validate_mobile_locked_dependencies.py --manifest package.json --lock package-lock.json
 
       - name: Vérifier le contrat mobile V25 sensible
         run: npm run validate:vault
+
+      - name: Tester la navigation externe
+        run: npm run test:navigation-guard
+
+      - name: Tester la normalisation des liens profonds
+        run: npm run test:deep-link-normalizer
+
+      - name: Tester la navigation des notifications
+        run: npm run test:notification-navigation
 
       - name: Tester la liaison du token push à l’installation
         run: npm run test:push-installation-binding
 
       - name: Vérifier TypeScript
         run: npm run typecheck
+
+      - name: Vérifier la compatibilité Expo Fingerprint et le snapshot final
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const {createRequire} = require('node:module');
+          const fromFingerprint = createRequire(require.resolve('@expo/fingerprint'));
+          let dir = path.dirname(fromFingerprint.resolve('minimatch'));
+          for (;;) {
+            const pkg = path.join(dir, 'package.json');
+            if (fs.existsSync(pkg)) {
+              const meta = JSON.parse(fs.readFileSync(pkg, 'utf8'));
+              if (meta.name === 'minimatch') {
+                assert.equal(meta.version, '11.0.9');
+                break;
+              }
+            }
+            const parent = path.dirname(dir);
+            assert.notEqual(parent, dir);
+            dir = parent;
+          }
+          const {createFingerprintAsync} = require('@expo/fingerprint');
+          (async () => {
+            const result = await createFingerprintAsync(process.cwd());
+            assert.match(result.hash, /^[0-9a-f]{40,64}$/);
+            assert.ok(Array.isArray(result.sources) && result.sources.length > 0);
+            console.log('PASS: Expo Fingerprint avec minimatch corrigé');
+          })().catch(() => { console.error('Expo Fingerprint compatibility failed'); process.exitCode=1; });
+          NODE
+          python3 ../scripts/validate_mobile_locked_dependencies.py --manifest package.json --lock package-lock.json

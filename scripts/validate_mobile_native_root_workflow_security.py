@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+from validate_mobile_locked_dependencies import verified_bytes
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-mobile-native.yml'
@@ -14,9 +15,14 @@ SETUP_PYTHON = 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE = 'actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38'
 SELF_TEST = 'python3 scripts/validate_mobile_native_root_workflow_security.py --self-test'
 SELF_CHECK = 'python3 scripts/validate_mobile_native_root_workflow_security.py'
-INSTALL = 'npm install --ignore-scripts --no-audit --no-fund'
+INSTALL = 'npm ci --ignore-scripts --no-audit --no-fund'
+AUDIT = 'npm audit --json --package-lock-only --ignore-scripts'
+SNAPSHOT = 'python3 ../scripts/validate_mobile_locked_dependencies.py --manifest package.json --lock package-lock.json'
 HISTORICAL = (
     'npm run validate:vault',
+    'npm run test:navigation-guard',
+    'npm run test:deep-link-normalizer',
+    'npm run test:notification-navigation',
     'npm run test:push-installation-binding',
     'npm run typecheck',
 )
@@ -60,20 +66,31 @@ def validate_text(text: str) -> None:
     require('persist-credentials: false' in text, 'Les credentials Git ne doivent pas être persistés.')
     require("python-version: '3.12.14'" in text, 'Python doit rester figé à 3.12.14.')
     require("node-version: '22.23.2'" in text, 'Node doit rester figé à 22.23.2.')
-    require('cache:' not in active, 'Aucune option cache setup-node ne doit être présente tant qu’aucun lockfile revu n’est suivi.')
+    require('package-manager-cache: false' in active, 'Cache implicite interdit.')
+    require(re.search(r'(?m)^\s+cache:', active) is None, 'Cache npm explicite interdit.')
     require('cache-dependency-path:' not in active, 'Aucun faux chemin de lockfile ne doit être configuré.')
 
     require(f'run: {SELF_TEST}' in text, 'L’auto-test du contrat CI est absent.')
     require(f'run: {SELF_CHECK}' in text, 'La vérification du contrat CI est absente.')
-    require(f'run: {INSTALL}' in text, 'L’installation npm doit refuser les scripts de cycle de vie.')
-    require('npm install --no-audit --no-fund' not in active, 'npm install sans --ignore-scripts est interdit.')
+    require(active.count(INSTALL) == 1, 'npm ci verrouillé obligatoire.')
+    require('npm install ' not in active, 'Installation flottante interdite.')
+    require(active.count(AUDIT) == 1 and active.count(SNAPSHOT) == 4, 'Audit et contrôles de snapshot obligatoires.')
+    require(active.count('--registry=https://registry.npmjs.org/') == 2, 'Registre officiel obligatoire.')
+    require(active.count('env -i PATH="$PATH" HOME=') == 2, 'Environnement npm isolé obligatoire.')
+    require('--audit "$audit_dir/audit.json" --audit-exit "$status"' in active, 'Résultat audit obligatoire.')
+    require("    - cron: '31 9 * * 1'" in active, 'Audit périodique obligatoire.')
+    require("      - 'scripts/validate_mobile_locked_dependencies.py'" in active and active.count("      - 'scripts/validate_mobile_locked_dependencies.py'") == 2, 'Couverture du validateur lock requise.')
+    require(active.count("      - 'scripts/validate_mobile_lock_candidate.py'") == 2, 'Couverture du parseur lock requise.')
+    require("createFingerprintAsync(process.cwd())" in active and "assert.equal(meta.version, '11.0.9')" in active, 'Compatibilité Expo obligatoire.')
     for command in HISTORICAL:
         require(f'run: {command}' in text, f'Validation historique absente: {command}')
 
     order = [
         text.find(f'run: {SELF_TEST}'),
         text.find(f'run: {SELF_CHECK}\n'),
-        text.find(f'run: {INSTALL}'),
+        text.find(SNAPSHOT),
+        text.find(AUDIT),
+        text.find(INSTALL),
         *(text.find(f'run: {command}') for command in HISTORICAL),
     ]
     require(min(order) >= 0 and order == sorted(order), 'Ordre attendu: garde CI, installation, vault, liaison push, typecheck.')
@@ -106,9 +123,12 @@ def validate_text(text: str) -> None:
 
 def validate_repo_state() -> None:
     require(
-        not LOCKFILE.exists(),
-        'mobile-native/package-lock.json est apparu: migrer explicitement ce workflow vers npm ci et un cache basé sur le lockfile dans une PR revue.',
+        LOCKFILE.is_file() and not LOCKFILE.is_symlink(),
+        'Lockfile approuvé obligatoire.',
     )
+    manifest = LOCKFILE.with_name('package.json')
+    require(manifest.is_file() and not manifest.is_symlink(), 'Manifest régulier obligatoire.')
+    verified_bytes(manifest.read_bytes(), LOCKFILE.read_bytes())
 
 
 def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
@@ -138,8 +158,18 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('auto-test retiré', text.replace(f'        run: {SELF_TEST}\n', '', 1)),
         ('contrat retiré', text.replace(f'        run: {SELF_CHECK}\n', '', 1)),
         ('vault retiré', text.replace(f'        run: {HISTORICAL[0]}\n', '', 1)),
-        ('liaison push retirée', text.replace(f'        run: {HISTORICAL[1]}\n', '', 1)),
-        ('typecheck retiré', text.replace(f'        run: {HISTORICAL[2]}\n', '', 1)),
+        ('liaison push retirée', text.replace(f'        run: {HISTORICAL[4]}\n', '', 1)),
+        ('typecheck retiré', text.replace(f'        run: {HISTORICAL[5]}\n', '', 1)),
+        ('navigation externe retirée', text.replace(f'        run: {HISTORICAL[1]}\n', '', 1)),
+        ('liens profonds retirés', text.replace(f'        run: {HISTORICAL[2]}\n', '', 1)),
+        ('notifications retirées', text.replace(f'        run: {HISTORICAL[3]}\n', '', 1)),
+        ('audit retiré', text.replace(AUDIT, 'echo audit', 1)),
+        ('snapshot retiré', text.replace(SNAPSHOT, 'echo snapshot', 1)),
+        ('registre remplacé', text.replace('https://registry.npmjs.org/', 'https://example.org/', 1)),
+        ('environnement non isolé', text.replace('env -i PATH="$PATH" HOME=', 'env PATH="$PATH" HOME=', 1)),
+        ('cache implicite', text.replace('package-manager-cache: false', 'package-manager-cache: true', 1)),
+        ('empreinte Expo retirée', text.replace('createFingerprintAsync(process.cwd())', 'null', 1)),
+        ('audit périodique retiré', text.replace("    - cron: '31 9 * * 1'", "    - cron: '0 0 1 * *'", 1)),
     )
 
 
@@ -166,7 +196,7 @@ def main() -> int:
     validate_repo_state()
     print(
         'OK mobile natif racine: runner/Python/Node/actions immuables, Git en lecture seule, '
-        'scripts npm désactivés et aucune configuration cache tant qu’un lockfile revu n’est pas suivi.'
+        'lockfile revu, npm ci, audit zéro, scripts npm désactivés et aucun cache.'
     )
     return 0
 

@@ -2,15 +2,14 @@
 """Review gate for the exact mobile dependency remediation, no installation."""
 from __future__ import annotations
 import argparse
-import base64
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 import unittest
 
-from validate_mobile_lock_candidate import inspect, load
-from verify_mobile_lock_artifact import audit_summary
+from validate_mobile_lock_candidate import inspect, load, audit_counts, NAME, SEVERITIES
 
 MANIFEST_SHA = "5202b2130b4a04ad3c95afca01503a9b5082c6dd32aa9a3ddf2f175ef97b70f9"
 LOCK_SHA = "66af9f87a206f7f73e15c2807c399f3ee5a12dd8d75470065051cff710ad1b0b"
@@ -38,30 +37,47 @@ def verified_bytes(manifest, lock):
         raise ValueError("Unexpected fingerprint version")
     return EXPECTED.copy()
 
+def audit_summary(report, code):
+    counts = audit_counts(report, code)
+    packages = report["vulnerabilities"]
+    if not isinstance(packages, dict) or len(packages) != counts["total"]:
+        raise ValueError("Audit package count mismatch")
+    actual = {k:0 for k in SEVERITIES}
+    summaries = []
+    for name, advisory in sorted(packages.items()):
+        severity = advisory["severity"]
+        if not NAME.fullmatch(name) or severity not in actual or advisory.get("name") != name:
+            raise ValueError("Invalid audit package")
+        actual[severity] += 1
+        ids = set()
+        indirect = set()
+        for item in advisory["via"]:
+            if isinstance(item, str):
+                if not NAME.fullmatch(item):
+                    raise ValueError("Invalid indirect advisory")
+                indirect.add(item)
+            elif isinstance(item, dict):
+                url = item.get("url", "")
+                match = re.fullmatch(r"https://github\.com/advisories/(GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})", url)
+                if match:
+                    ids.add(match[1])
+            else:
+                raise ValueError("Invalid advisory record")
+        summaries.append({"name":name,"severity":severity,"ghsa":sorted(ids),"via_packages":sorted(indirect)})
+    if any(actual[k] != counts[k] for k in SEVERITIES):
+        raise ValueError("Audit severities mismatch")
+    return {"counts":counts,"packages":summaries}
+
 def zero_audit(payload, code):
     result = audit_summary(load(payload), code)
     if result["counts"]["total"] != 0 or result["packages"]:
         raise ValueError("Audit reports vulnerabilities")
     return result["counts"]
 
-def handoff(lock):
-    if len(lock) != 238125 or digest(lock) != LOCK_SHA or git_blob_sha(lock) != LOCK_BLOB_SHA:
-        raise ValueError("Handoff bytes not reviewed")
-    # The public npm lock only. Never encode the environment, logs, manifests,
-    # credentials, arbitrary paths or private data. Fixed hash/size above.
-    encoded = base64.b64encode(lock).decode("ascii")
-    chunks = [encoded[i:i+4096] for i in range(0,len(encoded),4096)]
-    print("MOBILE_LOCK_HANDOFF_BEGIN %d %s %s" % (len(chunks), LOCK_SHA, LOCK_BLOB_SHA))
-    for i, chunk in enumerate(chunks):
-        print("MOBILE_LOCK_HANDOFF_CHUNK %04d %s" % (i,chunk))
-    print("MOBILE_LOCK_HANDOFF_END")
-
 class Tests(unittest.TestCase):
     def test_digest_gate(self):
         with self.assertRaises(ValueError):
             verified_bytes(b"{}",b"{}")
-        with self.assertRaises(ValueError):
-            handoff(b"not a reviewed lock")
         self.assertEqual(git_blob_sha(b""),"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
     def test_zero_audit(self):
         counts={k:0 for k in ("info","low","moderate","high","critical","total")}
@@ -81,7 +97,6 @@ def main():
     p.add_argument("--lock",type=Path)
     p.add_argument("--audit",type=Path)
     p.add_argument("--audit-exit",type=int)
-    p.add_argument("--handoff-public-lock",action="store_true")
     args=p.parse_args()
     if args.self_test:
         return 0 if unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests)).wasSuccessful() else 1
@@ -95,10 +110,6 @@ def main():
                 p.error("Audit exit status required")
             zero_audit(args.audit.read_bytes(),args.audit_exit)
         print("PASS: reviewed mobile lock",coverage)
-        if args.handoff_public_lock:
-            if args.audit is None:
-                p.error("Successful fresh audit required for handoff")
-            handoff(lock)
     except (ValueError,KeyError,TypeError,AttributeError,OSError) as exc:
         print("FAIL: mobile snapshot rejected ("+type(exc).__name__+")",file=sys.stderr)
         return 1
