@@ -46,7 +46,11 @@ def assert_true(value, message):
 
 
 def register_error_capture(page, target):
-    page.on("pageerror", lambda error: target.append(f"pageerror: {error}"))
+    # Indiquer uniquement le chemin, jamais les paramètres ni le fragment.
+    # Conserver toutes les erreurs, y compris celles de ResizeObserver.
+    page.on("pageerror", lambda error: target.append(
+        f"pageerror [{urlparse(page.url).path}]: {error}"
+    ))
 
 
 def wait_for_assistant(page):
