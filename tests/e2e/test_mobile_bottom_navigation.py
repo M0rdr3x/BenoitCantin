@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.101"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.102"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
@@ -34,7 +34,7 @@ def navigate_account(context, path):
         response = page.goto(urljoin(BASE, path), wait_until="domcontentloaded", timeout=30_000)
         verify(response is not None and response.status < 400, f"page fixture absente : {path}")
         if path != "compte/connexion.html":
-            page.locator("[data-sinjira-account-mobile-nav]").wait_for(timeout=12_000)
+            page.locator("[data-sinjira-account-mobile-nav]").wait_for(state="attached", timeout=12_000)
         return page
     except Exception:
         page.close()
@@ -177,7 +177,8 @@ def check_keyboard_overlap(context):
 def check_install_focus(browser):
     # Un contexte isolé par résolution évite que la préférence de fermeture
     # d'une session masque la proposition lors du scénario suivant.
-    for width, height in ((240, 360), (390, 700), (1280, 800)):
+    for width, height, fallback in ((240, 360, False), (390, 700, False),
+                                    (1280, 800, False), (390, 700, True)):
         context = browser.new_context(
             locale="fr-CA",
             user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
@@ -190,6 +191,9 @@ def check_install_focus(browser):
             page = navigate_account(context, "compte/index.html")
             card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
             card.wait_for(state="visible", timeout=12_000)
+            dock = page.locator("[data-sinjira-account-mobile-nav]")
+            verify(dock.is_visible() == (width <= 820),
+                   f"visibilité du dock incorrecte à {width}px")
             link = page.locator('main a[href="/app/"]')
             reveal = card.locator("[data-pwa-install-reveal]")
             close = card.locator(".sinjira-pwa-install__close")
@@ -203,11 +207,19 @@ def check_install_focus(browser):
                    f"Échap ne replie pas la proposition à {width}px")
             verify(reveal.evaluate("(el) => el === document.activeElement"),
                    "focus perdu en repliant la proposition")
+            if fallback:
+                # Le contrôle précédent peut disparaître pendant que la carte
+                # est ouverte : revenir alors à main, sans arrêt de Tab ajouté.
+                link.evaluate("(el) => { el.hidden = true; }")
             close.focus()
             close.press("Enter")
             verify(card.count() == 0, "proposition non retirée")
-            verify(link.evaluate("(el) => el === document.activeElement"),
-                   f"focus non restitué au contenu à {width}px")
+            target = page.locator("main") if fallback else link
+            verify(target.evaluate("(el) => el === document.activeElement"),
+                   f"focus non restitué au contenu à {width}px (repli={fallback})")
+            if fallback:
+                verify(target.get_attribute("tabindex") == "-1",
+                       "le contenu principal ne doit pas ajouter un arrêt Tab")
             page.reload(wait_until="domcontentloaded")
             page.wait_for_function("() => document.documentElement.hasAttribute('data-sinjira-pwa-ready')")
             verify(card.count() == 0, "préférence de fermeture non respectée")

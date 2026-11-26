@@ -97,10 +97,9 @@
       // une destination stable, sans ajouter d'arrêt à la tabulation.
       var main=d.querySelector('main');
       if(!main)return;
-      var temporary=!main.hasAttribute('tabindex');
-      if(temporary)main.setAttribute('tabindex','-1');
+      // Garder tabindex=-1 évite de perdre le focus dans certains moteurs.
+      if(!main.hasAttribute('tabindex'))main.setAttribute('tabindex','-1');
       main.focus();
-      if(temporary)main.removeAttribute('tabindex');
     }
     function setExpanded(open){
       details.hidden=!open;
