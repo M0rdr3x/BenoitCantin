@@ -6,6 +6,41 @@
     if(!form||form.hasAttribute('data-sinjira-feedback-ready'))return;
     form.setAttribute('data-sinjira-feedback-ready','');
     var active=new Map(),sequence=0;
+    // Une région distincte de la zone aria-busy annonce réellement l'attente.
+    // Le module Auth reste seul responsable du verrouillage et des résultats.
+    var processing=document.createElement('p');
+    processing.className='sinjira-form-processing';
+    processing.setAttribute('role','status');
+    processing.setAttribute('aria-atomic','true');
+    form.insertAdjacentElement('afterend',processing);
+    var result=document.querySelector('[data-account-status]');
+    var pending=false;
+    function busy(){return form.getAttribute('aria-busy')==='true';}
+    function finishProcessing(){pending=false;processing.textContent='';}
+    function syncProcessing(){
+      if(!busy()){finishProcessing();return;}
+      if(pending&&processing.textContent!=='Traitement en cours… Veuillez patienter.'){
+        processing.textContent='Traitement en cours… Veuillez patienter.';
+      }
+    }
+    form.addEventListener('submit',function(event){
+      if(busy()){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      // Laisser les gestionnaires Auth effectuer leurs validations normales.
+      pending=true;
+      window.setTimeout(syncProcessing,0);
+    },true);
+    if(typeof MutationObserver!=='undefined'){
+      new MutationObserver(syncProcessing).observe(form,{attributes:true,attributeFilter:['aria-busy']});
+      if(result)new MutationObserver(function(){
+        // Un résultat peut laisser le formulaire verrouillé (récupération
+        // terminée ou vérification refusée) sans requête encore en cours.
+        if(!result.hidden&&result.textContent.trim())finishProcessing();
+      }).observe(result,{attributes:true,attributeFilter:['hidden','data-status-type'],childList:true,subtree:true,characterData:true});
+    }
     function message(field){
       var v=field.validity;
       if(v.valueMissing)return 'Ce champ est obligatoire.';
