@@ -37,7 +37,7 @@ def test_sources() -> None:
         source = ROOT / page.lstrip("/") / "index.html"
         html = source.read_text(encoding="utf-8")
         assert html.count("sinjira-universe-nav-v2.css?v=2.0.1") == 1, page
-        assert html.count("sinjira-universe-nav-v2.js?v=2.0.0") == 1, page
+        assert html.count("sinjira-universe-nav-v2.js?v=2.0.1") == 1, page
         assert 'class="universe-subnav"' in html, page
         assert 'aria-current="page"' in html, page
     assert "démo de validation de 62 pages" not in (ROOT / "projets/sinjira/index.html").read_text("utf-8")
