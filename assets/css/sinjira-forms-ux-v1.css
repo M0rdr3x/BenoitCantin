@@ -79,3 +79,16 @@ body[data-sinjira-form-ux="v1"] .sinjira-auth-nav-arrow:focus-visible{
 @media(prefers-reduced-motion:reduce){
   body[data-sinjira-form-ux="v1"] .universe-subnav .container{scroll-behavior:auto}
 }
+
+/* Retour de validation natif : texte persistant, sans dépendre de la couleur. */
+body[data-sinjira-form-ux="v1"] .sinjira-field-error{
+  display:block;margin:6px 0 0;color:#ffb9b9;font-size:.9rem;
+  line-height:1.45;overflow-wrap:anywhere;
+}
+body[data-sinjira-form-ux="v1"] .account-form [data-sinjira-invalid]{
+  border-color:#ffb9b9;
+}
+@media(forced-colors:active){
+  body[data-sinjira-form-ux="v1"] .sinjira-field-error{color:CanvasText}
+  body[data-sinjira-form-ux="v1"] .account-form [data-sinjira-invalid]{outline:2px solid CanvasText}
+}

@@ -117,6 +117,39 @@ def assert_password_script_is_safe(context):
         page.close()
 
 
+def assert_inline_feedback(context):
+    # Validation native uniquement, sans accès aux services Auth.
+    page = context.new_page()
+    try:
+        page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        page.set_content("""<!doctype html><html lang="fr-CA"><body>
+          <form data-login-form>
+            <label for="email">Courriel</label><input id="email" type="email" required aria-describedby="help">
+            <small id="help">Votre courriel.</small>
+            <button type="submit">Continuer</button>
+          </form></body></html>""")
+        page.add_script_tag(url=urljoin(BASE, "assets/js/sinjira-form-feedback-v1.js"))
+        field = page.locator("#email")
+        page.locator('button[type=submit]').click()
+        error = page.locator(".sinjira-field-error")
+        assert_ok(error.count() == 1 and error.is_visible(), "erreur native non persistante")
+        assert_ok(field.get_attribute("aria-invalid") == "true", "champ invalide non annoncé")
+        assert_ok("help" in field.get_attribute("aria-describedby").split(), "aide d'origine perdue")
+        field.fill("invalide")
+        assert_ok(error.is_visible(), "erreur effacée avant correction")
+        field.fill("exemple@example.invalid")
+        assert_ok(error.count() == 0, "erreur non retirée après correction")
+        assert_ok(field.get_attribute("aria-invalid") is None, "état invalide résiduel")
+        assert_ok(field.get_attribute("aria-describedby") == "help", "aide d'origine non restaurée")
+        field.fill("")
+        page.locator('button[type=submit]').click()
+        page.locator("form").evaluate("(el) => el.reset()")
+        page.wait_for_function("() => !document.querySelector('.sinjira-field-error')")
+        assert_ok(field.get_attribute("aria-describedby") == "help", "aide non restaurée après reset")
+    finally:
+        page.close()
+
+
 def run():
     assert_ok(ENGINE in {"chromium", "firefox", "webkit"}, "moteur navigateur inconnu")
     with sync_playwright() as playwright:
@@ -132,6 +165,7 @@ def run():
                     for width in WIDTHS:
                         inspect_route(page, path, width)
                 assert_password_script_is_safe(context)
+                assert_inline_feedback(context)
                 print(f"OK {ENGINE}: quatre formulaires Auth à 240–1440px + révélation locale sûre")
             finally:
                 context.close()

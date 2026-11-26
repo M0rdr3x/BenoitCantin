@@ -39,7 +39,9 @@ def check_page(path, expected):
         errors.append(f"{path}: cible du lien d’évitement non focalisable")
     if auth_nav and 'data-backend-state role="status" aria-atomic="true"' not in text:
         errors.append(f"{path}: état du service non annoncé")
-    css_version = "1.0.1" if auth_nav else "1.0.0"
+    css_version = "1.0.2" if auth_nav else "1.0.0"
+    if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.0" not in text:
+        errors.append(f"{path}: aide de validation absente")
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
     if auth_nav and 'sinjira-auth-nav-v1.js?v=1.0.0' not in text:
@@ -114,6 +116,12 @@ def main():
         problems.append("Le script mot de passe ne doit enregistrer ou transmettre aucun secret")
     if re.search(r'\.value\b|console\.', script):
         problems.append("Le script mot de passe ne doit lire ou journaliser aucune valeur")
+    feedback = (ROOT / "assets/js/sinjira-form-feedback-v1.js").read_text("utf-8")
+    for marker in ("'invalid'", "'aria-invalid'", "'aria-describedby'", "'reset'", "validity.valid"):
+        if marker not in feedback:
+            problems.append("Aide de validation : contrat manquant " + marker)
+    if re.search(r'\\.value\\b|\\b(localStorage|sessionStorage|fetch\\s*\\(|sendBeacon|XMLHttpRequest)\\b', feedback):
+        problems.append("Aide de validation : aucune lecture de valeur ni transmission autorisée")
     css = CSS.read_text("utf-8")
     for marker in ('font-size:max(1rem,16px)', 'min-height:46px',
                    '.account-optional-details summary:focus-visible',
