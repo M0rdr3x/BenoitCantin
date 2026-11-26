@@ -55,7 +55,14 @@
       strip.addEventListener('scroll', update, { passive: true });
       window.addEventListener('resize', update, { passive: true });
       if (typeof ResizeObserver === 'function') {
-        var observer = new ResizeObserver(update);
+        var resizeFrame = null;
+        var observer = new ResizeObserver(function () {
+          if (resizeFrame !== null) return;
+          resizeFrame = window.requestAnimationFrame(function () {
+            resizeFrame = null;
+            update();
+          });
+        });
         observer.observe(strip);
       }
       update();
