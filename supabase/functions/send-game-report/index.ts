@@ -2,6 +2,8 @@ import { readLimitedBinaryResponse } from '../_shared/limited-body.mjs';
 import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
+import { createPdfAdmissionGate } from '../_shared/pdf-admission.mjs';
+import { consumeReportBudget } from '../_shared/report-pdf-budget.mjs';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const FUNCTION_VERSION='24.5.2';
@@ -9,6 +11,8 @@ const MAX_REQUEST_BYTES=220_000;
 const MAX_REQUEST_READ_TIMEOUT_MS=8_000;
 const TEMPLATE_FETCH_TIMEOUT_MS=12_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+// Per-isolate admission only; never presented as a distributed rate limiter.
+const acquirePdfSlot = createPdfAdmissionGate(2);
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
@@ -199,6 +203,16 @@ Deno.serve(async (req) => {
     if (mode === 'email' && !resendKey) {
       return privateJson({ ok: false, error: 'Service courriel non configuré.', function_version: FUNCTION_VERSION }, 503);
     }
+    const releasePdfSlot = acquirePdfSlot();
+    if (!releasePdfSlot) return new Response(JSON.stringify({ ok:false, code:'REPORT_BUSY', error:'Service temporairement occupé. Réessayez dans quelques secondes.', function_version:FUNCTION_VERSION }), {
+      status:503, headers:{ ...PRIVATE_JSON_HEADERS, 'Retry-After':'3' }
+    });
+    try {
+    const budget = await consumeReportBudget(serviceClient(), Boolean(user));
+    if (budget !== 'allowed') return new Response(JSON.stringify({
+      ok:false, code:budget === 'limited' ? 'REPORT_QUOTA_EXCEEDED' : 'REPORT_QUOTA_UNAVAILABLE',
+      error:'Service temporairement occupé. Réessayez plus tard.', function_version:FUNCTION_VERSION
+    }), {status:budget === 'limited' ? 429 : 503, headers:{...PRIVATE_JSON_HEADERS, 'Retry-After':'60'}});
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);
     const filename = `SINJIRA_Fracture_Rapport_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -240,6 +254,9 @@ Deno.serve(async (req) => {
 
     await recordDelivery(user.id, body?.session_id, 'email');
     return privateJson({ ok: true, emailed: true, function_version: FUNCTION_VERSION });
+    } finally {
+      releasePdfSlot();
+    }
   } catch {
     console.error('[SINJIRA report]', { code:'SEND_GAME_REPORT_FAILED' });
     return privateJson({ ok: false, error: 'Erreur lors de la génération du rapport.', function_version: FUNCTION_VERSION }, 500);
