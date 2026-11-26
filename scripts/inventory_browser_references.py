@@ -272,6 +272,8 @@ def main():
         if args.root.resolve() in args.output.resolve().parents:
             raise ValueError("Report must remain outside public build")
         report=inventory(args.root)
+        if report["scheme_counts"].get("node",0):
+            raise ValueError("Node-only imports in browser publication")
         report["source_sha"]=args.source_sha
         payload=(json.dumps(report,indent=2,sort_keys=True)+"\n").encode()
         with args.output.open("xb") as out:
