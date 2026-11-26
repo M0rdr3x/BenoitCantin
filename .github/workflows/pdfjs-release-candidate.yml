@@ -6,6 +6,10 @@ on:
     paths:
       - 'scripts/verify_pdfjs_release_candidate.py'
       - 'scripts/test_pdfjs_candidate_browser.py'
+      - 'scripts/stage_pdfjs_runtime.py'
+      - 'projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf'
+      - 'projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf'
+      - 'projets/projet-nova/documents/04_Livre_Nova_Complet.pdf'
       - '.github/workflows/pdfjs-release-candidate.yml'
       - 'projets/projet-nova/visionneuse.html'
   workflow_dispatch:
@@ -26,7 +30,9 @@ jobs:
         with:
           python-version: '3.12.14'
       - name: Tester les frontières d'archive
-        run: python3 scripts/verify_pdfjs_release_candidate.py --self-test
+        run: |
+          python3 scripts/verify_pdfjs_release_candidate.py --self-test
+          python3 scripts/stage_pdfjs_runtime.py --self-test
       - name: Acquérir la version officielle sans exécuter son contenu
         shell: bash
         run: |
@@ -46,6 +52,10 @@ jobs:
           python3 scripts/verify_pdfjs_release_candidate.py \
             --archive "$output/release.zip" --receipt "$output/receipt.json" \
             --source-sha "$GITHUB_SHA"
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          python3 scripts/stage_pdfjs_runtime.py --archive "$output/release.zip" \
+            --destination "$work/runtime" --receipt "$output/runtime-receipt.json"
       - name: Conserver seulement le candidat vérifié et son inventaire
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -53,6 +63,7 @@ jobs:
           path: |
             ${{ runner.temp }}/pdfjs-release-candidate/release.zip
             ${{ runner.temp }}/pdfjs-release-candidate/receipt.json
+            ${{ runner.temp }}/pdfjs-release-candidate/runtime-receipt.json
           retention-days: 7
           if-no-files-found: error
           overwrite: false
