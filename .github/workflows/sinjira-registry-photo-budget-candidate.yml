@@ -4,11 +4,17 @@ on:
     branches: [main]
     paths:
       - 'security/candidates/registry_photo_budget*.sql'
+      - 'security/candidates/registry-photo-budget.mjs'
+      - 'scripts/test_registry_photo_budget_concurrency.py'
+      - 'scripts/test_registry_photo_budget_rpc.mjs'
       - '.github/workflows/sinjira-registry-photo-budget-candidate.yml'
   push:
     branches: [main]
     paths:
       - 'security/candidates/registry_photo_budget*.sql'
+      - 'security/candidates/registry-photo-budget.mjs'
+      - 'scripts/test_registry_photo_budget_concurrency.py'
+      - 'scripts/test_registry_photo_budget_rpc.mjs'
       - '.github/workflows/sinjira-registry-photo-budget-candidate.yml'
 permissions:
   contents: read
@@ -23,6 +29,12 @@ jobs:
       - uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Tester le contrat RPC candidat
+        run: node scripts/test_registry_photo_budget_rpc.mjs
       - name: Démarrer Supabase local
         run: supabase start
       - name: Vérifier ACL, limites, compteurs et expiration
@@ -32,6 +44,8 @@ jobs:
           candidate=security/candidates/registry_photo_budget.sql
           test "$(tail -n 1 "$candidate")" = 'ROLLBACK;'
           { head -n -1 "$candidate"; cat security/candidates/registry_photo_budget_assertions.sql; } | env -i PATH="$PATH" PGPASSWORD=postgres PGCONNECT_TIMEOUT=5 psql -X -w -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U postgres -d postgres
+      - name: Tester les connexions concurrentes isolées
+        run: python3 scripts/test_registry_photo_budget_concurrency.py
       - name: Nettoyer Supabase local
         if: always()
         run: supabase stop --no-backup || true
