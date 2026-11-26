@@ -27,7 +27,7 @@ class ViewerHandler(Handler):
         SimpleHTTPRequestHandler.end_headers(self)
 
 def run(archive, browser_name):
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import expect, sync_playwright
     with tempfile.TemporaryDirectory(prefix="nova-viewer-local-") as temp:
         root=Path(temp)
         assets=root/"assets"
@@ -75,7 +75,7 @@ def run(archive, browser_name):
                     page.on("pageerror",lambda _:errors.append("pageerror"))
                     page.add_init_script("window.violations=[];document.addEventListener('securitypolicyviolation', e=>window.violations.push(e.effectiveDirective));")
                     page.goto(origin+"/?doc=resume")
-                    page.wait_for_function("document.querySelector('#viewerStatus').textContent.includes('indisponible')")
+                    expect(page.locator("#viewerStatus")).to_contain_text("indisponible",timeout=30000)
                     assert page.locator("#docSelect option").count()==11
                     assert page.locator("#openPdfBtn").get_attribute("href")==origin+"/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf"
                     assert page.locator("#openPdfBtn").get_attribute("rel")=="noopener noreferrer"
@@ -84,21 +84,33 @@ def run(archive, browser_name):
                     assert not any("/pdfjs-6.5.438/" in x or x.endswith(".pdf") for x in observed)
                     # Unrecognized request parameter must not become a URL.
                     page.goto(origin+"/?doc=https%3A%2F%2Fexample.invalid%2Fbad.pdf")
-                    page.wait_for_function("document.querySelector('#viewerStatus').textContent.includes('indisponible')")
+                    expect(page.locator("#viewerStatus")).to_contain_text("indisponible",timeout=30000)
                     assert page.locator("#docSelect").input_value()=="resume"
                     assert not external and not errors and page.evaluate("window.violations.length")==0
                     records=stage(archive,assets/"pdfjs-6.5.438")
                     # Activation is simulated solely in the disposable harness.
                     (assets/MODULE).write_text(original.replace("const RUNTIME_ENABLED = false;","const RUNTIME_ENABLED = true;"),encoding="utf-8")
                     page.goto(origin+"/?doc=resume")
-                    page.wait_for_function("document.querySelector('#pageInfo').textContent === 'Page 1 / 2' && !document.querySelector('#nextPage').disabled && !!document.querySelector('#pdfPages canvas')")
-                    first=page.locator("#pdfPages canvas").evaluate("(c)=>c.width")
+                    # Locator assertions poll in Playwright's injected DOM
+                    # engine without eval-ing a string in the page context.
+                    # Never relax script-src to accommodate a test helper.
+                    canvas=page.locator("#pdfPages canvas")
+                    expect(page.locator("#pageInfo")).to_have_text("Page 1 / 2",timeout=30000)
+                    expect(page.locator("#nextPage")).to_be_enabled(timeout=30000)
+                    expect(canvas).to_have_count(1,timeout=30000)
+                    expect(canvas).to_have_attribute("width","240",timeout=30000)
+                    first=int(canvas.get_attribute("width"))
                     page.locator("#nextPage").click()
-                    page.wait_for_function("document.querySelector('#pageInfo').textContent === 'Page 2 / 2' && !document.querySelector('#zoomIn').disabled")
+                    expect(page.locator("#pageInfo")).to_have_text("Page 2 / 2",timeout=30000)
+                    expect(page.locator("#zoomIn")).to_be_enabled(timeout=30000)
                     page.locator("#zoomIn").click()
-                    page.wait_for_function("(width)=>document.querySelector('#pdfPages canvas').width > width && !document.querySelector('#zoomOut').disabled",arg=first)
+                    expect(canvas).to_have_attribute("width","270",timeout=30000)
+                    expect(page.locator("#zoomOut")).to_be_enabled(timeout=30000)
+                    assert int(canvas.get_attribute("width")) > first
                     page.locator("#docSelect").select_option("depliant")
-                    page.wait_for_function("document.querySelector('#pageInfo').textContent === 'Page 1 / 2' && !document.querySelector('#docSelect').disabled")
+                    expect(page.locator("#pageInfo")).to_have_text("Page 1 / 2",timeout=30000)
+                    expect(page.locator("#docSelect")).to_be_enabled(timeout=30000)
+                    expect(canvas).to_have_attribute("width","240",timeout=30000)
                     assert page.locator("#downloadBtn").get_attribute("download")=="02_Depliant_Public_4_Pages_Projet_Nova.pdf"
                     assert not external and not errors and page.evaluate("window.violations.length")==0
                     check_tree(assets/"pdfjs-6.5.438",records)
