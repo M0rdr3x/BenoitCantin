@@ -133,6 +133,63 @@ def inspect_workflows(files: dict[str, str]) -> list[str]:
     return errors
 
 
+def inspect_authorization(body: str) -> list[str]:
+    """Require the reviewed job boundaries and final fail-closed gate.
+
+    Deliberately accept only the canonical layout of this sensitive workflow.
+    This is a regression guard, not a general-purpose YAML parser.
+    """
+    errors = []
+    # Reject alternative declarations, including quoted or inline permissions.
+    permissions = re.findall(r"(?im)^([ \t]*)(?:permissions|'permissions'|\"permissions\")[ \t]*:[ \t]*([^\n]*)$", body)
+    if permissions != [("", ""), ("    ", ""), ("    ", ""), ("    ", "")]:
+        errors.append("Déclarations de permissions Pages non canoniques")
+    chunks = re.split(r"(?m)^  (build|verify|deploy):\s*$", body)
+    if len(chunks) != 7 or chunks[1::2] != ["build", "verify", "deploy"]:
+        return errors + ["Structure des jobs Pages non canonique"]
+    prefix, build, verify, deploy = chunks[0], chunks[2], chunks[4], chunks[6]
+    expected_permissions = (
+        (prefix, "permissions:\n  contents: read\n\nconcurrency:"),
+        (build, "    permissions:\n      contents: read\n    runs-on:"),
+        (verify, "    permissions:\n      contents: read\n      actions: read\n    runs-on:"),
+        (deploy, "    permissions:\n      contents: read\n      actions: read\n      pages: write\n      id-token: write\n    environment:"),
+    )
+    for section, expected in expected_permissions:
+        if section.count(expected) != 1:
+            errors.append("Permissions Pages hors contrat minimal")
+    gate = "    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' && inputs.expected_sha == github.sha"
+    if gate + "\n" not in build or gate + " && needs.build.result == 'success' && needs.verify.result == 'success'\n" not in deploy:
+        errors.append("Garde de publication manuelle ou SHA absent")
+    if "    if: needs.build.result == 'success' && github.run_attempt == '1'\n" not in verify:
+        errors.append("Vérification Pages non liée au build réussi")
+    if "    needs: [build, verify]\n" not in deploy or "    environment:\n      name: github-pages\n" not in deploy:
+        errors.append("Dépendances ou environnement de publication incorrects")
+    if re.search(r"(?im)^\s*(?:continue-on-error|always)\s*:", body):
+        errors.append("Contournement des erreurs de publication interdit")
+    final_markers = (
+        'test "$GITHUB_EVENT_NAME" = workflow_dispatch',
+        'test "$GITHUB_RUN_ATTEMPT" = 1',
+        'test "$GITHUB_REF" = refs/heads/main',
+        'test "$EXPECTED_SHA" = "$GITHUB_SHA"',
+        'gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main"',
+        '.ref=="refs/heads/main" and .object.type=="commit" and .object.sha==$sha',
+        '.total_count==1 and (.artifacts|length)==1 and',
+        '.expired==false and .digest==$digest',
+        '(.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha',
+        '(.workflow_run.repository_id|tostring)==$repo and (.workflow_run.head_repository_id|tostring)==$repo',
+        "artifact_name: github-pages",
+    )
+    for marker in final_markers:
+        if marker not in deploy:
+            errors.append("Contrôle final Pages absent : " + marker)
+    # No extra step or action in the privileged job.
+    if len(re.findall(r"(?m)^      - ", deploy)) != 2:
+        errors.append("Étapes privilégiées Pages inattendues")
+    if not deploy.rstrip().endswith("uses: " + DEPLOY + "\n        with:\n          artifact_name: github-pages"):
+        errors.append("Action finale Pages non canonique")
+    return errors
+
+
 def self_test() -> None:
     # Fixture représentant les étapes pertinentes du vrai workflow.
     good = (
@@ -229,6 +286,28 @@ def self_test() -> None:
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
+    actual = (WORKFLOWS / APPROVED).read_text("utf-8", errors="strict")
+    assert not inspect_authorization(actual), inspect_authorization(actual)
+    for old, new in (
+        ("      contents: read\n    runs-on:", "      contents: write\n    runs-on:"),
+        ("      actions: read\n    runs-on:", "      actions: write\n    runs-on:"),
+        ("      pages: write\n", "      pages: read\n"),
+        ("      id-token: write\n", "      id-token: write\n      contents: write\n"),
+        ("github.run_attempt == '1'", "github.run_attempt >= '1'"),
+        ("inputs.expected_sha == github.sha", "true"),
+        ("needs.verify.result == 'success'", "always()"),
+        ('test "$EXPECTED_SHA" = "$GITHUB_SHA"', "true"),
+        ('.object.sha==$sha', "true"),
+        ('.total_count==1 and (.artifacts|length)==1 and\n', '.total_count>=1 and\n'),
+        ('.expired==false and .digest==$digest', '.expired==false'),
+        ("artifact_name: github-pages", "artifact_name: unverified"),
+        ("      - name: Déployer sur GitHub Pages", "      - run: echo unreviewed\n      - name: Déployer sur GitHub Pages"),
+        ("    environment:\n      name: github-pages", "    environment:\n      name: other"),
+        ("    timeout-minutes: 5\n", "    timeout-minutes: 5\n    continue-on-error: true\n"),
+    ):
+        assert old in actual, old
+        altered = actual.replace(old, new)
+        assert inspect_authorization(altered), "Authorization mutation accepted: " + old
     print("OK : scénarios Pages hostiles refusés; archive contrôlée obligatoire.")
 
 
@@ -257,6 +336,8 @@ def main() -> int:
             print("ECHEC : workflow illisible")
             return 1
     problems = inspect_workflows(entries)
+    if APPROVED in entries:
+        problems.extend(inspect_authorization(entries[APPROVED]))
     if problems:
         for problem in problems:
             print("ECHEC : " + problem)

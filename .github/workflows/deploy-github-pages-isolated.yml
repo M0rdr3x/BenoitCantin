@@ -32,7 +32,7 @@ concurrency:
 jobs:
   build:
     name: Construire l’artefact de confinement Pages
-    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' && inputs.expected_sha == github.sha
     permissions:
       contents: read
     runs-on: ubuntu-24.04
@@ -137,6 +137,7 @@ jobs:
   verify:
     name: Vérifier l'archive téléversée avant publication
     needs: build
+    if: needs.build.result == 'success' && github.run_attempt == '1'
     permissions:
       contents: read
       actions: read
@@ -182,8 +183,10 @@ jobs:
   deploy:
     name: Publier le confinement Pages
     needs: [build, verify]
-    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.event_name == 'workflow_dispatch' && github.run_attempt == '1' && inputs.expected_sha == github.sha && needs.build.result == 'success' && needs.verify.result == 'success'
     permissions:
+      contents: read
+      actions: read
       pages: write
       id-token: write
     environment:
@@ -192,6 +195,34 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - name: Revalider main et l'identité de l'artefact après autorisation
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+          ARTIFACT_ZIP_SHA256: ${{ needs.build.outputs.artifact_zip_sha256 }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$EXPECTED_SHA" = "$GITHUB_SHA"
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARTIFACT_ZIP_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" | jq -e --arg sha "$EXPECTED_SHA" '
+            .ref=="refs/heads/main" and .object.type=="commit" and .object.sha==$sha
+          ' >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages&per_page=100" | jq -e --arg id "$ARTIFACT_ID" --arg run "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" --arg repo "$GITHUB_REPOSITORY_ID" --arg digest "sha256:$ARTIFACT_ZIP_SHA256" '
+            .total_count==1 and (.artifacts|length)==1 and
+            (.artifacts[0] | (.id|tostring)==$id and .name=="github-pages" and .expired==false and .digest==$digest and
+              (.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha and
+              (.workflow_run.repository_id|tostring)==$repo and (.workflow_run.head_repository_id|tostring)==$repo and .workflow_run.head_branch=="main")
+          ' >/dev/null
+
       - name: Déployer sur GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+        with:
+          artifact_name: github-pages
