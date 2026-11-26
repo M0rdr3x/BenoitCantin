@@ -348,6 +348,20 @@ async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSiz
   }
 }
 
+// Admission locale par instance Edge : budget mémoire et équité entre comptes.
+// Ne remplace pas un quota distribué et ne fait aucune écriture persistante.
+const registryPhotoActiveAccounts=new Set<string>();
+function reserveRegistryPhotoSlot(userId:string):(()=>void)|null{
+  if(registryPhotoActiveAccounts.size>=2||registryPhotoActiveAccounts.has(userId))return null;
+  registryPhotoActiveAccounts.add(userId);
+  let released=false;
+  return ()=>{
+    if(released)return;
+    released=true;
+    registryPhotoActiveAccounts.delete(userId);
+  };
+}
+
 // Le chemin seul ne prouve ni l'existence ni le type de l'objet.
 async function registryPhotoStored(service:any,photoPath:string):Promise<boolean>{
   const bucketId='sinjira-character-sources';
@@ -414,7 +428,15 @@ Deno.serve(async(req)=>{
     const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
     // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
     if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
-    if(photo_path!==null && !(await registryPhotoStored(service,photo_path as string)))return privateJson({ok:false,error:'La photo privée ne peut pas être vérifiée. Veuillez la téléverser de nouveau.',code:'CHARACTER_PHOTO_UNVERIFIED',version:VERSION},422);
+    if(photo_path!==null){
+      const releasePhotoSlot=reserveRegistryPhotoSlot(user.id);
+      if(!releasePhotoSlot)return privateJson({ok:false,error:'Vérification des photos temporairement occupée. Réessayez dans quelques instants.',code:'CHARACTER_PHOTO_BUSY',version:VERSION},429);
+      try{
+        if(!(await registryPhotoStored(service,photo_path as string)))return privateJson({ok:false,error:'La photo privée ne peut pas être vérifiée. Veuillez la téléverser de nouveau.',code:'CHARACTER_PHOTO_UNVERIFIED',version:VERSION},422);
+      }finally{
+        releasePhotoSlot();
+      }
+    }
     const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),

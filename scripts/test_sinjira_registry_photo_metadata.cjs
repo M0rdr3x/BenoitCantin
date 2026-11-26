@@ -22,11 +22,29 @@ async function check({ext='png',bucket={id:bucketId,public:false},bucketError=nu
   for(const bucket of [null,{}, {id:bucketId,public:true},{id:bucketId,public:'false'},{id:'other',public:false}])await check({bucket});
   for(const error of [false,0,'']){await check({bucketError:error});await check({infoError:error});}
   await check({bucketError:{code:'FAIL'}});await check({infoError:{code:'FAIL'}});await check({info:null});await check({throws:true});await check({ext:'svg'});await check({ext:'constructor'});
+  // Tester le vrai garde local, y compris la libération répétée d'un ancien slot.
+  const slotStart=src.indexOf('const registryPhotoActiveAccounts=');
+  const slotEnd=src.indexOf('// Le chemin seul',slotStart);
+  assert.ok(slotStart>=0&&slotEnd>slotStart);
+  const slotCode=src.slice(slotStart,slotEnd).replace('new Set<string>()','new Set()').replace('(userId:string):(()=>void)|null','(userId)');
+  const slots={};vm.runInNewContext(slotCode+'\nthis.reserve=reserveRegistryPhotoSlot;',slots,{timeout:1000});
+  const a=slots.reserve('account-a');assert.equal(typeof a,'function');count++;
+  assert.equal(slots.reserve('account-a'),null);count++;
+  const b=slots.reserve('account-b');assert.equal(typeof b,'function');count++;
+  assert.equal(slots.reserve('account-c'),null);count++;
+  a();const renewed=slots.reserve('account-a');assert.equal(typeof renewed,'function');count++;
+  a();assert.equal(slots.reserve('account-a'),null);count++;
+  b();const c=slots.reserve('account-c');assert.equal(typeof c,'function');count++;
+  renewed();c();const d=slots.reserve('account-d');assert.equal(typeof d,'function');count++;d();
   const route=src.slice(src.indexOf('Deno.serve(async(req)=>{'));
   const canonical=route.indexOf('isCanonicalRegistryPhotoPath(photo_path,user.id)');
   const verified=route.indexOf('await registryPhotoStored(service,photo_path as string)');
   const state=route.indexOf("service.from('character_submissions')");
-  assert.ok(canonical>=0&&canonical<verified&&verified<state,'Path and object verification precede dossier access');
+  const reserve=route.indexOf('reserveRegistryPhotoSlot(user.id)');
+  const release=route.indexOf('releasePhotoSlot();');
+  assert.ok(canonical>=0&&canonical<reserve&&reserve<verified&&verified<release&&release<state,'Path, admission and object verification precede dossier access');
+  assert.ok(route.includes("code:'CHARACTER_PHOTO_BUSY',version:VERSION},429)"));
+  assert.match(route,/finally\s*\{\s*releasePhotoSlot\(\);\s*\}/);
   assert.ok(route.includes("code:'CHARACTER_PHOTO_UNVERIFIED'"));
   console.log('PASS registry upload metadata: '+count+' cases.');
 })().catch(e=>{console.error(e);process.exitCode=1});
