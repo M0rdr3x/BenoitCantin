@@ -229,7 +229,17 @@
       revealCurrentTab();
       scrollLimits();
     }
+    var lastAccountViewportWidth = window.innerWidth;
     window.addEventListener('resize', function () {
+      var width = window.innerWidth;
+      // Les barres du navigateur mobile et le clavier virtuel peuvent
+      // modifier uniquement la hauteur. Ne pas effacer le parcours manuel
+      // des rubriques : recentrer uniquement après un changement de largeur.
+      if (width === lastAccountViewportWidth) {
+        scrollLimits();
+        return;
+      }
+      lastAccountViewportWidth = width;
       alignCurrentAfterLayout();
       // WebKit peut finaliser la largeur effective des onglets au frame
       // suivant une modification de taille.
