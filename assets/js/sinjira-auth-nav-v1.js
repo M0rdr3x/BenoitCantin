@@ -43,14 +43,12 @@
       var available = Math.max(0, nav.clientWidth - 40);
       var active = window.matchMedia('(max-width: 680px)').matches &&
         total > available + 2;
-      // Quand les liens tiennent déjà dans la grille, ne jamais laisser
-      // des flèches inertes : Safari termine parfois ce reflow tardivement.
-      if (active && nav.classList.contains('is-scrollable') && max <= 2) {
-        active = false;
-      }
+      // Décider à partir de la largeur hors grille, puis mesurer le ruban
+      // réellement disposé. Ne pas alterner les deux mises en page.
       nav.classList.toggle('is-scrollable', active);
       back.hidden = !active;
       forward.hidden = !active;
+      max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
       back.disabled = !active || scroll.scrollLeft <= 2;
       forward.disabled = !active || scroll.scrollLeft >= max - 2;
     }
@@ -71,27 +69,47 @@
       var delta = Math.max(110, Math.round(scroll.clientWidth * .75));
       var target = Math.max(0, Math.min(max, scroll.scrollLeft + delta * direction));
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      scroll.scrollTo({left: target, behavior: reduce ? 'auto' : 'smooth'});
-      window.requestAnimationFrame(refresh);
+      if (reduce) scroll.scrollLeft = target;
+      else scroll.scrollTo({left: target, behavior: 'smooth'});
+      scheduleRefresh();
     }
     back.addEventListener('click', function () { slide(-1); });
     forward.addEventListener('click', function () { slide(1); });
-    scroll.addEventListener('scroll', refresh, {passive: true});
-    function onLayoutChange() {
-      refresh();
-      window.requestAnimationFrame(function () {
+    var frame = null;
+    var lastWidth = nav.clientWidth;
+    function scheduleRefresh() {
+      if (frame !== null) return;
+      frame = window.requestAnimationFrame(function () {
+        frame = null;
         refresh();
-        revealActive();
-        refresh();
-        // Safari peut disposer les flex items au frame suivant.
-        window.requestAnimationFrame(refresh);
       });
     }
-    window.addEventListener('resize', onLayoutChange);
-    if (typeof ResizeObserver !== 'undefined') {
-      new ResizeObserver(refresh).observe(scroll);
+    scroll.addEventListener('scroll', scheduleRefresh, {passive: true});
+    function onLayoutChange() {
+      var width = nav.clientWidth;
+      refresh();
+      if (width !== lastWidth) {
+        lastWidth = width;
+        revealActive();
+        refresh();
+      }
+      // Les callbacks différés ne recentrent jamais le ruban : un geste
+      // volontaire entre le resize et le prochain frame reste prioritaire.
+      scheduleRefresh();
     }
-    onLayoutChange();
+    window.addEventListener('resize', onLayoutChange, {passive: true});
+    if (typeof ResizeObserver === 'function') {
+      var observer = new ResizeObserver(scheduleRefresh);
+      observer.observe(scroll);
+      scroll.querySelectorAll('a').forEach(function (link) { observer.observe(link); });
+    }
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(scheduleRefresh).catch(function () {});
+    }
+    refresh();
+    revealActive();
+    refresh();
+    scheduleRefresh();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialize, {once: true});

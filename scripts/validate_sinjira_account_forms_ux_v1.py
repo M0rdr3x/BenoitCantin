@@ -38,7 +38,7 @@ def check_page(path, expected):
     css_version = "1.0.1" if auth_nav else "1.0.2"
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
-    if auth_nav and 'sinjira-auth-nav-v1.js?v=1.0.0' not in text:
+    if auth_nav and 'sinjira-auth-nav-v1.js?v=1.0.1' not in text:
         errors.append(f"{path}: commandes de navigation Auth absentes")
     found = list(FIELD.finditer(text))
     if len(found) != expected:
