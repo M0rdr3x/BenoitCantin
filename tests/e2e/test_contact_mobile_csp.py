@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173").rstrip("/")
@@ -29,6 +29,10 @@ def static_contracts() -> None:
     assert 'data-personal-formspree-state="pending-separate-endpoint"' in html
     assert 'src="/assets/js/sinjira-contact-route-v1.js?v=1.0.0"' in html
     assert 'href="/assets/css/contact-ux-v1.css?v=1.0.1"' in html
+    assert 'aria-labelledby="contact-channel-title"' in html
+    assert '<h2 id="contact-channel-title">Choisir le bon contact</h2>' in html
+    assert html.index('name="viewport"') < html.index("sinjira-nav-boot-v2.js")
+    assert html.count("site.js?v=24.4.105") == 1
     assert "onsubmit=" not in html and "onclick=" not in html
     assert "<script>(" not in html and "style=" not in html
     assert "var PERSONAL_ENDPOINT=''" in js
@@ -47,13 +51,22 @@ def verify(context, width: int, js_enabled: bool) -> None:
     try:
         response = page.goto(BASE + "/contact.html", wait_until="domcontentloaded", timeout=30_000)
         assert response and response.status == 200, (BROWSER, width, "contact inaccessible")
-        assert page.locator("body.contact-ux-page").count() == 1
-        assert page.get_by_role("heading", name="Choisir le bon contact").count() == 1
+        if js_enabled:
+            assert response.headers.get("content-security-policy") == STRICT_CSP
+        # Vérifier le DOM et l'arbre accessible avec une attente bornée.
+        # count() seul peut lire l'arbre avant sa mise à jour dans Firefox.
+        expect(page.locator("body.contact-ux-page")).to_have_count(1, timeout=5000)
+        title = page.locator("#contact-channel-title")
+        expect(title).to_be_visible(timeout=5000)
+        expect(title).to_have_text("Choisir le bon contact", timeout=5000)
+        heading = page.get_by_role("heading", name="Choisir le bon contact", exact=True)
+        expect(heading).to_have_count(1, timeout=5000)
+        expect(heading).to_be_visible(timeout=5000)
         channels = page.get_by_role("list", name="Démarches de contact disponibles")
-        assert channels.count() == 1
-        assert channels.get_by_role("listitem").count() == 3
+        expect(channels).to_have_count(1, timeout=5000)
+        expect(channels.get_by_role("listitem")).to_have_count(3, timeout=5000)
         destinations = channels.locator(":scope > li > a")
-        assert destinations.count() == 3, (BROWSER, width, "trois parcours attendus")
+        expect(destinations).to_have_count(3, timeout=5000)
         assert page.locator('.contact-channel-list > li > a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1
         assert page.locator('.contact-channel-list > li > a[href="/compte/vie-privee.html"]').count() == 1
         assert page.locator('.contact-channel-list > li > a[href="/projets/projet-nova/contact.html"]').count() == 1
