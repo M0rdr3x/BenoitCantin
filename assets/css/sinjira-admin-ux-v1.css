@@ -66,3 +66,10 @@
 .admin-sinjira-page .bible-editor [aria-invalid="true"]{border:2px solid currentColor}
 .admin-sinjira-page :is(.admin-v18-row,.admin-v18-actions){min-width:0;max-width:100%;overflow-wrap:anywhere}
 @media(max-width:560px){.admin-sinjira-page .admin-v18-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.admin-sinjira-page .admin-v18-actions .btn{width:100%}}
+
+/* Modération : les preuves restent lisibles et les décisions distinctes. */
+.admin-sinjira-page :is(.v20-admin-report,.v20-admin-actions,.v20-admin-report .field){box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.admin-sinjira-page .v20-admin-report pre{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+.admin-sinjira-page .v20-admin-report summary{min-height:48px;align-content:center;overflow-wrap:anywhere}
+.admin-sinjira-page [data-social-admin-status]{margin-block:12px;scroll-margin-top:100px}
+@media(max-width:560px){.admin-sinjira-page .v20-admin-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.admin-sinjira-page .v20-admin-actions .btn{width:100%}}

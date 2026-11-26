@@ -937,6 +937,67 @@ def check_admin_character_editor(browser):
         ctx.close()
 
 
+def check_admin_moderation(browser):
+    # Modération réelle côté interface, uniquement des dossiers fictifs.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        allowed={"/assets/js/sinjira-admin-social-v20.js","/assets/js/sinjira-admin-panel-nav.mjs"}
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
+                  and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
+                  else route.abort())
+        ctx.route("**/assets/js/sinjira-admin-parallel-v24.js*",lambda route:route.fulfill(content_type="text/javascript",body="export {};"))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.moderationWrites=[];
+          window.reports=[{id:'fixture-report-a',network:'real',reason:'other',snapshot:{}},{id:'fixture-report-b',network:'real',reason:'scam',snapshot:{}}];
+          window.appeals=[{id:'fixture-appeal',decision:{id:'fixture-decision',action:'hide_content'},appeal_text:'Appel fictif'}];
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export function getSupabase(){return {functions:{async invoke(name,{body}){
+            if(body.action==='dashboard')return {error:null,data:{ok:true,dashboard:{open_reports:window.reports.length,active_suspensions:0,pending_appeals:window.appeals.length}}};
+            if(body.action==='list_reports')return {error:null,data:{ok:true,reports:window.reports}};
+            if(body.action==='list_appeals')return {error:null,data:{ok:true,appeals:window.appeals}};
+            return new Promise(resolve=>window.moderationWrites.push({name,body,resolve}));
+          }}}}
+          """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="domcontentloaded")
+        page.wait_for_function("document.querySelectorAll('[data-social-report-list] [data-report]').length===2")
+        page.evaluate("""async()=>{const m=await import('/assets/js/sinjira-admin-panel-nav.mjs?v=1.0.0');m.openAdminPanel('social-moderation')}""")
+        first=page.locator('[data-report="fixture-report-a"]')
+        second=page.locator('[data-report="fixture-report-b"]')
+        appeal=page.locator('[data-appeal="fixture-appeal"]')
+        feedback=page.locator("[data-social-admin-status]")
+        first.locator("[data-suspend]").click()
+        assert_true("motivation humaine" in feedback.inner_text() and page.evaluate("window.moderationWrites.length===0"),"sanction sans motivation")
+        first.locator("[data-statement]").fill("Motivation humaine fictive pour la première décision.")
+        second.locator("summary").click()
+        second.locator("[data-statement]").fill("Brouillon indépendant à conserver après actualisation.")
+        appeal.locator("[data-review-reason]").fill("Révision humaine fictive suffisamment détaillée.")
+        page.once("dialog",lambda d:d.dismiss())
+        first.locator("[data-suspend]").click()
+        assert_true(page.evaluate("window.moderationWrites.length===0"),"décision annulée transmise")
+        page.once("dialog",lambda d:d.accept())
+        first.locator("[data-restrict]").click()
+        page.wait_for_function("window.moderationWrites.length===1")
+        assert_true(first.locator("[data-suspend]").is_disabled() and second.locator("[data-resolve]").is_disabled() and appeal.locator("[data-reverse]").is_disabled(),"actions concurrentes non verrouillées")
+        first.locator("[data-suspend]").evaluate("el=>el.dispatchEvent(new MouseEvent('click',{bubbles:true}))")
+        assert_true(page.evaluate("""window.moderationWrites.length===1 && window.moderationWrites[0].name==='admin-social-v20' &&
+          window.moderationWrites[0].body.action==='restrict_reported_content' &&
+          window.moderationWrites[0].body.report_id==='fixture-report-a' &&
+          window.moderationWrites[0].body.statement_of_reasons.startsWith('Motivation humaine')"""),"double décision ou contrat modifié")
+        page.evaluate("window.reports.shift();window.moderationWrites[0].resolve({error:null,data:{ok:true,decision_id:'fixture-decision',reversible:true}})")
+        page.wait_for_function("document.querySelector('[data-social-admin-status]').textContent.includes('Décision confirmée')")
+        assert_true(first.count()==0 and second.locator("[data-statement]").input_value()=="Brouillon indépendant à conserver après actualisation." and appeal.locator("[data-review-reason]").input_value()=="Révision humaine fictive suffisamment détaillée.","brouillons indépendants perdus")
+        page.once("dialog",lambda d:d.accept())
+        appeal.locator("[data-reverse]").click()
+        page.wait_for_function("window.moderationWrites.length===2")
+        page.evaluate("window.moderationWrites[1].resolve({error:null,data:{ok:true,outcome:'upheld',decision_id:'fixture-decision'}})")
+        page.wait_for_function("document.querySelector('[data-social-admin-status]').textContent.includes('Décision non confirmée')")
+        assert_true(appeal.locator("[data-uphold]").is_disabled() and second.locator("[data-resolve]").is_disabled(),"relance après réponse contradictoire")
+        assert_true(appeal.locator("[data-review-reason]").input_value()=="Révision humaine fictive suffisamment détaillée.","motivation perdue après incertitude")
+        assert_true(page.evaluate("""()=>[...document.querySelectorAll('[data-report] .field label,[data-appeal] .field label')].every(l=>l.control)"""),"libellés dynamiques non associés")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2786,6 +2847,7 @@ def run() -> None:
             check_admin_license_generation(browser)
             check_admin_form_saves(browser)
             check_admin_character_editor(browser)
+            check_admin_moderation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
