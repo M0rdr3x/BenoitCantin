@@ -200,3 +200,27 @@ body[data-v18-page="comments"] .reader-comment-inline-edit{
 body[data-v18-page="comments"] .reader-comment-inline-edit :where(label,output){
   overflow-wrap:anywhere
 }
+
+/* Mes commentaires : une colonne lisible et des commandes qui restent
+   utilisables sur écran très étroit ou avec agrandissement du texte. */
+body[data-v18-page="comments"] :where(.my-comments-guide,.reader-comments){
+  box-sizing:border-box;width:min(100%,860px);min-width:0;margin-inline:auto
+}
+body[data-v18-page="comments"] .reader-comments{grid-template-columns:minmax(0,1fr)}
+body[data-v18-page="comments"] .my-comments-guide{
+  margin-bottom:20px;overflow-wrap:anywhere
+}
+body[data-v18-page="comments"] .my-comments-guide .hero-actions{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px
+}
+body[data-v18-page="comments"] .my-comments-guide .btn{
+  box-sizing:border-box;min-width:0;min-height:48px;white-space:normal;
+  overflow-wrap:anywhere;text-align:center;justify-content:center
+}
+@media(max-width:360px){
+  body[data-v18-page="comments"] .my-comments-guide .hero-actions,
+  body[data-v18-page="comments"] .reader-comment .hero-actions{
+    grid-template-columns:minmax(0,1fr)
+  }
+  body[data-v18-page="comments"] .reader-comment{padding:12px}
+}
