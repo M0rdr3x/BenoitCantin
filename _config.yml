@@ -53,6 +53,8 @@ exclude:
   - "supabase"
   - "tests"
   - "scripts"
+  # Candidats SQL/RPC et dossiers d’audit : jamais des ressources Web.
+  - "security"
   - "mobile-native"
   - "docs"
   - "node_modules"
