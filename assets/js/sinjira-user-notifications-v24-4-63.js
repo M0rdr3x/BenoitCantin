@@ -28,7 +28,7 @@ function notificationCard(item,{compact=false}={}){
     <p>${escapeHtml(item.body||'')}</p>
     <small>${escapeHtml(formatDate(item.created_at))}</small>
     <div class="hero-actions">
-      ${unread?`<button class="btn btn-secondary btn-small" type="button" data-notification-read="${escapeHtml(item.id)}">Marquer comme lu</button>`:''}
+      ${unread&&!compact?`<button class="btn btn-secondary btn-small" type="button" data-notification-read="${escapeHtml(item.id)}">Marquer comme lu</button>`:''}
       ${path?`<a class="btn btn-primary btn-small" data-notification-open="${escapeHtml(item.id)}" href="${escapeHtml(path)}">Ouvrir</a>`:''}
     </div>
   </article>`;
@@ -46,12 +46,13 @@ async function markRead(user,id){
 async function loadFullPage(user){
   const box=document.querySelector('[data-notifications-list]');
   if(!box)return;
+  box.setAttribute('aria-busy','true');
   const {data=[],error}=await s.from('user_notifications')
     .select('id,notification_type,title,body,action_path,read_at,created_at')
     .eq('user_id',user.id)
     .order('created_at',{ascending:false})
     .limit(100);
-  if(error)throw error;
+  if(error){box.setAttribute('aria-busy','false');throw error;}
 
   const unread=data.filter(item=>!item.read_at).length;
   const unreadNode=document.querySelector('[data-notifications-unread-count]');
@@ -63,16 +64,22 @@ async function loadFullPage(user){
     ? data.map(item=>notificationCard(item)).join('')
     : '<div class="notice"><strong>Aucun avis pour le moment.</strong><p>Les changements importants de votre compte apparaîtront ici.</p></div>';
 
+  box.setAttribute('aria-busy','false');
   box.querySelectorAll('[data-notification-read]').forEach(button=>button.addEventListener('click',async()=>{
+    const hadFocus=document.activeElement===button;
     button.disabled=true;
+    let updated=false;
     try{
       await markRead(user,button.dataset.notificationRead);
+      updated=true;
       await loadFullPage(user);
       setStatus(pageStatus,'Avis marqué comme lu.','success');
     }catch(_){
-      button.disabled=false;
-      setStatus(pageStatus,'Impossible de modifier cet avis pour le moment.','error');
+      box.setAttribute('aria-busy','false');
+      button.disabled=updated;
+      setStatus(pageStatus,updated?'Avis marqué comme lu, mais la liste n’a pas pu être actualisée. Rechargez la page.':'Impossible de modifier cet avis pour le moment.','error');
     }
+    if(hadFocus&&(!document.activeElement||document.activeElement===document.body||document.activeElement===button))pageStatus?.focus();
   }));
 
   box.querySelectorAll('[data-notification-open]').forEach(link=>link.addEventListener('click',async event=>{
@@ -88,18 +95,25 @@ async function loadFullPage(user){
   if(all){
     all.disabled=unread===0;
     all.onclick=async()=>{
+      if(all.disabled)return;
+      const hadFocus=document.activeElement===all;
       all.disabled=true;
-      const {error:updateError}=await s.from('user_notifications')
-        .update({read_at:new Date().toISOString()})
-        .eq('user_id',user.id)
-        .is('read_at',null);
-      if(updateError){
-        all.disabled=false;
-        setStatus(pageStatus,'Impossible de marquer tous les avis comme lus.','error');
-        return;
+      let updated=false;
+      try{
+        const {error:updateError}=await s.from('user_notifications')
+          .update({read_at:new Date().toISOString()})
+          .eq('user_id',user.id)
+          .is('read_at',null);
+        if(updateError)throw updateError;
+        updated=true;
+        await loadFullPage(user);
+        setStatus(pageStatus,'Tous les avis sont maintenant marqués comme lus.','success');
+      }catch(_){
+        box.setAttribute('aria-busy','false');
+        all.disabled=updated;
+        setStatus(pageStatus,updated?'Avis marqués comme lus, mais la liste n’a pas pu être actualisée. Rechargez la page.':'Impossible de marquer tous les avis comme lus.','error');
       }
-      await loadFullPage(user);
-      setStatus(pageStatus,'Tous les avis sont maintenant marqués comme lus.','success');
+      if(hadFocus&&all.disabled&&(document.activeElement===document.body||document.activeElement===all))pageStatus?.focus();
     };
   }
 }
@@ -138,5 +152,10 @@ async function loadDashboardPreview(user){
     loadDashboardPreview(user)
   ]);
 })().catch(error=>{
+  const box=document.querySelector('[data-notifications-list]');
+  if(box){
+    box.setAttribute('aria-busy','false');
+    box.textContent='Les avis privés sont indisponibles. Actualisez la page pour réessayer.';
+  }
   if(error?.message!=='Connexion requise')setStatus(pageStatus,'Impossible de charger les avis privés pour le moment.','error');
 });
