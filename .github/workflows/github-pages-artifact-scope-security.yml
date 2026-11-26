@@ -7,6 +7,7 @@ on:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
       - 'scripts/pages_archive_integrity.py'
+      - 'scripts/verify_pages_artifact_zip.py'
       - 'scripts/build_netlify_public.py'
   push:
     branches: [main]
@@ -14,6 +15,7 @@ on:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
       - 'scripts/pages_archive_integrity.py'
+      - 'scripts/verify_pages_artifact_zip.py'
       - 'scripts/build_netlify_public.py'
   workflow_dispatch:
 
@@ -37,6 +39,8 @@ jobs:
         run: python3 scripts/validate_pages_artifact_boundary.py --self-test
       - name: Tester les archives déterministes et les membres hostiles
         run: python3 scripts/pages_archive_integrity.py self-test
+      - name: Vérifier les enveloppes ZIP sans extraction
+        run: python3 scripts/verify_pages_artifact_zip.py --self-test
       - name: Valider tous les workflows de publication
         run: python3 scripts/validate_pages_artifact_boundary.py
       - name: Construire et vérifier la vraie archive publique sans publication
