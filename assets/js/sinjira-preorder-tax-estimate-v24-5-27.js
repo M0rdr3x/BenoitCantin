@@ -4,22 +4,22 @@ const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
 const s = getSupabase();
 const initialized = new WeakSet();
 
-function money(cents, currency = 'CAD') {
-  if (cents === null || cents === undefined || !Number.isFinite(Number(cents))) return null;
+function money(cents, currency) {
+  if (cents === null || cents === undefined || cents === '' || (typeof cents !== 'number' && (typeof cents !== 'string' || !/^\d+$/.test(cents))) || !Number.isSafeInteger(Number(cents)) || Number(cents) < 0 || !/^[A-Z]{3}$/.test(currency || '')) return null;
   try { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency }).format(Number(cents) / 100); }
-  catch { return `${(Number(cents) / 100).toFixed(2)} ${currency}`; }
+  catch { return null; }
 }
 
 function range(min, max, currency) {
   const a = money(min, currency); const b = money(max, currency);
-  if (!a || !b) return null;
+  if (!a || !b || Number(min) > Number(max)) return null;
   return Number(min) === Number(max) ? a : `${a} à ${b}`;
 }
 
 async function rpc(name, args = {}) {
-  const { data, error } = await s.rpc(name, args);
-  if (error) throw error;
-  return data;
+  const result = await s.rpc(name, args);
+  if (result?.error !== null || !Object.hasOwn(result, 'data')) throw result?.error || new Error('Réponse non confirmée');
+  return result.data;
 }
 
 function addUi(summary) {
@@ -58,7 +58,7 @@ function addUi(summary) {
 function currentControls(summary) {
   return {
     format: String(summary.querySelector('[data-pcs-format]')?.value || 'undecided'),
-    quantity: Math.max(1, Math.min(5, Number(summary.querySelector('[data-pcs-quantity]')?.value || 1))),
+    quantity: Number(summary.querySelector('[data-pcs-quantity]')?.value),
     method: String(summary.querySelector('[data-pcs-method]')?.value || 'undecided'),
     zone: String(summary.querySelector('[data-pcs-zone]')?.value || '')
   };
@@ -76,6 +76,7 @@ async function init(summary) {
   initialized.add(summary);
   const n = addUi(summary);
   if (!n) return;
+  n.select.disabled = true;
 
   if (!isSinjiraBackendConfigured()) {
     resetUi(n, 'Estimation fiscale temporairement indisponible');
@@ -86,7 +87,7 @@ async function init(summary) {
   try {
     options = await rpc('product_preorder_tax_options', { p_product_slug: PRODUCT_SLUG });
   } catch (error) {
-    console.error('[SINJIRA tax options]', error);
+    // Ne pas journaliser le contenu brut des erreurs serveur.
     resetUi(n, 'Estimation fiscale temporairement indisponible');
     return;
   }
@@ -111,11 +112,11 @@ async function init(summary) {
     const taxCode = String(n.select.value || '');
     const c = currentControls(summary);
     if (!taxCode) { resetUi(n, profiles.length ? 'Choisissez une zone fiscale' : 'Aucune estimation fiscale publiée'); return; }
-    if (c.format === 'undecided') { resetUi(n, 'Choisissez d’abord un format'); return; }
+    if (!['paper','digital','both'].includes(c.format) || !Number.isInteger(c.quantity) || c.quantity < 1 || c.quantity > 5 || !profiles.some(profile => profile.tax_code === taxCode)) { resetUi(n, 'Choisissez un format, une quantité et une zone fiscale valides'); return; }
     if ((c.format === 'paper' || c.format === 'both') && c.method === 'undecided') { resetUi(n, 'Choisissez livraison ou ramassage'); return; }
     if ((c.format === 'paper' || c.format === 'both') && c.method === 'shipping' && !c.zone) { resetUi(n, 'Choisissez une zone de livraison'); return; }
 
-    n.tax.textContent = 'Calcul de l’estimation…';
+    resetUi(n, 'Calcul de l’estimation…');
     n.total.textContent = 'Calcul…';
     try {
       const data = await rpc('product_preorder_tax_estimate', {
@@ -124,7 +125,7 @@ async function init(summary) {
         p_format: c.format,
         p_quantity: c.quantity,
         p_fulfillment_method: c.method,
-        p_shipping_zone_code: c.zone || null
+        p_shipping_zone_code: (c.format === 'paper' || c.format === 'both') && c.method === 'shipping' ? c.zone || null : null
       });
       if (id !== calculation) return;
       const row = Array.isArray(data) ? data[0] : data;
@@ -139,7 +140,7 @@ async function init(summary) {
       }
       const taxRange = range(row.estimated_tax_min_cents, row.estimated_tax_max_cents, row.currency);
       const totalRange = range(row.estimated_total_min_cents, row.estimated_total_max_cents, row.currency);
-      if (!taxRange || !totalRange) { resetUi(n, 'Estimation fiscale incomplète'); return; }
+      if (!taxRange || !totalRange || Number(row.estimated_total_min_cents) < Number(row.estimated_tax_min_cents) || Number(row.estimated_total_max_cents) < Number(row.estimated_tax_max_cents)) { resetUi(n, 'Estimation fiscale incomplète'); return; }
       n.tax.textContent = taxRange;
       n.taxNote.innerHTML = `Estimation non contractuelle — ${escapeHtml(row.tax_label || taxCode)}.${row.effective_on ? ` Effet : ${escapeHtml(row.effective_on)}.` : ''}${row.source_reference ? ` Source vérifiée : ${escapeHtml(row.source_reference)}.` : ''}`;
       n.total.textContent = totalRange;
@@ -147,12 +148,19 @@ async function init(summary) {
       if (row.estimate_note) n.totalNote.textContent += ` ${row.estimate_note}`;
     } catch (error) {
       if (id !== calculation) return;
-      console.error('[SINJIRA tax estimate]', error);
+      // Ne pas journaliser le contenu brut des erreurs serveur.
       resetUi(n, 'Estimation fiscale temporairement indisponible');
     }
   }
 
-  n.select.addEventListener('change', calculate);
+  n.select.disabled = profiles.length === 0;
+  const selected = document.createElement('small');
+  selected.className = 'sinjira-selected-option';
+  selected.setAttribute('aria-hidden', 'true');
+  const showSelection = () => { selected.textContent = n.select.selectedOptions[0]?.textContent || ''; };
+  n.select.after(selected);
+  showSelection();
+  n.select.addEventListener('change', () => { showSelection(); calculate(); });
   summary.querySelectorAll('[data-pcs-format],[data-pcs-quantity],[data-pcs-method],[data-pcs-zone]').forEach(el => el.addEventListener('change', calculate));
   await calculate();
 }

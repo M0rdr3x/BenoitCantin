@@ -30,7 +30,7 @@ def main():
 
     for marker in ["import './sinjira-admin-preorder-tax-v24-5-27.js';",'/admin/sinjira/precommandes-readiness.html','ensureReadinessLink()']:
         if marker not in admin: errors.append(f'Console admin non convergée: {marker}')
-    for marker in ["import './sinjira-preorder-cost-summary-v24-5-25.js';","import './sinjira-preorder-tax-estimate-v24-5-27.js';"]:
+    for marker in ["import './sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.2';","import './sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46.2';"]:
         if marker not in public: errors.append(f'Parcours public incomplet: {marker}')
     for marker in ['requireAdminAal2','admin_preorder_tax_profile_save','admin_preorder_tax_profile_publish','API fiscale externe : désactivée']:
         if marker not in admin_tax: errors.append(f'Éditeur fiscal incomplet: {marker}')

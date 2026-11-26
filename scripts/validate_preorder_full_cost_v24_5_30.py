@@ -33,8 +33,8 @@ def main():
     rows = [x for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
 
     for marker in [
-        "import './sinjira-preorder-cost-summary-v24-5-25.js'",
-        "import './sinjira-preorder-tax-estimate-v24-5-27.js'",
+        "import './sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46.2'",
+        "import './sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46.2'",
     ]:
         if marker not in fulfillment:
             errors.append(f'Chaîne frontend incomplète: {marker}')
