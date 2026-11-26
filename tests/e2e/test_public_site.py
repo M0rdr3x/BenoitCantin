@@ -711,6 +711,60 @@ def check_admin_panel_navigation(browser):
         ctx.close()
 
 
+def check_admin_license_generation(browser):
+    # Le module client réel ne voit qu'un backend fictif, sans compte ni code réel.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        ctx.route("**/*",lambda route: route.continue_() if
+            route.request.url.startswith(BASE_URL) and
+            (route.request.resource_type!="script" or
+             urlparse(route.request.url).path=="/assets/js/v24-admin-licenses.js")
+            else route.abort())
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(
+            content_type="text/javascript",body="""window.writes=[];
+            export const requireUser=async()=>({id:'fixture'});
+            export function setStatus(n,m,t){n.hidden=false;n.textContent=m;n.dataset.type=t}
+            export function getSupabase(){return {functions:{invoke:(name,args)=>new Promise(resolve=>window.writes.push({name,args,resolve}))}}}
+            """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/licences.html"),wait_until="domcontentloaded")
+        form=page.locator("[data-admin-license-form]")
+        button=form.locator('button[type="submit"]')
+        batch=form.locator('[name="batch_code"]')
+        output=page.locator("[data-admin-license-output]")
+        next_button=page.locator("[data-admin-license-next]")
+        status=page.locator("[data-admin-license-status]")
+        form.locator('[name="product_slug"]').fill("fixture")
+        batch.fill("LOT-FICTIF")
+        form.locator('[name="quantity"]').fill("2")
+        button.click()
+        page.wait_for_function("window.writes.length===1")
+        assert_true(button.is_disabled() and batch.is_disabled() and form.get_attribute("aria-busy")=="true","génération non verrouillée")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.writes.length===1"),"double génération")
+        assert_true(page.evaluate("window.writes[0].name==='admin-license-codes'&&Object.keys(window.writes[0].args.body).sort().join() === 'batch_code,product_slug,quantity'"),"contrat serveur modifié")
+        page.evaluate("""window.writes[0].resolve({error:null,data:{ok:true,batch:{batch_code:'LOT-FICTIF'},codes:['SJR-FIXTUR-AAAAA-BBBBB-CCCCC','SJR-FIXTUR-DDDDD-EEEEE-FFFFF']}})""")
+        next_button.wait_for(state="visible")
+        assert_true("LOT-FICTIF" in output.input_value() and button.is_disabled(),"export non protégé")
+        saved=output.input_value()
+        page.once("dialog",lambda d:d.dismiss())
+        next_button.click()
+        assert_true(output.input_value()==saved and button.is_disabled(),"export perdu sans confirmation")
+        page.once("dialog",lambda d:d.accept())
+        next_button.click()
+        assert_true(output.input_value()=="" and batch.input_value()=="" and not button.is_disabled(),"nouveau lot non préparé")
+        batch.fill("LOT-FICTIF-2")
+        button.click()
+        page.wait_for_function("window.writes.length===2")
+        page.evaluate("window.writes[1].resolve({data:{ok:true},error:null})")
+        page.wait_for_function("document.querySelector('[data-admin-license-status]').textContent.includes('non confirmée')")
+        assert_true(output.input_value()=="" and button.is_disabled() and not next_button.is_visible(),"réponse partielle acceptée")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.writes.length===2"),"relance après résultat incertain")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2557,6 +2611,7 @@ def run() -> None:
             check_reservation_feedback(browser)
             check_admin_responsive_layout(browser)
             check_admin_panel_navigation(browser)
+            check_admin_license_generation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
