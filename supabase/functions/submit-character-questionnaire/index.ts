@@ -363,21 +363,29 @@ function reserveRegistryPhotoSlot(userId:string):(()=>void)|null{
 }
 
 // Le chemin seul ne prouve ni l'existence ni le type de l'objet.
-async function registryPhotoStored(service:any,photoPath:string):Promise<boolean>{
+async function registryPhotoStored(service:any,photoPath:string,metadataDeadlineMs=5000):Promise<boolean>{
   const bucketId='sinjira-character-sources';
   const maxBytes=10*1024*1024;
   const formats:Record<string,string>={jpg:'image/jpeg',png:'image/png',webp:'image/webp',avif:'image/avif',gif:'image/gif'};
   const ext=photoPath.split('.').pop()||'';
   if(!Object.prototype.hasOwnProperty.call(formats,ext))return false;
+  // Budget partagé pour les deux lectures de métadonnées. Le SDK ne reçoit
+  // pas de signal ici : le délai borne notre attente, pas forcément le réseau.
+  let metadataTimer:ReturnType<typeof setTimeout>|undefined;
+  const metadataDeadline=new Promise<never>((_,reject)=>{
+    metadataTimer=setTimeout(()=>reject(new Error('PHOTO_METADATA_TIMEOUT')),metadataDeadlineMs);
+  });
   try{
-    const {data:bucket,error:bucketError}=await service.storage.getBucket(bucketId);
+    const {data:bucket,error:bucketError}=await Promise.race([service.storage.getBucket(bucketId),metadataDeadline]);
     if(bucketError!==null||!bucket||typeof bucket!=='object'||Array.isArray(bucket)||bucket.id!==bucketId||bucket.public!==false)return false;
     const file=service.storage.from(bucketId);
-    const {data:info,error:infoError}=await file.info(photoPath);
+    const {data:info,error:infoError}=await Promise.race([file.info(photoPath),metadataDeadline]);
     if(infoError!==null||!info||typeof info!=='object'||Array.isArray(info)||typeof info.size!=='number'||!Number.isSafeInteger(info.size)
       ||info.size<=0||info.size>maxBytes||info.contentType!==formats[ext])return false;
+    if(metadataTimer!==undefined)clearTimeout(metadataTimer);
     return await registryPhotoBinaryVerified(file,photoPath,info.size);
   }catch{return false}
+  finally{if(metadataTimer!==undefined)clearTimeout(metadataTimer);}
 }
 
 // Une violation UNIQUE peut venir d'un autre onglet ayant inséré entre notre

@@ -4,8 +4,9 @@ const src=fs.readFileSync(path.join(__dirname,'../supabase/functions/submit-char
 const start=src.indexOf('async function registryPhotoStored(');
 const end=src.indexOf('// Une violation UNIQUE',start);
 assert.ok(start>=0&&end>start);
-const code=src.slice(start,end).replace('(service:any,photoPath:string):Promise<boolean>','(service,photoPath)').replace('formats:Record<string,string>','formats');
-const ctx={registryPhotoBinaryVerified:async()=>true};vm.runInNewContext(code+'\nthis.verify=registryPhotoStored;',ctx,{timeout:1000});
+const code=src.slice(start,end).replace('(service:any,photoPath:string,metadataDeadlineMs=5000):Promise<boolean>','(service,photoPath,metadataDeadlineMs=5000)').replace('formats:Record<string,string>','formats').replace('metadataTimer:ReturnType<typeof setTimeout>|undefined','metadataTimer').replace('new Promise<never>','new Promise');
+let binaryCalls=0;
+const ctx={setTimeout,clearTimeout,registryPhotoBinaryVerified:async()=>{binaryCalls++;return true;}};vm.runInNewContext(code+'\nthis.verify=registryPhotoStored;',ctx,{timeout:1000});
 const prefix='10000000-0000-4000-8000-000000000001/aabbccdd-1234-4abc-8abc-001122334455.';
 const bucketId='sinjira-character-sources';
 let count=0;
@@ -22,6 +23,31 @@ async function check({ext='png',bucket={id:bucketId,public:false},bucketError=nu
   for(const bucket of [null,{}, {id:bucketId,public:true},{id:bucketId,public:'false'},{id:'other',public:false}])await check({bucket});
   for(const error of [false,0,'']){await check({bucketError:error});await check({infoError:error});}
   await check({bucketError:{code:'FAIL'}});await check({infoError:{code:'FAIL'}});await check({info:null});await check({throws:true});await check({ext:'svg'});await check({ext:'constructor'});
+  // Un fournisseur bloqué ne doit jamais déclencher une lecture binaire tardive.
+  for(const phase of ['bucket','info']){
+    let settle,infos=0;
+    const pending=new Promise(resolve=>{settle=resolve;});
+    const previous=binaryCalls;
+    const service={storage:{
+      getBucket:()=>phase==='bucket'?pending:Promise.resolve({data:{id:bucketId,public:false},error:null}),
+      from:()=>({info:()=>{infos++;return pending;}})
+    }};
+    assert.equal(await ctx.verify(service,prefix+'png',20),false,phase);count++;
+    settle(phase==='bucket'?{data:{id:bucketId,public:false},error:null}:{data:{size:100,contentType:'image/png'},error:null});
+    await new Promise(resolve=>setTimeout(resolve,0));
+    assert.equal(binaryCalls,previous,phase+' late binary');count++;
+    assert.equal(infos,phase==='bucket'?0:1,phase+' later metadata');count++;
+  }
+  // Le budget est partagé, pas renouvelé entre les appels.
+  let secondCalled=false;
+  const shared={storage:{
+    getBucket:()=>new Promise(resolve=>setTimeout(()=>resolve({data:{id:bucketId,public:false},error:null}),30)),
+    from:()=>({info:()=>{secondCalled=true;return new Promise(resolve=>setTimeout(()=>resolve({data:{size:100,contentType:'image/png'},error:null}),60));}})
+  }};
+  const prior=binaryCalls;
+  assert.equal(await ctx.verify(shared,prefix+'png',70),false);count++;
+  assert.equal(secondCalled,true);count++;
+  assert.equal(binaryCalls,prior);count++;
   // Tester le vrai garde local, y compris la libération répétée d'un ancien slot.
   const slotStart=src.indexOf('const registryPhotoActiveAccounts=');
   const slotEnd=src.indexOf('// Le chemin seul',slotStart);

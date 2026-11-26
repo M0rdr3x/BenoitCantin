@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const src=fs.readFileSync(path.join(__dirname,'../supabase/functions/submit-character-questionnaire/index.ts'),'utf8');
-const start=src.indexOf('function registryPhotoSignature('),end=src.indexOf('// Le chemin seul',start);
+const start=src.indexOf('function registryPhotoSignature('),end=src.indexOf('// Admission locale par instance Edge',start);
 assert.ok(start>=0&&end>start);
 const code=src.slice(start,end)
  .replace('(header:Uint8Array,ext:string,total:number):boolean','(header,ext,total)')
