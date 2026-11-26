@@ -1,0 +1,57 @@
+name: Sécurité — candidat PDF.js vérifié
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify_pdfjs_release_candidate.py'
+      - '.github/workflows/pdfjs-release-candidate.yml'
+      - 'projets/projet-nova/visionneuse.html'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-release:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'security/browser-dependency-inventory-20261126')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester les frontières d'archive
+        run: python3 scripts/verify_pdfjs_release_candidate.py --self-test
+      - name: Acquérir la version officielle sans exécuter son contenu
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/pdfjs-release-candidate"
+          mkdir "$output"
+          # Fixed official release URL, no authorization header or credentials.
+          # A redirect must remain HTTPS. Exact pre-reviewed digest is mandatory.
+          (
+            ulimit -f 7000
+            env -i PATH="$PATH" HOME="$output" curl --disable --fail --silent --show-error \
+              --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+              --connect-timeout 10 --max-time 60 --max-filesize 6911254 \
+              --output "$output/release.zip" \
+              https://github.com/mozilla/pdf.js/releases/download/v6.5.438/pdfjs-6.5.438-legacy-dist.zip
+          )
+          python3 scripts/verify_pdfjs_release_candidate.py \
+            --archive "$output/release.zip" --receipt "$output/receipt.json" \
+            --source-sha "$GITHUB_SHA"
+      - name: Conserver seulement le candidat vérifié et son inventaire
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: pdfjs-release-candidate-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/pdfjs-release-candidate/release.zip
+            ${{ runner.temp }}/pdfjs-release-candidate/receipt.json
+          retention-days: 7
+          if-no-files-found: error
+          overwrite: false
