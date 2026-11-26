@@ -1,4 +1,4 @@
-import {createAdminSaveGuard} from './sinjira-admin-save-guard.mjs?v=1.0.0';
+import {createAdminSaveGuard} from './sinjira-admin-save-guard.mjs?v=1.0.1';
 import {prepareAdminNavigation,openAdminPanel} from './sinjira-admin-panel-nav.mjs?v=1.0.0';
 import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.js';
 
@@ -89,17 +89,37 @@ async function loadDocs(){
   box.querySelectorAll('[data-doc]').forEach(b=>b.addEventListener('click',async()=>{try{await call('set_document_status',{document_id:b.dataset.doc,status:b.dataset.state});await loadDocs();await dashboard()}catch(x){setStatus(status,x.message,'error')}}));
 }
 function bindUpload(){
-  const f=document.querySelector('[data-document-upload-form]');
-  f.addEventListener('submit',async e=>{e.preventDefault();const file=f.elements.file.files?.[0],project=projects.find(p=>p.id===f.elements.project_id.value);
-    if(!file||!project){setStatus(status,'Choisissez un projet et un fichier.','error');return}
-    try{
-      setStatus(status,'Préparation du téléversement sécurisé…','info');
-      const prep=await call('prepare_document_upload',{document:{project_id:project.id,project_slug:project.slug,title:f.elements.title.value,description:f.elements.description.value,document_type:f.elements.document_type.value,version:f.elements.version.value,access_level:f.elements.access_level.value,sort_order:f.elements.sort_order.value,filename:file.name,mime_type:file.type||'application/octet-stream',file_size_bytes:file.size}});
-      const {error}=await getSupabase().storage.from(prep.upload.bucket).uploadToSignedUrl(prep.upload.path,prep.upload.token,file,{contentType:file.type||'application/octet-stream'});
-      if(error)throw error;
-      await call('finalize_document',{document_id:prep.document.id,status:f.elements.publish_status.value});
-      setStatus(status,'Document téléversé.','success');f.reset();await loadDocs();await dashboard();
-    }catch(x){setStatus(status,x.message,'error')}
+  const f=document.querySelector('[data-document-upload-form]'),guard=createAdminSaveGuard(f);
+  f.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!guard.canStart())return;
+    const file=f.elements.file.files?.[0],project=projects.find(p=>p.id===f.elements.project_id.value);
+    const desired=f.elements.publish_status.value;
+    if(!file||!file.size||!project||!['review','approved'].includes(desired)){
+      guard.notice('Choisissez un projet, un fichier non vide et un statut valide.','error');return;
+    }
+    if(desired==='approved'&&!window.confirm('Approuver ce document après son téléversement ? Il deviendra accessible aux comptes autorisés.'))return;
+    const payload={project_id:project.id,project_slug:project.slug,title:f.elements.title.value,description:f.elements.description.value,document_type:f.elements.document_type.value,version:f.elements.version.value,access_level:f.elements.access_level.value,sort_order:f.elements.sort_order.value,filename:file.name,mime_type:file.type||'application/octet-stream',file_size_bytes:file.size};
+    let stage='préparation';
+    guard.run(async()=>{
+      guard.notice('Étape 1 sur 3 : préparation du brouillon privé…','info');
+      const prep=await call('prepare_document_upload',{document:payload});
+      const doc=prep.document,upload=prep.upload;
+      if(!doc||typeof doc.id!=='string'||!doc.id||doc.project_id!==payload.project_id||
+        doc.status!=='draft'||doc.storage_bucket!=='sinjira-private-documents'||
+        upload?.bucket!=='sinjira-private-documents'||typeof upload.path!=='string'||!upload.path||
+        upload.path!==doc.storage_path||typeof upload.token!=='string'||!upload.token)throw new Error('UPLOAD_PREP_UNCONFIRMED');
+      stage='transfert';
+      guard.notice('Étape 2 sur 3 : transfert du fichier privé…','info');
+      const result=await getSupabase().storage.from(upload.bucket).uploadToSignedUrl(upload.path,upload.token,file,{contentType:payload.mime_type});
+      if(result?.error!==null||result.data?.path!==upload.path)throw new Error('UPLOAD_UNCONFIRMED');
+      stage='finalisation';
+      guard.notice('Étape 3 sur 3 : enregistrement du statut…','info');
+      const final=await call('finalize_document',{document_id:doc.id,status:desired});
+      if(final.document?.id!==doc.id||final.document?.status!==desired)throw new Error('FINALIZE_UNCONFIRMED');
+      return final.document;
+    },async()=>{await loadDocs();await dashboard()},'Document téléversé et statut confirmé.',null,
+      ()=> 'Téléversement non confirmé ('+stage+'). Le fichier et la saisie restent sélectionnés. Vérifiez le brouillon dans la liste avant toute nouvelle tentative ; ne renvoyez pas le fichier automatiquement.');
   });
 }
 async function loadRequests(){
@@ -174,4 +194,4 @@ async function analytics(){
   const d=(await call('analytics')).analytics||{},box=document.querySelector('[data-admin-analytics]');
   box.innerHTML=Object.entries(d).map(([g,a])=>`<article class="admin-analytics-card"><h3>${escapeHtml(g)}</h3><dl><div><dt>Contributions</dt><dd>${a.count}</dd></div><div><dt>Joueurs moyens</dt><dd>${a.average_players??'—'}</dd></div><div><dt>Durée moyenne</dt><dd>${a.average_duration?`${a.average_duration} min`:'—'}</dd></div><div><dt>Note moyenne</dt><dd>${a.average_rating??'—'}</dd></div></dl></article>`).join('')||'<p>Aucune contribution.</p>';
 }
-(async()=>{try{await requireSinjiraAdmin();tabs();bindUpload();await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);bindProject();bindPlaytest();bindExtension();setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){if(x?.message!=='AUTH_REQUIRED'&&x?.message!=='ADMIN_REQUIRED')setStatus(status,x.message||'Erreur de chargement de l’administration.','error')}})();
+(async()=>{try{await requireSinjiraAdmin();tabs();await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);bindProject();bindPlaytest();bindExtension();bindUpload();setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){if(x?.message!=='AUTH_REQUIRED'&&x?.message!=='ADMIN_REQUIRED')setStatus(status,x.message||'Erreur de chargement de l’administration.','error')}})();

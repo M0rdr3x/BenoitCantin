@@ -774,15 +774,16 @@ def check_admin_form_saves(browser):
         ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
                   and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
                   else route.abort())
-        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.saves=[];window.failRefresh=false;
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.saves=[];window.failRefresh=false;window.uploads=[];window.docActions=[];window.uploadPath='projet-fictif/fixture/test.pdf';
           export const requireUser=async()=>({id:'fixture'});
           export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
           export function setStatus(n,m,t){n.hidden=false;n.textContent=m;n.dataset.statusType=t}
           const project={id:'fixture-project',name:'Projet fictif',slug:'projet-fictif',status:'development',visibility:'account'};
           export function getSupabase(){return {auth:{getUser:async()=>({data:{user:{id:'fixture'}},error:null})},
-            rpc:async()=>({data:true,error:null}),functions:{async invoke(name,{body}){
+            rpc:async()=>({data:true,error:null}),storage:{from(bucket){return {uploadToSignedUrl:(path,token,file,options)=>new Promise(resolve=>window.uploads.push({bucket,path,token,size:file.size,options,resolve}))}}},functions:{async invoke(name,{body}){
               const a=body.action;
               if(a.startsWith('save_'))return new Promise(resolve=>window.saves.push({name,body,resolve}));
+              if(a==='prepare_document_upload'||a==='finalize_document')return new Promise(resolve=>window.docActions.push({name,body,resolve}));
               if(a==='dashboard')return {data:{ok:true,dashboard:{}},error:null};
               if(a==='list_projects')return {data:{ok:true,projects:[project]},error:null};
               if(a==='list_playtests'&&window.failRefresh)return {data:null,error:{message:'fixture'}};
@@ -824,6 +825,44 @@ def check_admin_form_saves(browser):
         page.evaluate("window.saves[2].resolve({data:{ok:true,extension:{id:'fixture-extension'}},error:null})")
         page.wait_for_function("document.querySelector('[data-extension-form] [data-admin-save-status]').textContent==='Extension enregistrée.'")
         assert_true(not ext.locator('button[type="submit"]').is_disabled() and ext.locator('[name="title"]').input_value()=="","sauvegarde confirmée non réinitialisée")
+        page.locator('[data-admin-tab="documents"]').click()
+        doc=page.locator("[data-document-upload-form]")
+        upload=doc.locator('[name="file"]')
+        title=doc.locator('[name="title"]')
+        button=doc.locator('button[type="submit"]')
+        feedback=doc.locator("[data-admin-save-status]")
+        title.fill("Document fictif")
+        upload.set_input_files({"name":"test.pdf","mimeType":"application/pdf","buffer":b"fixture only"})
+        doc.locator('[name="publish_status"]').select_option("approved")
+        page.once("dialog",lambda d:d.dismiss())
+        button.click()
+        assert_true(page.evaluate("window.docActions.length===0"),"publication transmise sans confirmation")
+        doc.locator('[name="publish_status"]').select_option("review")
+        button.click()
+        page.wait_for_function("window.docActions.length===1")
+        assert_true(upload.is_disabled() and button.is_disabled(),"téléversement non verrouillé")
+        doc.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.docActions.length===1"),"préparation dupliquée")
+        page.evaluate("""window.docActions[0].resolve({error:null,data:{ok:true,document:{id:'doc-fixture',project_id:'fixture-project',status:'draft',storage_bucket:'sinjira-private-documents',storage_path:window.uploadPath},upload:{bucket:'sinjira-private-documents',path:window.uploadPath,token:'fixture-token'}}})""")
+        page.wait_for_function("window.uploads.length===1")
+        assert_true("Étape 2" in feedback.inner_text(),"état du transfert absent")
+        assert_true(page.evaluate("window.uploads[0].bucket==='sinjira-private-documents' && window.uploads[0].size===12"),"contrat du transfert modifié")
+        page.evaluate("window.uploads[0].resolve({error:null,data:{path:window.uploadPath}})")
+        page.wait_for_function("window.docActions.length===2")
+        assert_true(page.evaluate("window.docActions[1].body.action==='finalize_document' && window.docActions[1].body.document_id==='doc-fixture' && window.docActions[1].body.status==='review'"),"finalisation incorrecte")
+        page.evaluate("window.docActions[1].resolve({error:null,data:{ok:true,document:{id:'doc-fixture',status:'review'}}})")
+        page.wait_for_function("document.querySelector('[data-document-upload-form] [data-admin-save-status]').textContent.includes('statut confirmé')")
+        assert_true(not button.is_disabled() and title.input_value()=="" and upload.evaluate("el=>el.files.length")==0,"transfert confirmé non réinitialisé")
+        title.fill("Document interrompu")
+        upload.set_input_files({"name":"test.pdf","mimeType":"application/pdf","buffer":b"fixture only"})
+        button.click()
+        page.wait_for_function("window.docActions.length===3")
+        page.evaluate("""window.docActions[2].resolve({error:null,data:{ok:true,document:{id:'doc-fixture-2',project_id:'fixture-project',status:'draft',storage_bucket:'sinjira-private-documents',storage_path:window.uploadPath},upload:{bucket:'sinjira-private-documents',path:window.uploadPath,token:'fixture-token'}}})""")
+        page.wait_for_function("window.uploads.length===2")
+        page.evaluate("window.uploads[1].resolve({error:null,data:{path:'unexpected-path'}})")
+        page.wait_for_function("document.querySelector('[data-document-upload-form] [data-admin-save-status]').textContent.includes('non confirmé (transfert)')")
+        assert_true(button.is_disabled() and title.input_value()=="Document interrompu" and upload.evaluate("el=>el.files.length")==1,"saisie ou fichier perdu après transfert incertain")
+        assert_true(page.evaluate("window.docActions.length===3"),"finalisation après transfert non confirmé")
     finally:
         ctx.close()
 

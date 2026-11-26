@@ -16,12 +16,14 @@ export function createAdminSaveGuard(form){
   form.addEventListener('change',change);
   submit.disabled=false;
   return {
+    canStart(){return !busy&&!uncertain&&!submit.disabled},
+    notice:say,
     canReplace(){
       if(busy||uncertain)return false;
       return !dirty||window.confirm('Remplacer les modifications non enregistrées de ce formulaire ?');
     },
     markClean(){dirty=false;status.hidden=true;syncWarning()},
-    async run(save,refresh,message,expectedId){
+    async run(save,refresh,message,expectedId,onUncertain){
       if(busy||uncertain||submit.disabled)return false;
       busy=true;syncWarning();
       const states=[...form.elements].filter(el=>'disabled' in el).map(el=>[el,el.disabled]);
@@ -36,7 +38,7 @@ export function createAdminSaveGuard(form){
             typeof row.id!=='string'||!row.id.trim()||(expectedId&&row.id!==expectedId))throw new Error('UNCONFIRMED');
         }catch{
           uncertain=true;
-          say('Enregistrement non confirmé. Votre saisie est conservée. Vérifiez le résultat avant de recharger et de réessayer.','error');
+          say(typeof onUncertain==='function'?onUncertain():'Enregistrement non confirmé. Votre saisie est conservée. Vérifiez le résultat avant de recharger et de réessayer.','error');
           return false;
         }
         form.reset();dirty=false;

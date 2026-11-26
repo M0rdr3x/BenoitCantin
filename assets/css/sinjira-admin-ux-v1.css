@@ -56,3 +56,6 @@
 /* Statuts locaux de sauvegarde. */
 .admin-sinjira-page .admin-save-status{grid-column:1/-1;min-width:0;max-width:100%;overflow-wrap:anywhere}
 .admin-sinjira-page form[aria-busy="true"] button[type="submit"]{cursor:wait}
+
+.admin-sinjira-page .admin-upload-help{font-size:.9em;color:var(--muted);overflow-wrap:anywhere;margin:8px 0}
+.admin-sinjira-page [data-document-upload-form] input[type=file]{white-space:normal;max-width:100%}
