@@ -4,7 +4,7 @@ import re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'/'20260818041444_sinjira_v24_4_63_user_notifications.sql'
-MIN_CLIENT_VERSION='24.4.63'
+MIN_CLIENT_VERSION='24.4.92'
 CLIENT_ASSET='sinjira-user-notifications-v24-4-63.js'
 
 
@@ -113,9 +113,15 @@ def main()->int:
         '.update({read_at:',
         '.is(\'read_at\',null)',
         'safeActionPath',
-        "path.startsWith('/compte/')",
-        "path.startsWith('/projets/sinjira/')"
+        'safeSocialDestination(value,',
+        "scopes:['/compte/','/projets/sinjira/']"
     ],'client notifications')
+    require(read(ROOT/'assets/js/sinjira-social-navigation-guard.mjs'),[
+        "target.origin!==base.origin",
+        "target.pathname!==rawPath",
+        "value.startsWith('//')",
+        "scopes.some(scope=>target.pathname.startsWith(scope))"
+    ],'garde partagé des URL sociales')
     forbid(client,[
         "from('user_notifications').insert",
         "from('user_notifications').delete",

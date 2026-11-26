@@ -340,7 +340,9 @@ export const getSupabase=()=>({from(table){
                 return route.abort()
             if parsed.path.endswith("/sinjira-supabase.js"):
                 return route.fulfill(status=200, content_type="text/javascript", body=mock)
-            if request.resource_type == "script" and not parsed.path.endswith("/sinjira-user-notifications-v24-4-63.js"):
+            if request.resource_type == "script" and not parsed.path.endswith((
+                "/sinjira-user-notifications-v24-4-63.js", "/sinjira-social-navigation-guard.mjs"
+            )):
                 return route.abort()
             return route.continue_()
         page.route("**/*", route_request)
