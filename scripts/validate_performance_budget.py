@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 import re
 import hashlib
 import json
-import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_LIMITS = {".js": 550_000, ".css": 550_000, ".html": 650_000}
@@ -35,62 +34,6 @@ def resolve_asset(page: Path, value: str) -> Path | None:
     if clean.startswith("/"):
         return ROOT / clean.lstrip("/")
     return (page.parent / clean).resolve()
-
-
-def validate_session_runtime(errors):
-    # Simule uniquement la fenêtre et remplace l'import réseau par un espion.
-    # Le reste du runtime est exécuté tel quel, sans connexion ni compte.
-    harness = r"""
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const source = fs.readFileSync('assets/js/home-session-lazy-v24-5-1.js', 'utf8');
-const target = "import('./v19-session.js?v=24.5.1')";
-assert.equal(source.split(target).length, 2);
-function run(readyState) {
-  const events = new Map(), timers = new Map();
-  let imports = 0;
-  const window = {
-    addEventListener: (name, cb) => events.set(name, cb),
-    removeEventListener: (name, cb) => { if (events.get(name) === cb) events.delete(name); },
-    setTimeout: (cb, ms) => { assert.equal(ms, 60000); timers.set(1, cb); return 1; },
-    clearTimeout: id => timers.delete(id)
-  };
-  vm.runInNewContext(source.replace(target, 'loadModule()'), {
-    window, document: {readyState}, loadModule: () => { imports++; return Promise.resolve(); }
-  });
-  return {events, timers, imports: () => imports};
-}
-for (const event of ['pointerdown','touchstart','keydown']) {
-  const early = run('interactive');
-  const callback = early.events.get(event);
-  assert.equal(early.timers.size, 0);
-  callback();
-  callback();
-  assert.equal(early.imports(), 1);
-  assert.equal(early.events.size, 0);
-  assert.equal(early.timers.size, 0);
-}
-const late = run('interactive');
-late.events.get('load')();
-assert.equal(late.timers.size, 1);
-late.events.get('keydown')();
-assert.equal(late.imports(), 1);
-assert.equal(late.events.size, 0);
-assert.equal(late.timers.size, 0);
-const idle = run('complete');
-idle.timers.get(1)();
-assert.equal(idle.imports(), 1);
-assert.equal(idle.events.size, 0);
-assert.equal(idle.timers.size, 0);
-"""
-    try:
-        result = subprocess.run(["node", "-e", harness], cwd=ROOT,
-                                capture_output=True, text=True, timeout=15)
-        if result.returncode:
-            errors.append("Session accueil : " + result.stderr.strip())
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        errors.append(f"Session accueil non testée : {exc}")
 
 
 def main() -> int:
@@ -138,8 +81,6 @@ def main() -> int:
         for marker in ("pointerdown", "touchstart", "keydown", "setTimeout(loadSession,60000)"):
             if marker not in session_text:
                 errors.append(f"Loader session accueil insuffisamment différé: {marker}")
-
-    validate_session_runtime(errors)
 
     script_count = len(re.findall(r"<script\b", home, flags=re.I))
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))

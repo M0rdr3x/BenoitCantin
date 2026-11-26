@@ -156,24 +156,43 @@ test('reprise hors ligne et anciens liens : destinations fixes, sans écriture',
   const runtime = readFileSync(new URL('../assets/js/error-pages-ux-v1.js', import.meta.url), 'utf8');
   function run(kind, pathname, search = '', hash = '') {
     const calls = [];
+    const events = new Map();
+    const navigator = { onLine: false };
+    const status = { textContent: '' };
     let click;
     const button = { hidden: true, addEventListener(type, handler) {
       assert.equal(type, 'click'); click = handler;
     } };
     runInNewContext(runtime, {
-      document: { body: { dataset: { errorPage: kind } }, querySelector: () => button },
+      document: { body: { dataset: { errorPage: kind } }, querySelector: selector => {
+        if (selector === '[data-error-retry]') return button;
+        if (selector === '[data-error-status]') return status;
+        return null;
+      } },
+      window: { addEventListener: (type, handler) => events.set(type, handler) },
+      navigator,
       location: { pathname, search, hash, reload: () => calls.push('reload'),
         assign: path => calls.push(path), replace: path => calls.push(path) },
     });
-    return { calls, button, click };
+    return { calls, button, click, events, navigator, status };
   }
   const fallback = run('offline', '/compte/');
   assert.equal(fallback.button.hidden, false);
+  assert.match(fallback.status.textContent, /semble déconnecté/);
+  fallback.navigator.onLine = true;
+  fallback.events.get('online')();
+  assert.match(fallback.status.textContent, /encore être indisponible/);
+  assert.deepEqual(fallback.calls, []);
+  fallback.navigator.onLine = false;
+  fallback.events.get('offline')();
+  assert.match(fallback.status.textContent, /semble déconnecté/);
   fallback.click();
   assert.deepEqual(fallback.calls, ['reload']);
   const direct = run('offline', '/offline.html');
-  direct.click();
-  assert.deepEqual(direct.calls, ['/']);
+  assert.equal(direct.button.hidden, true);
+  assert.equal(direct.click, undefined);
+  assert.match(direct.status.textContent, /Revenez à l’accueil/);
+  assert.deepEqual(direct.calls, []);
   assert.deepEqual(run('404', '/sinjira/romans/', '?page=2', '#sommaire').calls,
     ['/projets/sinjira/romans/?page=2#sommaire']);
   assert.deepEqual(run('404', '/inconnue').calls, []);
