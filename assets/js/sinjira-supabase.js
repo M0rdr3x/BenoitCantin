@@ -7,11 +7,20 @@ export function getSupabase() {
   if (!client) client = createClient(SINJIRA_CONFIG.supabaseUrl, SINJIRA_CONFIG.supabasePublishableKey, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   return client;
 }
-export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) return null;const {data,error}=await getSupabase().auth.getUser();return error ? null : (data.user || null)}
+export async function getCurrentUser() {
+  if (!isSinjiraBackendConfigured()) return null;
+  try{
+    const result=await getSupabase().auth.getUser();
+    const user=result?.data?.user;
+    if(result?.error!==null||!user||typeof user.id!=='string'||
+       !user.id.trim()||user.id!==user.id.trim())return null;
+    return user;
+  }catch{return null}
+}
 
 // Un résultat MFA incomplet ne constitue jamais une preuve d’assurance.
 export function assertKnownAssuranceLevels(data){
-  if(!data||!['aal1','aal2'].includes(data.currentLevel)||!['aal1','aal2'].includes(data.nextLevel)){
+  if(!data||typeof data!=='object'||Array.isArray(data)||!['aal1','aal2'].includes(data.currentLevel)||!['aal1','aal2'].includes(data.nextLevel)){
     throw new Error('MFA_STATE_UNAVAILABLE');
   }
 }
@@ -39,14 +48,14 @@ export async function requireUser(redirect='/compte/connexion.html') {
     const next=safeInternalDestination(location.pathname+location.search+location.hash,'/compte/index.html');
     try{
       const {data,error}=await getSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
-      if(error)throw error;
+      if(error!==null)throw new Error('MFA_STATE_UNAVAILABLE');
       assertKnownAssuranceLevels(data);
       if(data?.nextLevel==='aal2'&&data?.currentLevel!=='aal2'){
         location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}`);
         await new Promise(()=>{});
       }
-    }catch(error){
-      console.warn('[SINJIRA MFA gate]',error?.message||error);
+    }catch{
+      console.warn('[SINJIRA MFA gate] vérification indisponible');
       location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}&state=aal-check`);
       await new Promise(()=>{});
     }
