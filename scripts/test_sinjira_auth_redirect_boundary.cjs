@@ -150,6 +150,37 @@ async function recoveryRevocationTests(){
   checks+=3;
 }
 
+async function recoveryIdentityTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  const start=source.indexOf('async function recoveryIdentity(');
+  const end=source.indexOf('async function boot(',start);
+  assert.ok(start>=0&&end>start);
+  const rejected=Symbol('network failure');
+  for(const [result,expectedId,expected] of [
+    [{error:null,data:{user:{id:'test-user'}}},undefined,'test-user'],
+    [{error:null,data:{user:{id:'test-user'}}},'test-user','test-user'],
+    [{error:null,data:{user:{id:'other-user'}}},'test-user',null],
+    [{error:null,data:{user:{id:''}}},undefined,null],
+    [{error:null,data:{user:{id:' '}}},undefined,null],
+    [{error:null,data:{user:{id:42}}},undefined,null],
+    [{error:null,data:{user:null}},undefined,null],
+    [{error:{message:'denied'},data:{user:{id:'test-user'}}},'test-user',null],
+    [{data:{user:{id:'test-user'}}},'test-user',null],
+    [undefined,'test-user',null],
+    [rejected,'test-user',null]
+  ]){
+    const ctx={s:{auth:{getUser:async()=>{if(result===rejected)throw Error('offline');return result}}}};
+    vm.runInNewContext(source.slice(start,end)+'\nglobalThis.identity=recoveryIdentity;',ctx,{timeout:1000});
+    eq(await ctx.identity(expectedId),expected,'Identité de récupération vérifiée et stable');
+  }
+  const submit=source.slice(source.indexOf("form.addEventListener('submit'"));
+  assert.ok(source.includes('const recoveryUserId=await recoveryIdentity();'));
+  assert.ok(submit.indexOf('if(!await recoveryIdentity(recoveryUserId))')>submit.indexOf('if(!await requireRecoveryAal2WhenAvailable())'));
+  assert.ok(submit.indexOf('if(!await recoveryIdentity(recoveryUserId))')<submit.indexOf('s.auth.updateUser({password})'));
+  assert.ok(!/console\.(?:warn|error)\([^\n]*,\s*error\b/.test(source),'Aucune exception brute dans les logs de récupération');
+  checks+=4;
+}
+
 function deviceEntropyTests(){
   for(const file of ['sinjira-auth-pages.js','sinjira-recovery-v24-4-99.js','sinjira-security-center-v24-4-98.js']){
     const source=fs.readFileSync(path.join(ROOT,'assets/js',file),'utf8');
@@ -276,6 +307,7 @@ async function main(){
     '/compte/bibliotheque.html','Fallback MFA prédéfini conservé');
   await assuranceTests();
   await recoveryRevocationTests();
+  await recoveryIdentityTests();
   deviceEntropyTests();
   await loginDecisionTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');

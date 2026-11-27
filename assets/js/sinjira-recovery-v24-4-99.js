@@ -59,6 +59,15 @@ async function revokeRecoverySessions(){
   }catch{}
   return 'unconfirmed';
 }
+async function recoveryIdentity(expectedId){
+  try{
+    const result=await s.auth.getUser();
+    const id=result?.data?.user?.id;
+    if(result?.error!==null||typeof id!=='string'||!id.trim())return null;
+    if(expectedId!==undefined&&id!==expectedId)return null;
+    return id;
+  }catch{return null}
+}
 async function boot(){
   if(!form)return;
   const configured=isSinjiraBackendConfigured();
@@ -66,8 +75,8 @@ async function boot(){
   if(!configured){setBusy(true);setStatus(status,'Le service de comptes SINJIRA™ est temporairement indisponible.','error');return}
 
   setBusy(true);
-  const {data:{user},error:userError}=await s.auth.getUser();
-  if(userError||!user){
+  const recoveryUserId=await recoveryIdentity();
+  if(!recoveryUserId){
     setStatus(status,'Ce lien de récupération est invalide ou expiré. Demandez un nouveau lien.','error');
     return;
   }
@@ -90,6 +99,11 @@ async function boot(){
     setBusy(true);
     try{
       if(!await requireRecoveryAal2WhenAvailable())return;
+      // Ne pas réutiliser l’identité du chargement si la session a changé.
+      if(!await recoveryIdentity(recoveryUserId)){
+        setStatus(status,'La session de récupération a changé ou ne peut plus être vérifiée. Demandez un nouveau lien.','error');
+        return;
+      }
       const {error:updateError}=await s.auth.updateUser({password});
       if(updateError){
         setStatus(status,'Impossible de mettre à jour le mot de passe. Demandez un nouveau lien de récupération.','error');
@@ -117,15 +131,15 @@ async function boot(){
         : 'Mot de passe mis à jour. La révocation globale a été acceptée, mais la vérification des appareils n’est pas confirmée. Après reconnexion, vérifiez Ma sécurité.',
         cleanupOk?'success':'info');
       setTimeout(()=>location.replace('/compte/connexion.html?reset=1'),1200);
-    }catch(error){
-      console.warn('[SINJIRA secure recovery]',error);
+    }catch{
+      console.warn('[SINJIRA secure recovery] opération non confirmée');
       setStatus(status,'La récupération n’a pas pu être terminée. Réessayez avec un nouveau lien si nécessaire.','error');
     }finally{submitting=false;setBusy(passwordUpdated)}
   });
 }
 
-boot().catch(error=>{
-  console.warn('[SINJIRA secure recovery init]',error);
+boot().catch(()=>{
+  console.warn('[SINJIRA secure recovery init] vérification indisponible');
   setBusy(true);
   setStatus(status,'La récupération sécurisée ne peut pas être vérifiée pour le moment. Réessayez plus tard.','error');
 });
