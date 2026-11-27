@@ -75,3 +75,9 @@ Le test pgTAP inclut désormais une répétition transactionnelle du retrait cib
 - Après sauvegarde et revue indépendante, appliquer la migration approuvée et refaire l'inventaire des droits effectifs et par défaut. Ne pas rétablir des permissions excessives pour contourner un échec.
 
 Ce test ne remplace pas une migration : aucun changement de droits n'est persistant tant que cette dernière n'est pas appliquée.
+
+### Migration canonique MAINTAIN
+
+Le CLI Supabase a généré `20261127230813_sinjira_pg17_maintain_least_privilege.sql` pendant la répétition CI du lot #1328. Les 24 assertions pgTAP ont réussi sur la pile locale. La migration canonique reprend exactement le blob testé, et le workflow vérifie son SHA-256 avant de reconstruire la pile. Les postconditions sont désormais intégrées à `supabase/tests/postgres17_maintain_postcheck.test.sql`.
+
+**Statut : non appliquée en production.** Ne pas modifier le ledger de production avant confirmation réelle. Les ACL par défaut du rôle géré `supabase_admin` nécessitent une intervention autorisée distincte. Aucun accès à la production ni secret n'est nécessaire au workflow de répétition.
