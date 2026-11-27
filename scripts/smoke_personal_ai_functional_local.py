@@ -242,6 +242,15 @@ def main() -> int:
     require(settings.get("language_code") == "fr-CA", "après suppression, langue par défaut attendue")
     require(permission_map(state) == {}, "après suppression, aucune permission source ne doit subsister")
 
+    # Révoquer la session synthétique, sans attendre l'expiration du JWT.
+    logout = request("POST", "/auth/v1/logout?scope=local", token=aal2)
+    require(logout.status in (200, 204), "révocation de la session locale non confirmée")
+    for action in ("get_state", "update_settings", "set_source_permission", "delete_personal_ai_data"):
+        rejected = personal_ai(aal2, action, enabled=True, source_type="life_story", granted=True)
+        require(rejected.status in (401, 403), f"{action}: session révoquée doit être refusée")
+        require(not isinstance(rejected.body, dict) or rejected.body.get("ok") is not True,
+                f"{action}: aucune confirmation après révocation")
+
     print(
         "OK smoke Mon IA V25: TOTP/AAL2 réel, premier appareil courant fiabilisé sans privilège, "
         "runtime toujours not_configured, sources bornées à Histoire de vie/Emploi, conscience et identité client refusées, "
