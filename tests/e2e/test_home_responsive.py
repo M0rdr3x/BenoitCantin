@@ -428,6 +428,40 @@ def test_public_navigation_fallback(browser):
             context.close()
 
 
+def test_home_partial_stylesheet_failure(browser):
+    """Une feuille UX indisponible ne doit ni tronquer ni bloquer les liens."""
+    for js_enabled in (False, True):
+        context = browser.new_context(
+            java_script_enabled=js_enabled, service_workers="block", locale="fr-CA",
+            reduced_motion="reduce", viewport={"width": 390, "height": 760},
+        )
+        try:
+            context.route("**/assets/css/site-ux-sinjira-v1.css*", lambda route: route.abort())
+            page = context.new_page()
+            page.goto(BASE, wait_until="load", timeout=30_000)
+            nav = page.locator("[data-main-nav]")
+            toggle = page.locator("[data-menu-toggle]")
+            if js_enabled:
+                verify(toggle.is_visible() and nav.is_hidden(), "menu compact sans feuille partagée invalide")
+                toggle.click()
+            verify(nav.is_visible(), "navigation indisponible sans feuille partagée")
+            for width in (240, 320, 390, 768, 1020):
+                page.set_viewport_size({"width": width, "height": 760})
+                bounds = nav.evaluate("""nav => ({
+                    overflow: document.documentElement.scrollWidth > innerWidth + 2,
+                    links: [...nav.querySelectorAll('a')].map(a => {
+                        const r=a.getBoundingClientRect();
+                        return r.left >= -2 && r.right <= innerWidth + 2 && r.height >= 47.5;
+                    })
+                })""")
+                verify(not bounds["overflow"] and len(bounds["links"]) == len(NAV_PATHS)
+                       and all(bounds["links"]), f"navigation tronquée à {width}px : {bounds}")
+            if js_enabled:
+                page.keyboard.press("Escape")
+                verify(nav.is_hidden(), "menu de secours non refermé au clavier")
+        finally:
+            context.close()
+
 def run():
     verify(BROWSER in {"chromium", "firefox", "webkit"}, "navigateur inconnu")
     verify((urlparse(BASE).hostname or "") in {"localhost", "127.0.0.1"},
@@ -449,6 +483,7 @@ def run():
             test_responsive_images(browser)
             test_without_javascript(browser)
             test_public_navigation_fallback(browser)
+            test_home_partial_stylesheet_failure(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")
