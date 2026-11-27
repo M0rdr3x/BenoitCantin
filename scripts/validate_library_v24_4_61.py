@@ -51,6 +51,10 @@ def main()->int:
     require(romans_html,[
         'data-v18-page="reads-v24-4-61"',
         'data-reader-library',
+        'id="contenu" tabindex="-1"',
+        'sinjira-livre-1-cover-480.webp 480w',
+        'loading="lazy" decoding="async"',
+        'Fonctions prévues de la liseuse',
         'sinjira-reads-v24-4-61.js?v=',
         'liseuse.html?edition=integrale',
         '/projets/sinjira/romans/lire-demo.html',

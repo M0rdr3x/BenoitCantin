@@ -248,3 +248,14 @@
 @media(max-width:600px){
   .sinjira-liseuse .reader-turn-help{text-align:left;padding:13px 16px}
 }
+
+/* Collection de romans : règles locales, sans modification des autres liseuses. */
+body[data-v18-page="reads-v24-4-61"] .sinjira-library-tabs a{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box;max-width:100%;overflow-wrap:anywhere}
+body[data-v18-page="reads-v24-4-61"] :where(.sinjira-library-feature,.sinjira-library-feature>div,.reader-book-card){min-width:0;overflow-wrap:anywhere}
+body[data-v18-page="reads-v24-4-61"] :where(.sinjira-library-feature,.reader-book-card) .hero-actions .btn{min-height:48px;max-width:100%;white-space:normal;text-align:center}
+@media(max-width:480px){
+  body[data-v18-page="reads-v24-4-61"] .sinjira-library-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  body[data-v18-page="reads-v24-4-61"] .sinjira-library-feature{padding:16px;gap:16px}
+  body[data-v18-page="reads-v24-4-61"] :where(.sinjira-library-feature,.reader-book-card) .hero-actions .btn{width:100%}
+}
+@media(max-width:280px){body[data-v18-page="reads-v24-4-61"] .sinjira-library-tabs{grid-template-columns:minmax(0,1fr)}}
