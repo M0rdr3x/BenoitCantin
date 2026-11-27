@@ -135,7 +135,7 @@ def main():
     errors.append('Réinitialisation: les deux champs doivent imposer minlength=12.')
   if len(re.findall(r'autocomplete=["\']new-password["\']',reset))<2:
     errors.append('Réinitialisation: autocomplete=new-password absent sur les deux champs.')
-  if 'second facteur' not in reset or 'sinjira-recovery-v24-4-99.js?v=24.4.99.1' not in reset:
+  if 'second facteur' not in reset or 'sinjira-recovery-v24-4-99.js?v=24.4.99.2' not in reset:
     errors.append('Réinitialisation: explication MFA ou module V24.4.99 absent.')
 
   login=text('compte/connexion.html')

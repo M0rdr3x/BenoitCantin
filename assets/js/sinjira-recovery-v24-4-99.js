@@ -59,6 +59,10 @@ async function revokeRecoverySessions(){
   }catch{}
   return 'unconfirmed';
 }
+function recoveryCleanupConfirmed(result){
+  return result?.error===null&&result.data?.ok===true&&
+    result.data?.current_device_trusted===false;
+}
 async function recoveryIdentity(expectedId){
   try{
     const result=await s.auth.getUser();
@@ -114,7 +118,7 @@ async function boot(){
       let cleanupOk=false;
       try{
         const result=await s.rpc('security_after_password_recovery',{p_device_key:deviceKey()});
-        cleanupOk=result?.error===null;
+        cleanupOk=recoveryCleanupConfirmed(result);
       }catch{}
       if(!cleanupOk)console.warn('[SINJIRA recovery security cleanup] non confirmé');
 

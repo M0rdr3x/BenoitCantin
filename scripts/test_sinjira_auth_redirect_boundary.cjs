@@ -221,13 +221,19 @@ async function lostDeviceRevocationTests(){
   const end=source.indexOf('let lostDevicePending=',start);
   assert.ok(start>=0&&end>start);
   const reject=Symbol('offline'), ok={error:null}, denied={error:{message:'denied'}};
+  const rpcOk={error:null,data:{ok:true,device_id:'synthetic-id',session_revocation_required:true}};
   for(const [rpcResult,authResult,expected,attempt] of [
-    [ok,ok,'confirmed',true],
-    [ok,denied,'device-only',true],
-    [ok,undefined,'device-only',true],
-    [ok,{},'device-only',true],
-    [ok,reject,'device-only',true],
+    [rpcOk,ok,'confirmed',true],
+    [rpcOk,denied,'device-only',true],
+    [rpcOk,undefined,'device-only',true],
+    [rpcOk,{},'device-only',true],
+    [rpcOk,reject,'device-only',true],
     [{error:{message:'AAL2_REQUIRED'}},ok,'mfa-required',false],
+    [ok,ok,'unconfirmed',false],
+    [{error:null,data:{ok:false,device_id:'synthetic-id',session_revocation_required:true}},ok,'unconfirmed',false],
+    [{error:null,data:{ok:true,device_id:'other-id',session_revocation_required:true}},ok,'unconfirmed',false],
+    [{error:null,data:{ok:true,device_id:'synthetic-id',session_revocation_required:false}},ok,'unconfirmed',false],
+    [{error:null,data:{ok:'true',device_id:'synthetic-id',session_revocation_required:true}},ok,'unconfirmed',false],
     [denied,ok,'unconfirmed',false],
     [undefined,ok,'unconfirmed',false],
     [{},ok,'unconfirmed',false],
@@ -247,6 +253,28 @@ async function lostDeviceRevocationTests(){
   assert.ok(source.includes("lostDevicePending||button.disabled"));
   assert.ok(!/console\.(?:warn|error)\([^\n]*,\s*error\b/.test(source));
   checks+=4;
+}
+
+function recoveryCleanupContractTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  const start=source.indexOf('function recoveryCleanupConfirmed(');
+  const end=source.indexOf('async function recoveryIdentity(',start);
+  assert.ok(start>=0&&end>start);
+  const ctx={};
+  vm.runInNewContext(source.slice(start,end)+'\nglobalThis.confirmed=recoveryCleanupConfirmed;',ctx,{timeout:1000});
+  for(const [result,expected] of [
+    [{error:null,data:{ok:true,current_device_trusted:false}},true],
+    [{error:null},false],
+    [{error:null,data:null},false],
+    [{error:null,data:{ok:false,current_device_trusted:false}},false],
+    [{error:null,data:{ok:true,current_device_trusted:true}},false],
+    [{error:null,data:{ok:true}},false],
+    [{error:null,data:{ok:'true',current_device_trusted:false}},false],
+    [{error:{message:'denied'},data:{ok:true,current_device_trusted:false}},false],
+    [undefined,false]
+  ])eq(ctx.confirmed(result),expected,'Contrat de confirmation du nettoyage après récupération');
+  assert.ok(source.includes('cleanupOk=recoveryCleanupConfirmed(result);'));
+  checks++;
 }
 
 function deviceEntropyTests(){
@@ -378,6 +406,7 @@ async function main(){
   await recoveryIdentityTests();
   await compromiseRevocationTests();
   await lostDeviceRevocationTests();
+  recoveryCleanupContractTests();
   deviceEntropyTests();
   await loginDecisionTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');
