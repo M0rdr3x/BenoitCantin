@@ -197,6 +197,88 @@ def live(*, mode: str = "strict") -> int:
     return 0
 
 
+# Pages canoniques existantes, sans identifiant, paramètre ni authentification.
+PRIVATE_HEADER_ROUTES = (
+    "/compte/connexion.html",
+    "/admin/sinjira/",
+    "/app/",
+    "/histoire-de-vie/remise.html",
+)
+
+
+def validate_private_headers(status: int, headers) -> list[str]:
+    """Contrat HTTP effectif, pas une preuve dérivée des fichiers de configuration."""
+    if status != 200:
+        return ["HTTP 200 attendu sur la page canonique"]
+    errors: list[str] = []
+    expected = {
+        "Cache-Control": "private, no-store, max-age=0",
+        "X-Frame-Options": "deny",
+        "Referrer-Policy": "no-referrer",
+        "Pragma": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+    }
+    for key, value in expected.items():
+        values = headers.get_all(key, [])
+        if len(values) != 1 or values[0].strip().lower() != value:
+            errors.append(f"{key}: absent, dupliqué ou non conforme")
+    policies = headers.get_all("Content-Security-Policy", [])
+    if len(policies) != 1:
+        errors.append("Content-Security-Policy: en-tête unique obligatoire")
+    else:
+        directives: dict[str, list[str]] = {}
+        for part in policies[0].split(";"):
+            tokens = part.strip().split()
+            if not tokens:
+                continue
+            key = tokens[0].lower()
+            if key in directives:
+                errors.append("Content-Security-Policy: directive dupliquée")
+            directives[key] = tokens[1:]
+        for key in ("frame-ancestors", "object-src", "script-src-attr"):
+            if directives.get(key) != ["'none'"]:
+                errors.append(f"Content-Security-Policy: {key} 'none' obligatoire")
+        scripts = directives.get("script-src", [])
+        if "'self'" not in scripts or any(token.lower() in
+                {"'unsafe-inline'", "'unsafe-eval'", "data:", "blob:", "*", "https:", "http:"}
+                for token in scripts):
+            errors.append("Content-Security-Policy: script-src non conforme")
+        if directives.get("upgrade-insecure-requests") != []:
+            errors.append("Content-Security-Policy: upgrade-insecure-requests obligatoire")
+    hsts = headers.get_all("Strict-Transport-Security", [])
+    if len(hsts) != 1 or "max-age=31536000" not in {
+        token.strip().lower() for token in hsts[0].split(";")
+    }:
+        errors.append("Strict-Transport-Security: durée canonique d'un an obligatoire")
+    elif sum(token.strip().lower().startswith("max-age") for token in hsts[0].split(";")) != 1:
+        errors.append("Strict-Transport-Security: max-age ambigu")
+    return errors
+
+
+def live_private_headers() -> int:
+    opener = build_opener(RefuseRedirect())
+    failed = False
+    for route in PRIVATE_HEADER_ROUTES:
+        request = Request(BASE_URL + route, method="GET", headers={
+            "User-Agent": "SINJIRA-private-header-watch/1.0",
+            "Cache-Control": "no-cache",
+        })
+        try:
+            with opener.open(request, timeout=TIMEOUT_SECONDS) as response:
+                errors = validate_private_headers(int(response.status), response.headers)
+        except HTTPError as error:
+            error.close()
+            errors = [f"HTTP {error.code}: réponse canonique non confirmée"]
+        except (URLError, OSError, TimeoutError) as error:
+            errors = [f"réseau indisponible: {type(error).__name__}"]
+        # Ne jamais afficher des valeurs d'en-têtes, des cookies ou des corps.
+        print(f"{route}: {'ECHEC' if errors else 'PASS'}")
+        for error in errors:
+            print("- " + error)
+        failed = failed or bool(errors)
+    return int(failed)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Contrôler la frontière HTTP du site public.")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -204,7 +286,10 @@ def main() -> int:
     group.add_argument("--live", action="store_true", help="Verdict strict historique: confidentialité et Netlify.")
     group.add_argument("--live-boundary", action="store_true", help="Vérifier uniquement le 404 des sources techniques.")
     group.add_argument("--live-hosting", action="store_true", help="Vérifier uniquement la migration Netlify cible.")
+    group.add_argument("--live-private-headers", action="store_true", help="Vérifier les en-têtes HTTP effectifs des pages privées.")
     args = parser.parse_args()
+    if args.live_private_headers:
+        return live_private_headers()
     if args.self_test:
         self_test()
         return 0
