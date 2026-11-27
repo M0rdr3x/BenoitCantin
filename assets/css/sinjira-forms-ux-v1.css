@@ -106,3 +106,41 @@ body[data-sinjira-form-ux="v1"] .account-form[aria-busy="true"] button[type="sub
 @media(forced-colors:active){
   body[data-sinjira-form-ux="v1"] .sinjira-form-processing{color:CanvasText;border-color:CanvasText}
 }
+
+/* Profil et paramètres : éviter les largeurs intrinsèques des dates, des
+   champs privés et des libellés longs, sans changer les droits ni les valeurs. */
+body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main :is(.account-card,.account-form,.profile-editor-grid,.profile-avatar-editor,.v24-fieldset,.field-row,.account-optional-details,.hero-actions){
+  box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere;
+}
+body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main .account-form .field :is(input:not([type="hidden"]),select,textarea){
+  box-sizing:border-box;width:100%;min-height:48px;
+}
+body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main :is(.btn,.account-optional-details summary){
+  box-sizing:border-box;min-height:48px;max-width:100%;white-space:normal;overflow-wrap:anywhere;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="profile"] .profile-avatar-frame{
+  width:min(100%,168px);height:auto;aspect-ratio:1;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] .account-check{
+  box-sizing:border-box;min-height:48px;min-width:0;align-items:center;
+  padding:6px 0;cursor:pointer;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] .account-check input{
+  flex:0 0 22px;width:22px;height:22px;min-height:22px;margin:0;padding:0;accent-color:#82ded1;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] .account-check span{min-width:0;overflow-wrap:anywhere}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] .account-check:has(input:disabled){cursor:default}
+body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main :is(button,a,input,select,summary):focus-visible{
+  outline:3px solid #a1f4ec;outline-offset:2px;
+}
+@media(max-width:680px){
+  body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main .account-card{padding:clamp(12px,4vw,24px)}
+  body[data-sinjira-form-ux="v1"][data-account-page="profile"] .profile-editor-grid{grid-template-columns:minmax(0,1fr)}
+  body[data-sinjira-form-ux="v1"][data-account-page="profile"] :is(.v24-fieldset,.account-optional-details,.profile-avatar-editor){padding:clamp(10px,3vw,18px)}
+  body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main .hero-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main .btn{width:100%}
+}
+
+@media(forced-colors:active){
+  body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main :is(button,a,input,select,summary):focus-visible{outline-color:Highlight}
+}
