@@ -60,7 +60,10 @@ def contains_unsafe_legacy_admin_link(rel: str, text: str) -> bool:
                     and isinstance(item.get('key'), str)
                 }
                 if (
-                    values.get('Cache-Control') != 'no-store'
+                    values.get('Cache-Control') != 'private, no-store, max-age=0'
+                    or values.get('X-Frame-Options') != 'DENY'
+                    or len(values) != len(entries)
+                    or len({key.lower() for key in values}) != len(values)
                     or values.get('Referrer-Policy') != 'no-referrer'
                     or values.get('Pragma') != 'no-cache'
                 ):
