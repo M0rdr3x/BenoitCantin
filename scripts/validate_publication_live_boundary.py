@@ -239,10 +239,11 @@ def validate_private_headers(status: int, headers) -> list[str]:
             if directives.get(key) != ["'none'"]:
                 errors.append(f"Content-Security-Policy: {key} 'none' obligatoire")
         scripts = directives.get("script-src", [])
-        if "'self'" not in scripts or any(token.lower() in
-                {"'unsafe-inline'", "'unsafe-eval'", "data:", "blob:", "*", "https:", "http:"}
-                for token in scripts):
+        allowed_scripts = {"'self'", "https://cdn.jsdelivr.net", "https://challenges.cloudflare.com"}
+        if "'self'" not in scripts or not set(scripts) <= allowed_scripts:
             errors.append("Content-Security-Policy: script-src non conforme")
+        if "script-src-elem" in directives and directives["script-src-elem"] != scripts:
+            errors.append("Content-Security-Policy: script-src-elem divergent")
         if directives.get("upgrade-insecure-requests") != []:
             errors.append("Content-Security-Policy: upgrade-insecure-requests obligatoire")
     hsts = headers.get_all("Strict-Transport-Security", [])
