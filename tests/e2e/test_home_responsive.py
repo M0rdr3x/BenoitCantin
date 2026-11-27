@@ -87,6 +87,10 @@ def test_home(page):
                    f"filtre coûteux du logo mobile à {width}px")
             verify(page.locator(".site-header").evaluate("(el) => {const s=getComputedStyle(el);return (s.backdropFilter || s.webkitBackdropFilter || 'none') === 'none';}"),
                    f"flou coûteux de l’en-tête mobile à {width}px")
+            for panel in (".manifesto-panel", ".feature-panel"):
+                verify(page.locator(panel).evaluate("(el) => {const s=getComputedStyle(el);return (s.backdropFilter || s.webkitBackdropFilter || 'none') === 'none';}"),
+                       f"flou coûteux du panneau {panel} à {width}px")
+
         if width <= 600:
             targets = page.locator(".site-footer .footer-col a")
             verify(targets.count() >= 5, "liens de pied de page manquants")

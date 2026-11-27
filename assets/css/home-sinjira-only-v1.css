@@ -183,3 +183,23 @@
   .home-page.home-sinjira-only .brand img{width:40px;height:40px;flex:0 0 40px}
   .home-page.home-sinjira-only .brand-text span{font-size:.72rem;overflow-wrap:anywhere}
 }
+
+/* Mobile : réduire les surfaces de composition coûteuses sans modifier
+ * les dimensions ni les contenus. Les panneaux gardent leur contraste. */
+@media(max-width:700px){
+  .home-page.home-sinjira-only .manifesto-panel,
+  .home-page.home-sinjira-only .feature-panel{
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:0 8px 18px rgba(0,0,0,.24)
+  }
+  .home-page.home-sinjira-only .feature-panel{background:#11172b}
+  .home-page.home-sinjira-only .manifesto-panel{
+    background:linear-gradient(145deg,#1d233e,#0e1224)
+  }
+  .home-page.home-sinjira-only::before{
+    position:absolute;bottom:auto;height:min(100vh,700px);
+    -webkit-mask-image:none;mask-image:none;
+    opacity:.16;background-image:radial-gradient(circle,rgba(255,255,255,.7) 0 1px,transparent 1.4px);
+    background-size:66px 66px
+  }
+}
