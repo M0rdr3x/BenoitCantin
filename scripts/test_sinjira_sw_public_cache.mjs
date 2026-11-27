@@ -294,3 +294,32 @@ test('hors ligne : les ressources absentes produisent une réponse réseau en er
     assert.equal((await h.request(path, { destination })).type, 'error');
   }
 });
+
+
+test('précache : quatre requêtes simultanées au maximum, aucun stockage avant validation', async () => {
+  const h = harness();
+  let active=0, peak=0;
+  h.setReply(async () => {
+    active++; peak=Math.max(peak,active);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(h.writes.length,0);
+    active--;
+    return new Response('public');
+  });
+  await h.lifecycle('install');
+  assert.ok(h.requests.length>4);
+  assert.equal(peak,4);
+  assert.equal(active,0);
+  assert.equal(h.writes.length,h.requests.length);
+});
+
+test('précache : échec tardif annule également les lots précédents', async () => {
+  const h=harness();
+  h.setReply(req => new URL(req.url).pathname === '/assets/css/site.css'
+    ? new Response('private',{headers:{'Cache-Control':'private'}})
+    : new Response('public'));
+  await assert.rejects(h.lifecycle('install'),/précache non admissible/);
+  assert.ok(h.requests.length>4);
+  assert.equal(h.writes.length,0);
+  assert.deepEqual([...h.stores.keys()],['another-app-cache']);
+});

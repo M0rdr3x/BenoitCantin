@@ -1,5 +1,5 @@
 /* Cache hors ligne réservé aux ressources publiques (pas de réponses privées/dynamiques). */
-const CACHE='benoitcantin-v24-4-95-public-19';
+const CACHE='benoitcantin-v24-4-95-public-20';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
   '/assets/css/site.css','/assets/css/error-pages-ux-v1.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/ai-transparency.css','/assets/css/home-v24-4-12.css','/assets/css/home-sinjira-only-v1.css','/assets/css/site-ux-sinjira-v1.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css','/assets/css/sinjira-mobile-app-v24-4-94.css','/assets/css/sinjira-mobile-account-shell-v24-4-95.css',
@@ -27,12 +27,21 @@ function networkOnly(request,isDocument){
 // Le précache ne doit jamais contourner les critères de confidentialité du cache runtime.
 async function installPublicCache(){
   try{
-    const entries=await Promise.all(CORE.map(async path=>{
-      const request=new Request(new URL(path,location.origin),{credentials:'omit',cache:'no-store',redirect:'error'});
-      const response=await fetch(request);
-      if(!cacheableResponse(response))throw new Error('Réponse de précache non admissible: '+path);
-      return [request,response];
-    }));
+    // Limiter les requêtes concurrentes pour laisser de la bande passante à la page.
+    // Aucun élément n'est écrit avant validation de toutes les réponses.
+    const entries=[];
+    const batchSize=4;
+    for(let offset=0;offset<CORE.length;offset+=batchSize){
+      const batch=await Promise.allSettled(CORE.slice(offset,offset+batchSize).map(async path=>{
+        const request=new Request(new URL(path,location.origin),{credentials:'omit',cache:'no-store',redirect:'error'});
+        const response=await fetch(request);
+        if(!cacheableResponse(response))throw new Error('Réponse de précache non admissible: '+path);
+        return [request,response];
+      }));
+      const failed=batch.find(result=>result.status==='rejected');
+      if(failed)throw failed.reason;
+      entries.push(...batch.map(result=>result.value));
+    }
     const cache=await caches.open(CACHE);
     await Promise.all(entries.map(([request,response])=>cache.put(request,response)));
   }catch(error){
