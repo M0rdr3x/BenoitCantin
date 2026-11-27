@@ -81,6 +81,49 @@ def diagnostic_metrics(report, emit=print):
                     emit(f"DIAGNOSTIC {audit_id} {metric}: {value:.2f}")
 
 
+# Diagnostic agrégé : aucune URL brute, chaîne DOM, valeur libre ou donnée de session.
+PUBLIC_BOOT_SCRIPTS = (
+    "site.js", "sinjira-nav-boot-v2.js", "sinjira-pwa-install.js",
+    "home-session-lazy-v24-5-1.js", "v19-session.js", "site-personality-v25.js", "sw.js",
+)
+
+
+def boot_costs(report, emit=print):
+    from urllib.parse import urlsplit
+    audits = report.get("audits", {})
+    if not isinstance(audits, dict):
+        return
+    audit = audits.get("bootup-time", {})
+    details = audit.get("details", {}) if isinstance(audit, dict) else {}
+    items = details.get("items", []) if isinstance(details, dict) else []
+    if not isinstance(items, list):
+        return
+    totals = {}
+    for item in items[:200]:
+        if not isinstance(item, dict):
+            continue
+        value = item.get("total")
+        url = item.get("url")
+        if not valid_number(value, 120000) or not isinstance(url, str) or len(url) > 2048:
+            continue
+        try:
+            parsed = urlsplit(url)
+            if parsed.hostname not in ("127.0.0.1", "localhost", "www.benoitcantin.com", "benoitcantin.com"):
+                continue
+            if parsed.scheme not in ("http", "https") or parsed.username or parsed.password:
+                continue
+        except ValueError:
+            continue
+        for name in PUBLIC_BOOT_SCRIPTS:
+            path = "/sw.js" if name == "sw.js" else "/assets/js/" + name
+            if parsed.path == path:
+                totals[name] = totals.get(name, 0) + value
+                break
+    for name in PUBLIC_BOOT_SCRIPTS:
+        if name in totals:
+            emit(f"DIAGNOSTIC CPU {name}: {totals[name]:.2f} ms")
+
+
 def self_test():
     def good():
         return {
@@ -118,6 +161,16 @@ def self_test():
         "details": {"url": "https://example.invalid/?secret=1"}}}}, diagnostics.append)
     assert diagnostics == ["DIAGNOSTIC bootup-time: 300.00",
                            "DIAGNOSTIC bootup-time TBT: 100.00"]
+    costs = []
+    boot_costs({"audits": {"bootup-time": {"details": {"items": [
+        {"url": "http://127.0.0.1:4173/assets/js/site.js?v=1", "total": 20},
+        {"url": "http://127.0.0.1:4173/assets/js/site.js?v=2", "total": 5},
+        {"url": "https://example.invalid/assets/js/site.js", "total": 100},
+        {"url": "http://127.0.0.1:4173/private/site.js?secret=fixture", "total": 100},
+        {"url": "http://127.0.0.1:4173/assets/js/sw.js", "total": 100},
+        {"url": "http://127.0.0.1:4173/sw.js", "total": True},
+    ]}}}}, costs.append)
+    assert costs == ["DIAGNOSTIC CPU site.js: 25.00 ms"]
     print("OK auto-tests du contrat Lighthouse : limites, mesures absentes et rapports invalides.")
 
 
@@ -137,6 +190,7 @@ def main() -> int:
     if failures:
         if isinstance(report, dict):
             diagnostic_metrics(report)
+            boot_costs(report)
         print("ECHEC Lighthouse mobile:")
         for item in failures:
             print("- " + item)

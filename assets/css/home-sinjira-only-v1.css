@@ -103,3 +103,27 @@
   .home-page.home-sinjira-only .sinjira-orbit{max-width:100%;min-width:min(188px,100%)}
   .home-page.home-sinjira-only .home-direct-access{min-width:0;flex-wrap:wrap}
 }
+
+/* Mobile : conserver le contraste et la composition, limiter le coût du rendu.
+ * Aucun changement de dimensions, d'ordre de navigation ou de contenu. */
+@media(max-width:700px){
+  .home-page.home-sinjira-only .site-header{
+    background:#0b0d19;-webkit-backdrop-filter:none;backdrop-filter:none
+  }
+  .home-page.home-sinjira-only .home-sinjira-cosmos::before{
+    box-shadow:inset 0 0 22px rgba(183,24,32,.18)
+  }
+  .home-page.home-sinjira-only .home-sinjira-cosmos::after{
+    box-shadow:none
+  }
+  .home-page.home-sinjira-only .sinjira-orbit,
+  .home-page.home-sinjira-only .sinjira-orbit:hover,
+  .home-page.home-sinjira-only .sinjira-orbit:focus-visible{
+    box-shadow:0 8px 18px rgba(0,0,0,.38),0 0 0 5px rgba(199,52,45,.075);
+    transition:border-color .18s ease
+  }
+  .home-page.home-sinjira-only .sinjira-orbit img{filter:none}
+}
+@media(max-width:700px) and (prefers-reduced-motion:reduce){
+  .home-page.home-sinjira-only .sinjira-orbit{transition:none}
+}
