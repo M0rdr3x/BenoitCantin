@@ -1,4 +1,4 @@
-import './sinjira-admin-console-core.js?v=4.0.1';
+import './sinjira-admin-console-core.js?v=4.0.2';
 
 function projectSlug(value){
   return String(value||'projet')

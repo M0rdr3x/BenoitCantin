@@ -2,6 +2,22 @@ import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.j
 
 const status=document.querySelector('[data-admin-status]');
 let projects=[];
+const busyForms=new WeakSet();
+function beginForm(form){
+  if(busyForms.has(form))return null;
+  busyForms.add(form);
+  const controls=Array.from(form.elements),previous=controls.map(el=>el.disabled);
+  controls.forEach(el=>{el.disabled=true;});
+  form.setAttribute('aria-busy','true');
+  return ()=>{controls.forEach((el,i)=>{el.disabled=previous[i];});form.setAttribute('aria-busy','false');busyForms.delete(form);};
+}
+async function saveForm(form,write,refresh,message){
+  const release=beginForm(form);if(!release)return;
+  let saved=false;
+  try{setStatus(status,'Enregistrement en cours…','info');await write();saved=true;form.reset();await refresh();setStatus(status,message,'success');}
+  catch(error){setStatus(status,saved?'Enregistrement confirmé, mais actualisation impossible. Rechargez la page avant une nouvelle opération.':(error?.message||'Enregistrement non confirmé. Vérifiez les données avant de réessayer.'),'error');}
+  finally{release();}
+}
 
 async function requireSinjiraAdmin(){
   const s=getSupabase();
@@ -62,15 +78,15 @@ async function loadProjects(){
   const opts=projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   document.querySelectorAll('[data-project-select]').forEach(s=>{const old=s.value;s.innerHTML=opts;if(old)s.value=old});
   list.querySelectorAll('[data-edit-project]').forEach(b=>b.addEventListener('click',()=>{
-    const p=projects.find(x=>x.id===b.dataset.editProject),f=document.querySelector('[data-project-form]');if(!p)return;
+    const p=projects.find(x=>x.id===b.dataset.editProject),f=document.querySelector('[data-project-form]');if(!p||busyForms.has(f))return;
     Object.entries(p).forEach(([k,v])=>{if(f.elements[k]){if(f.elements[k].type==='checkbox')f.elements[k].checked=!!v;else f.elements[k].value=v??''}});
     f.scrollIntoView({behavior:'smooth'});
   }));
 }
 function bindProject(){
   const f=document.querySelector('[data-project-form]');
-  f.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(f),obj=Object.fromEntries(fd.entries());obj.allow_tester_requests=f.elements.allow_tester_requests.checked;
-    try{await call('save_project',{project:obj});setStatus(status,'Projet enregistré.','success');f.reset();await loadProjects();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
+  f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const fd=new FormData(f),obj=Object.fromEntries(fd.entries());obj.allow_tester_requests=f.elements.allow_tester_requests.checked;
+    await saveForm(f,()=>call('save_project',{project:obj}),async()=>{await loadProjects();await dashboard();},'Projet enregistré.');})
 }
 async function loadDocs(){
   const rows=(await call('list_documents')).documents||[],box=document.querySelector('[data-admin-document-list]');
@@ -79,16 +95,16 @@ async function loadDocs(){
 }
 function bindUpload(){
   const f=document.querySelector('[data-document-upload-form]');
-  f.addEventListener('submit',async e=>{e.preventDefault();const file=f.elements.file.files?.[0],project=projects.find(p=>p.id===f.elements.project_id.value);
+  f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const file=f.elements.file.files?.[0],project=projects.find(p=>p.id===f.elements.project_id.value);
     if(!file||!project){setStatus(status,'Choisissez un projet et un fichier.','error');return}
-    try{
+    const publishStatus=f.elements.publish_status.value;
+    await saveForm(f,async()=>{
       setStatus(status,'Préparation du téléversement sécurisé…','info');
       const prep=await call('prepare_document_upload',{document:{project_id:project.id,project_slug:project.slug,title:f.elements.title.value,description:f.elements.description.value,document_type:f.elements.document_type.value,version:f.elements.version.value,access_level:f.elements.access_level.value,sort_order:f.elements.sort_order.value,filename:file.name,mime_type:file.type||'application/octet-stream',file_size_bytes:file.size}});
       const {error}=await getSupabase().storage.from(prep.upload.bucket).uploadToSignedUrl(prep.upload.path,prep.upload.token,file,{contentType:file.type||'application/octet-stream'});
       if(error)throw error;
-      await call('finalize_document',{document_id:prep.document.id,status:f.elements.publish_status.value});
-      setStatus(status,'Document téléversé.','success');f.reset();await loadDocs();await dashboard();
-    }catch(x){setStatus(status,x.message,'error')}
+      await call('finalize_document',{document_id:prep.document.id,status:publishStatus});
+    },async()=>{await loadDocs();await dashboard();},'Document téléversé.');
   });
 }
 async function loadRequests(){
@@ -107,7 +123,7 @@ async function loadPlaytests(){
   box.querySelectorAll('[data-pt]').forEach(b=>b.addEventListener('click',async()=>{try{await call('review_playtest_participant',{playtest_id:b.dataset.pt,user_id:b.dataset.user,status:b.dataset.state});await loadPlaytests()}catch(x){setStatus(status,x.message,'error')}}));
 }
 function bindPlaytest(){
-  const f=document.querySelector('[data-playtest-form]');f.addEventListener('submit',async e=>{e.preventDefault();try{await call('save_playtest',{playtest:Object.fromEntries(new FormData(f).entries())});setStatus(status,'Playtest enregistré.','success');f.reset();await loadPlaytests();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
+  const f=document.querySelector('[data-playtest-form]');f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const playtest=Object.fromEntries(new FormData(f).entries());await saveForm(f,()=>call('save_playtest',{playtest}),async()=>{await loadPlaytests();await dashboard();},'Playtest enregistré.');})
 }
 async function loadExtensions(){
   const d=await call('list_extensions'),box=document.querySelector('[data-admin-extension-list]'),signals=document.querySelector('[data-extension-signals]');
@@ -115,7 +131,7 @@ async function loadExtensions(){
   signals.innerHTML=(d.signals||[]).slice(0,100).map(s=>`<article class="extension-signal"><strong>${escapeHtml(s.game_slug)}</strong>${s.idea?`<p><b>Extension :</b> ${escapeHtml(s.idea)}</p>`:''}${s.favorite?`<p><b>Mécanique appréciée :</b> ${escapeHtml(s.favorite)}</p>`:''}${s.unclear?`<p><b>À clarifier :</b> ${escapeHtml(s.unclear)}</p>`:''}</article>`).join('')||'<p>Aucun signal partagé.</p>';
 }
 function bindExtension(){
-  const f=document.querySelector('[data-extension-form]');f.addEventListener('submit',async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;try{await call('save_extension',{extension:o});setStatus(status,'Extension enregistrée.','success');f.reset();await loadExtensions()}catch(x){setStatus(status,x.message,'error')}})
+  const f=document.querySelector('[data-extension-form]');f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;await saveForm(f,()=>call('save_extension',{extension:o}),loadExtensions,'Extension enregistrée.');})
 }
 function reportModeLabel(v){return v==='solo'?'Solo':v==='duo'?'Duo':v==='multiplayer'?'Multijoueur':(v||'—')}
 function reportDate(v){try{return new Date(v).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'})}catch{return v||'—'}}
