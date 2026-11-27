@@ -1,7 +1,7 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.71';
+const UI_VERSION='24.4.73';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -11,6 +11,7 @@ const status=document.querySelector('[data-social-status]');
 const lock=document.querySelector('[data-character-message-lock]');
 const shell=document.querySelector('.v20-message-shell');
 let user,me,all=[],peer=null,channel=null,unreadByCharacter=new Map();
+let conversationVersion=0,requestVersion=0,sending=false;
 
 function portrait(profile={}){
   const path=String(profile.portrait_path||'').trim();
@@ -58,7 +59,7 @@ function renderContacts(){
   contacts.innerHTML=rows.map(item=>{
     const unread=unreadByCharacter.get(item.character_id)||0;
     const unreadLabel=unread?` · ${unread} non lu${unread>1?'s':''}`:'';
-    return `<button class="v20-contact character" data-character="${escapeHtml(item.character_id)}"><img src="${escapeHtml(portrait(item))}" alt=""><span><strong>${escapeHtml(item.public_name||'Personnage')}</strong><small>Personnage SINJIRA${unreadLabel}</small></span></button>`;
+    return `<button class="v20-contact character" data-character="${escapeHtml(item.character_id)}" aria-current="${peer?.character_id===item.character_id?'true':'false'}"><img src="${escapeHtml(portrait(item))}" alt=""><span><strong>${escapeHtml(item.public_name||'Personnage')}</strong><small>Personnage SINJIRA${unreadLabel}</small></span></button>`;
   }).join('')||'<p>Aucun personnage disponible.</p>';
   contacts.querySelectorAll('[data-character]').forEach(button=>{
     button.addEventListener('click',()=>openPeer(button.dataset.character).catch(error=>fail(error,'Impossible d’ouvrir cette conversation.')));
@@ -66,8 +67,18 @@ function renderContacts(){
 }
 
 async function openPeer(id){
-  peer=all.find(item=>item.character_id===id)||null;
-  if(!peer)return;
+  if(sending)return;
+  const next=all.find(item=>item.character_id===id);
+  if(!next)return;
+  if(peer?.character_id===id){await messages();return;}
+  const draft=form.querySelector('textarea');
+  if(draft?.value&&!confirm('Changer de conversation et effacer le brouillon actuel?'))return;
+  form.reset();
+  peer=next;
+  conversationVersion++;
+  log.textContent='Chargement de la conversation…';
+  log.scrollTop=0;
+  renderContacts();
   history.replaceState({},'',`?character=${encodeURIComponent(id)}`);
   title.innerHTML=`<div class="v20-social-identity"><img class="v20-social-avatar character" src="${escapeHtml(portrait(peer))}" alt=""><div><strong>${escapeHtml(peer.public_name)}</strong><span class="v20-social-time">Conversation personnage · rôle-play</span></div></div>`;
   form.hidden=false;
@@ -76,21 +87,22 @@ async function openPeer(id){
 
 async function messages(){
   if(!peer)return;
+  const version=conversationVersion,request=++requestVersion;
+  const selected=peer;
+  const nearBottom=log.scrollHeight-log.scrollTop-log.clientHeight<64;
   const s=getSupabase();
   const {data,error}=await s.from('social_character_messages')
     .select('*')
     .or(`and(sender_character_id.eq.${me.character_id},recipient_character_id.eq.${peer.character_id}),and(sender_character_id.eq.${peer.character_id},recipient_character_id.eq.${me.character_id})`)
     .order('created_at');
-  if(error)throw error;
+  if(version!==conversationVersion||request!==requestVersion)return;
+  if(error){
+    if(log.textContent==='Chargement de la conversation…')log.textContent='Chargement impossible. Sélectionnez de nouveau cette conversation pour réessayer.';
+    throw error;
+  }
   const rows=Array.isArray(data)?data:[];
   log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
-  log.scrollTop=log.scrollHeight;
-
-  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
-    await markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id});
-    unreadByCharacter.delete(peer.character_id);
-    renderContacts();
-  }
+  if(nearBottom)log.scrollTop=log.scrollHeight;
 
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
@@ -103,6 +115,13 @@ async function messages(){
       alert('Message signalé à l’administration.');
     }catch(error){fail(error,'Signalement impossible pour le moment.');}
   }));
+  // Les commandes de signalement restent actives même si l’état lu échoue.
+  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
+    await markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id});
+    if(version!==conversationVersion||request!==requestVersion)return;
+    unreadByCharacter.delete(selected.character_id);
+    renderContacts();
+  }
 }
 
 function showLocked(owner){
@@ -134,11 +153,15 @@ function showLocked(owner){
 
     form.addEventListener('submit',async event=>{
       event.preventDefault();
-      if(!peer)return;
+      if(!peer||sending)return;
       const body=String(new FormData(form).get('body')||'').trim();
       if(!body)return;
       const button=form.querySelector('button[type="submit"]');
+      sending=true;
       if(button)button.disabled=true;
+      const draft=form.querySelector('textarea');
+      if(draft)draft.readOnly=true;
+      form.setAttribute('aria-busy','true');
       try{
         const {error}=await getSupabase().from('social_character_messages').insert({
           sender_user_id:user.id,
@@ -149,8 +172,13 @@ function showLocked(owner){
         });
         if(error)return fail(error,'Impossible d’envoyer ce message personnage.');
         form.reset();
-        await messages();
+        try{await messages();socialStatus(status,'Message envoyé.','success');}catch(error){socialStatus(status,'Message envoyé, mais actualisation impossible.','error');}
+      }catch(error){
+        fail(error,'Envoi non confirmé. Vérifiez la conversation avant de réessayer.');
       }finally{
+        sending=false;
+        form.setAttribute('aria-busy','false');
+        if(draft)draft.readOnly=false;
         if(button)button.disabled=false;
       }
     });

@@ -103,7 +103,9 @@ jobs:
       - name: Vérifier les préférences self-only V24.4.70
         run: python scripts/validate_preferences_v24_4_70.py
       - name: Vérifier les messages non lus V24.4.71
-        run: python scripts/validate_message_read_state_v24_4_71.py
+        run: |
+          python scripts/validate_message_read_state_v24_4_71.py
+          node scripts/test_messaging_ux.cjs
       - name: Vérifier la gestion self-only du contenu social V24.4.72
         run: python scripts/validate_social_content_v24_4_72.py
       - name: Vérifier les avis de réponses sociales V24.4.73
