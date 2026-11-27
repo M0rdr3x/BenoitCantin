@@ -17,23 +17,26 @@ const code=extract('authenticatedContext','assuranceLevel')+
   extract('assertAdminMfa','sensitiveStepUpEnabled')+
   extract('sensitiveStepUpEnabled','assertSensitiveMfa')+
   extract('assertSensitiveMfa','assertVaultMfa')+
-  '\nglobalThis.gates={authenticatedContext,assuranceLevel,assertAdminMfa,assertSensitiveMfa};';
+  extract('assertVaultMfa','assertPersonalAiMfa')+
+  source.slice(source.indexOf('async function assertPersonalAiMfa('),source.indexOf('\nexport async function optionalUser('))
+    .replace('context: Awaited<ReturnType<typeof authenticatedContext>>','context')+
+  '\nglobalThis.gates={authenticatedContext,assuranceLevel,assertAdminMfa,assertSensitiveMfa,assertVaultMfa,assertPersonalAiMfa};';
 const validAal={currentLevel:'aal2',nextLevel:'aal2'};
-function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,settings={data:null,error:null}}={}){
-  let assuranceCalls=0;
-  const service={rpc:async()=>({data:admin,error:adminError}),
-    from(table){assert.equal(table,'security_user_settings');return {
+function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,aalReject=false,authReject=false,adminReject=false,settingsReject=false,clientReject=false,settings={data:null,error:null}}={}){
+  let assuranceCalls=0,settingsCalls=0;
+  const service={rpc:async()=>{if(adminReject)throw new Error('synthetic private RPC detail');return {data:admin,error:adminError}},
+    from(table){settingsCalls++;assert.equal(table,'security_user_settings');return {
       select(columns){assert.equal(columns,'user_id,sensitive_step_up');return {
         eq(column,value){assert.equal(column,'user_id');assert.equal(value,'test-user');return {
-          maybeSingle:async()=>settings
+          maybeSingle:async()=>{if(settingsReject)throw new Error('synthetic private query detail');return settings}
         };}
       };}
     };},
-    auth:{getUser:async()=>({data:user===null?null:{user},error:authError}),
-      mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;return {data:aal,error:aalError}}}}};
-  const sandbox={serviceClient:()=>service,bearerToken:()=> 'synthetic-token',console:{error(){}}};
+    auth:{getUser:async()=>{if(authReject)throw new Error('synthetic private Auth detail');return {data:user===null?null:{user},error:authError}},
+      mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;if(aalReject)throw new Error('synthetic provider detail');return {data:aal,error:aalError}}}}};
+  const sandbox={serviceClient:()=>{if(clientReject)throw new Error('synthetic private configuration detail');return service},bearerToken:()=> 'synthetic-token',console:{error(){}}};
   vm.runInNewContext(code,sandbox,{timeout:1000});
-  return {gates:sandbox.gates,context:{user:{id:'test-user'},service,token:'synthetic-token'},calls:()=>assuranceCalls};
+  return {gates:sandbox.gates,context:{user:{id:'test-user'},service,token:'synthetic-token'},calls:()=>assuranceCalls,settingsCalls:()=>settingsCalls};
 }
 async function main(){
   for(const admin of [false,null,0,1,'false','true',[],{},[true]]){
@@ -88,6 +91,44 @@ async function main(){
   const optedOut=harness({settings:{data:{...own,sensitive_step_up:false},error:null}});
   assert.equal(await optedOut.gates.assertSensitiveMfa(optedOut.context),null);
   assert.equal(optedOut.calls(),0);
-  console.log('PASS: 41 scénarios serveur Auth, Admin, AAL et préférence MFA.');
+  // Une exception du fournisseur ne doit jamais franchir la frontière Auth.
+  for(const gate of ['assuranceLevel','assertAdminMfa','assertSensitiveMfa','assertVaultMfa','assertPersonalAiMfa']){
+    const h=harness({aalReject:true});
+    await assert.rejects(h.gates[gate](h.context),{message:'MFA_STATE_UNAVAILABLE'});
+    assert.equal(h.calls(),1);
+  }
+  // Les deux espaces privés restent soumis au MFA même avec une préférence désactivée.
+  for(const gate of ['assertVaultMfa','assertPersonalAiMfa']){
+    for(const [aal,expected] of [
+      [null,'MFA_STATE_UNAVAILABLE'],
+      [{currentLevel:'aal1',nextLevel:'aal1'},'MFA_SETUP_REQUIRED'],
+      [{currentLevel:'aal1',nextLevel:'aal2'},'MFA_REQUIRED'],
+      [{currentLevel:'aal2',nextLevel:'aal1'},'MFA_SETUP_REQUIRED']
+    ]){
+      const h=harness({aal,settings:{data:{...own,sensitive_step_up:false},error:null}});
+      await assert.rejects(h.gates[gate](h.context),{message:expected});
+      assert.equal(h.calls(),1);
+      assert.equal(h.settingsCalls(),0);
+    }
+    const h=harness({settings:{data:{...own,sensitive_step_up:false},error:null}});
+    assert.equal((await h.gates[gate](h.context)).currentLevel,'aal2');
+    assert.equal(h.calls(),1);
+    assert.equal(h.settingsCalls(),0);
+  }
+  // Les exceptions de configuration, transport et requête ne doivent pas sortir
+  // de la frontière Auth, ni permettre une décision positive par défaut.
+  for(const opts of [{authReject:true},{clientReject:true},{authError:{message:'synthetic private detail'}}]){
+    const h=harness(opts);
+    await assert.rejects(h.gates.authenticatedContext({}),{message:'AUTH_REQUIRED'});
+    assert.equal(h.calls(),0);
+  }
+  const rejectedAdmin=harness({adminReject:true});
+  await assert.rejects(rejectedAdmin.gates.assertAdminMfa(rejectedAdmin.context),{message:'ADMIN_REQUIRED'});
+  assert.equal(rejectedAdmin.calls(),0);
+  const rejectedSettings=harness({settingsReject:true});
+  await assert.rejects(rejectedSettings.gates.assertSensitiveMfa(rejectedSettings.context),{message:'SECURITY_STATE_UNAVAILABLE'});
+  assert.equal(rejectedSettings.calls(),0);
+  assert.equal(rejectedSettings.settingsCalls(),1);
+  console.log('PASS: Auth, Admin, AAL, préférence MFA, frontières privées et exceptions fournisseur.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
