@@ -23,6 +23,12 @@ REQUIRED = {
     'région approximative seulement': "req.headers.get('x-sinjira-region')",
     'RPC contexte session canonique': "service.rpc('service_security_evaluate_context_session'",
     'session imposée au RPC': 'p_session_id: sessionId',
+    'UUID de longueur exacte': 'value.length === 36 && UUID_RE.test(value)',
+    'session UUID obligatoire': 'if (!validSessionUuid(sessionId))',
+    'clé appareil ASCII stricte': 'value.length >= 16 && value.length <= 128 && !/[^!-~]/.test(value)',
+    'corps objet uniquement': "typeof body !== 'object' || Array.isArray(body)",
+    'RPC succès explicite': 'if (error !== null || !validSecurityDecision(data))',
+    'session SQL invalide refusée': "error?.code === '42501' && error.message === 'USER_SESSION_INVALID'",
     'réponse succès privée': 'return privateJson({\n      ok: true,',
     'contrat confidentialité IP': 'raw_ip_stored: false',
     'contrat confidentialité GPS': 'gps_used: false',
@@ -86,7 +92,9 @@ async function readLimitedJson(req){
  new TextEncoder().encode(raw).byteLength;
  return {body:{}};
 }
-function sessionIdFromVerifiedRequest(req){return req}
+function validSessionUuid(value){return typeof value === 'string' && value.length === 36 && UUID_RE.test(value)}
+function validDeviceKey(value){return typeof value === 'string' && value.length >= 16 && value.length <= 128 && !/[^!-~]/.test(value) ? value : null}
+function sessionIdFromVerifiedRequest(req){const sessionId=req; if (!validSessionUuid(sessionId)) throw new Error('AUTH_REQUIRED');return sessionId}
 function trustedGeo(req){
  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') return {country:null,region:null};
  const country=req.headers.get('cf-ipcountry');
@@ -99,11 +107,13 @@ Deno.serve(async (req) => {
  const sessionId = sessionIdFromVerifiedRequest(req);
  const parsed = await readLimitedJson(req);
  if (parsed.response) return parsed.response;
- if (!parsed.body) return privateJson({},400);
+ const body = parsed.body;
+ if (!body || typeof body !== 'object' || Array.isArray(body)) return privateJson({},400);
  const geo=trustedGeo(req);
  const service=serviceClient();
- const {data}=await service.rpc('service_security_evaluate_context_session',{p_session_id: sessionId});
- if(!data)return privateJson({},500);
+ const {data,error}=await service.rpc('service_security_evaluate_context_session',{p_session_id: sessionId});
+ if (error?.code === '42501' && error.message === 'USER_SESSION_INVALID') return privateJson({},401);
+ if (error !== null || !validSecurityDecision(data)) return privateJson({},503);
  const privacy={raw_ip_stored: false,gps_used: false};
  return privateJson({
       ok: true,
@@ -118,6 +128,18 @@ privateJson({});
         clean = validate(path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        for marker, weakened in [
+            ('value.length === 36 && UUID_RE.test(value)', 'UUID_RE.test(value)'),
+            ('if (!validSessionUuid(sessionId))', 'if (false)'),
+            ('value.length >= 16 && value.length <= 128 && !/[^!-~]/.test(value)', 'true'),
+            ("typeof body !== 'object' || Array.isArray(body)", 'false'),
+            ('if (error !== null || !validSecurityDecision(data))', 'if (error)'),
+            ("error?.code === '42501' && error.message === 'USER_SESSION_INVALID'", 'false'),
+        ]:
+            path.write_text(safe.replace(marker, weakened), encoding='utf-8')
+            if not validate(path):
+                raise AssertionError('Une frontière de session affaiblie doit être bloquée: ' + marker)
 
         path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
         direct = validate(path)
