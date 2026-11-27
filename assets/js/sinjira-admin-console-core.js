@@ -119,8 +119,22 @@ function bindExtension(){
 }
 function reportModeLabel(v){return v==='solo'?'Solo':v==='duo'?'Duo':v==='multiplayer'?'Multijoueur':(v||'—')}
 function reportDate(v){try{return new Date(v).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'})}catch{return v||'—'}}
+const REPORT_PAGE_SIZE=25;
+function reportPage(rows,mode,query,page){
+  const term=String(query||'').trim().toLowerCase();
+  const visible=rows.filter(r=>(!mode||r.play_mode===mode)&&(!term||String(r.party_code||'').toLowerCase().includes(term)));
+  const pages=Math.max(1,Math.ceil(visible.length/REPORT_PAGE_SIZE));
+  const index=Math.max(0,Math.min(page,pages-1));
+  const start=index*REPORT_PAGE_SIZE;
+  return {index,pages,start,total:visible.length,items:visible.slice(start,start+REPORT_PAGE_SIZE)};
+}
 async function loadGameReports(){
-  const d=await callReports('list_game_reports'),rows=d.reports||[],s=d.summary||{},box=document.querySelector('[data-admin-report-list]'),filter=document.querySelector('[data-report-filter]');
+  const box=document.querySelector('[data-admin-report-list]'),filter=document.querySelector('[data-report-filter]');
+  const search=document.querySelector('[data-report-search]'),prev=document.querySelector('[data-report-prev]'),next=document.querySelector('[data-report-next]'),info=document.querySelector('[data-report-page]');
+  let page=0,d;
+  try{d=await callReports('list_game_reports');if(!Array.isArray(d.reports))throw new Error('REPORTS_UNAVAILABLE');}
+  catch(error){box.textContent='Rapports indisponibles. Rechargez la page pour réessayer.';box.setAttribute('aria-busy','false');if(info)info.textContent='Données indisponibles.';throw error;}
+  const rows=d.reports,s=d.summary||{};
   const counts={
     '[data-report-total]':s.count||0,
     '[data-report-resistance]':s.resistance_wins||0,
@@ -129,8 +143,12 @@ async function loadGameReports(){
   };
   Object.entries(counts).forEach(([sel,val])=>{const n=document.querySelector(sel);if(n)n.textContent=String(val)});
   const render=()=>{
-    const visible=filter?.value?rows.filter(r=>r.play_mode===filter.value):rows;
-    box.innerHTML=visible.map(r=>{
+    const result=reportPage(rows,filter?.value,search?.value,page);
+    page=result.index;
+    if(prev)prev.disabled=page===0;
+    if(next)next.disabled=page>=result.pages-1;
+    if(info)info.textContent=result.total?`${result.start+1}–${result.start+result.items.length} sur ${result.total} · Page ${page+1}/${result.pages}`:'Aucun rapport correspondant.';
+    box.innerHTML=result.items.map(r=>{
       const f=r.fields||{},who=r.owner?.pseudo||r.owner?.display_name||r.owner?.email||'Compte joueur';
       return `<article class="admin-management-row" style="align-items:flex-start">
         <div style="min-width:0">
@@ -143,8 +161,13 @@ async function loadGameReports(){
       </article>`;
     }).join('')||'<p>Aucun rapport de fin de partie transmis pour ce filtre.</p>';
   };
-  if(filter&&!filter.dataset.bound){filter.dataset.bound='1';filter.addEventListener('change',render)}
+  const reset=()=>{page=0;render();};
+  if(filter){filter.disabled=false;filter.onchange=reset;}
+  if(search){search.disabled=false;search.oninput=reset;}
+  if(prev)prev.onclick=()=>{page--;render();};
+  if(next)next.onclick=()=>{page++;render();};
   render();
+  box.setAttribute('aria-busy','false');
 }
 
 async function analytics(){

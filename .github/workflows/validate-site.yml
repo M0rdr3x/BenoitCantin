@@ -163,7 +163,9 @@ jobs:
       - name: Vérifier les avatars 512 × 512 et leurs politiques Storage
         run: python scripts/validate_storage_policies.py
       - name: Vérifier la console administrateur complète
-        run: python scripts/validate_admin_console.py
+        run: |
+          python scripts/validate_admin_console.py
+          node scripts/test_admin_report_pagination.cjs
       - name: Auto-tester la confidentialité et les purges admin V18
         run: python scripts/validate_admin_v18_privacy_security.py --self-test
       - name: Vérifier la confidentialité et les purges admin V18

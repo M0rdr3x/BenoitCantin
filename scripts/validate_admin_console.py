@@ -47,11 +47,13 @@ def main()->int:
    errors.append(f'Commande non reliée à son panneau: {tab}')
   if f'id="admin-panel-{tab}" aria-labelledby="admin-tab-{tab}"' not in html:
    errors.append(f'Panneau non nommé: {tab}')
- for marker in ('href="#contenu"','id="contenu" tabindex="-1"','sinjira-admin-console-ux-v1.css?v=1.0.0'):
+ for marker in ('href="#contenu"','id="contenu" tabindex="-1"','sinjira-admin-console-ux-v1.css?v=1.0.1'):
   if marker not in html: errors.append(f'Accessibilité admin: {marker}')
  css=(ROOT/'assets/css/sinjira-admin-console-ux-v1.css').read_text('utf-8')
  for marker in ('min-height:44px','overflow-wrap:anywhere','@media(max-width:480px)', 'font-size:max(1rem,16px)'):
   if marker not in css: errors.append(f'CSS admin: {marker}')
+ for marker in ('data-report-search','data-report-prev','data-report-next','data-report-page role="status"','data-admin-report-list="" aria-busy="true"'):
+  if marker not in html: errors.append(f'Pagination des rapports: {marker}')
  if '/Admin/sinjira/' in html:
   errors.append('Ancien chemin /Admin/sinjira/ présent dans la console officielle.')
  if errors:
