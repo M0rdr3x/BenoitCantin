@@ -96,7 +96,9 @@ def main()->int:
     require(page,[
         'noindex,nofollow',
         'data-notifications-list',
-        'data-notifications-read-all',
+        'data-notifications-read-all type="button" disabled',
+        'data-notifications-list aria-busy="true"',
+        'data-notifications-status tabindex="-1"',
         'Aucun courriel, SMS ou service payant n’est nécessaire.'
     ],'page notifications')
     require_client_version(page,'page notifications')
@@ -113,6 +115,11 @@ def main()->int:
         '.update({read_at:',
         '.is(\'read_at\',null)',
         'safeActionPath',
+        'unread&&!compact',
+        "box.setAttribute('aria-busy','false')",
+        'if(all.disabled)return',
+        'all.disabled=updated',
+        'pageStatus?.focus()',
         "path.startsWith('/compte/')",
         "path.startsWith('/projets/sinjira/')"
     ],'client notifications')
