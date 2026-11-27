@@ -11,6 +11,8 @@ on:
       - 'compte/profil.html'
       - 'compte/parametres.html'
       - 'assets/js/sinjira-password-visibility-v1.js'
+      - 'assets/js/sinjira-form-feedback-v1.js'
+      - 'tests/e2e/test_auth_forms_responsive.py'
       - 'assets/css/sinjira-forms-ux-v1.css'
       - 'scripts/validate_sinjira_account_forms_ux_v1.py'
       - 'tests/e2e/test_public_site.py'
@@ -25,6 +27,8 @@ on:
       - 'compte/profil.html'
       - 'compte/parametres.html'
       - 'assets/js/sinjira-password-visibility-v1.js'
+      - 'assets/js/sinjira-form-feedback-v1.js'
+      - 'tests/e2e/test_auth_forms_responsive.py'
       - 'assets/css/sinjira-forms-ux-v1.css'
       - 'scripts/validate_sinjira_account_forms_ux_v1.py'
       - 'tests/e2e/test_public_site.py'
@@ -46,7 +50,9 @@ jobs:
       - name: Contrôler les libellés et les sections facultatives
         run: python3 scripts/validate_sinjira_account_forms_ux_v1.py
       - name: Vérifier la syntaxe JS
-        run: node --check assets/js/sinjira-password-visibility-v1.js
+        run: |
+          node --check assets/js/sinjira-password-visibility-v1.js
+          node --check assets/js/sinjira-form-feedback-v1.js
       - name: Vérifier les contrats de sécurité des comptes
         run: python3 scripts/validate_account_auth_security_shell.py
       - name: Vérifier la réception Auth/Registre sans accès privé
