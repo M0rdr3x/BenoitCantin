@@ -27,6 +27,8 @@ def main():
         errors.append('anon ne doit jamais pouvoir exécuter la file logistique.')
     for marker in ['data-pa-logistics-panel','admin_preorder_logistics_queue','exporter csv local','aucun nom de compte, courriel, adresse, uuid ou donnée de paiement','url.createobjecturl','new blob']:
         if marker not in js: errors.append(f'Interface logistique historique incomplète: {marker}')
+    for marker in ['logistics_page_size = 25','logisticspageslice','if (!logisticsready) return;','version !== logisticsversion','data-pa-logistics-prev','data-pa-logistics-next']:
+        if marker not in js: errors.append(f'Pagination locale incomplète: {marker}')
     for forbidden in ['row.user_id','row.email','row.public_address','row.payment_status','row.financial_commitment','fetch(','xmlhttprequest','navigator.sendbeacon']:
         if forbidden in js: errors.append(f'Export local contient une surface interdite: {forbidden}')
     expected='20260830035043 sinjira_v24_5_38_preorder_logistics_queue'
