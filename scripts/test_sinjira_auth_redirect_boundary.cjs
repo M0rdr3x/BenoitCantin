@@ -65,7 +65,33 @@ function safeTests(safe,label){
     '/app/test\\path',
   ])eq(safe(path),HOME,label+': destination ambiguë acceptée: '+String(path));
 }
+async function browserIdentityContractTests(){
+  const start=SHARED.indexOf('export async function getCurrentUser(');
+  const end=SHARED.indexOf('export function assertKnownAssuranceLevels(',start);
+  assert.ok(start>=0&&end>start);
+  const code=SHARED.slice(start,end).replace('export async function','async function')+'\nglobalThis.getUser=getCurrentUser;';
+  const user={id:'test-user'};
+  const reject=Symbol('offline');
+  for(const [result,expected] of [
+    [{data:{user},error:null},user],
+    [{data:{user}},null],
+    [{data:{user},error:false},null],
+    [{data:{user},error:0},null],
+    [{data:{user},error:''},null],
+    [{data:{user},error:{message:'denied'}},null],
+    [{data:{user:{id:' ' }},error:null},null],
+    [{data:{user:{id:' test-user '}},error:null},null],
+    [{data:{user:{id:42}},error:null},null],
+    [{data:null,error:null},null],
+    [undefined,null],[reject,null]
+  ]){
+    const ctx={isSinjiraBackendConfigured:()=>true,getSupabase:()=>({auth:{getUser:async()=>{if(result===reject)throw Error('synthetic');return result}}})};
+    vm.runInNewContext(code,ctx,{timeout:1000});
+    eq(await ctx.getUser(),expected,'Identité navigateur explicite et valide');
+  }
+}
 async function assuranceTests(){
+  await browserIdentityContractTests();
   const start=SHARED.indexOf('export function assertKnownAssuranceLevels(');
   const end=SHARED.indexOf('export function safeInternalDestination(',start);
   assert.ok(start>=0&&end>start);
@@ -82,7 +108,8 @@ async function assuranceTests(){
 
   for(const data of [null,undefined,{}, {currentLevel:'aal1'}, {nextLevel:'aal2'},
     {currentLevel:null,nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:null},
-    {currentLevel:'aal3',nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:'unknown'}]){
+    {currentLevel:'aal3',nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:'unknown'},
+    Object.assign([],{currentLevel:'aal2',nextLevel:'aal2'})]){
     const redirects=[];
     const client={auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data,error:null})}}};
     const ctx={getCurrentUser:async()=>({id:'test-user'}),getSupabase:()=>client,s:client,
@@ -95,6 +122,24 @@ async function assuranceTests(){
     eq(settled,false,'Le garde central ne doit pas autoriser un AAL indéterminé');
     eq(redirects.length,1,'Un AAL indéterminé doit conduire au contrôle MFA');
     eq(redirects[0].includes('state=aal-check'),true,'Contrôle MFA explicite');
+    await assert.rejects(ctx.recover(),/MFA_STATE_UNAVAILABLE/);
+    checks++;
+  }
+  for(const result of [
+    {data:{currentLevel:'aal2',nextLevel:'aal2'}},
+    ...[false,0,''].map(error=>({data:{currentLevel:'aal2',nextLevel:'aal2'},error}))
+  ]){
+    const redirects=[];
+    const client={auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>result}}};
+    const ctx={getCurrentUser:async()=>({id:'test-user'}),getSupabase:()=>client,s:client,
+      safeInternalDestination:sharedDestination,location:{pathname:HOME,search:'',hash:'',replace:v=>redirects.push(v)},
+      console:{warn(){}},setBusy(){},setStatus(){},status:null,RESET_PATH:'/compte/reinitialiser-mot-de-passe.html'};
+    vm.runInNewContext(validator+gate+recoveryGate+'\nglobalThis.gate=requireUser;globalThis.recover=requireRecoveryAal2WhenAvailable;',ctx);
+    let settled=false;
+    ctx.gate().then(()=>{settled=true},()=>{settled=true});
+    await new Promise(resolve=>setImmediate(resolve));
+    eq(settled,false,'Une réponse MFA ambiguë ne doit pas autoriser le compte');
+    eq(redirects.length,1,'Contrôle MFA obligatoire');
     await assert.rejects(ctx.recover(),/MFA_STATE_UNAVAILABLE/);
     checks++;
   }
@@ -162,6 +207,7 @@ async function recoveryIdentityTests(){
     [{error:null,data:{user:{id:'other-user'}}},'test-user',null],
     [{error:null,data:{user:{id:''}}},undefined,null],
     [{error:null,data:{user:{id:' '}}},undefined,null],
+    [{error:null,data:{user:{id:' test-user '}}},undefined,null],
     [{error:null,data:{user:{id:42}}},undefined,null],
     [{error:null,data:{user:null}},undefined,null],
     [{error:{message:'denied'},data:{user:{id:'test-user'}}},'test-user',null],
