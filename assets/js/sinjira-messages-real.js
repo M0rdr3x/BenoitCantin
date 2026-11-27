@@ -1,7 +1,7 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.71';
+const UI_VERSION='24.4.72';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -9,6 +9,7 @@ const form=document.querySelector('[data-chat-form]');
 const title=document.querySelector('[data-chat-title]');
 const status=document.querySelector('[data-social-status]');
 let user,all=[],peer=null,channel=null,unreadByUser=new Map();
+let conversationVersion=0,requestVersion=0,sending=false;
 
 function fail(error,fallback='Action impossible dans la messagerie.'){
   socialErrorStatus(status,error,fallback);
@@ -31,7 +32,7 @@ function renderContacts(){
     .map(item=>{
       const unread=unreadByUser.get(item.user_id)||0;
       const unreadLabel=unread?` · ${unread} non lu${unread>1?'s':''}`:'';
-      return `<button class="v20-contact" data-user="${escapeHtml(item.user_id)}"><img src="${escapeHtml(avatarUrl(item.avatar_path))}" alt=""><span><strong>${escapeHtml(item.pseudo||item.display_name||'Membre')}</strong><small>Compte réel${unreadLabel}</small></span></button>`;
+      return `<button class="v20-contact" data-user="${escapeHtml(item.user_id)}" aria-current="${peer?.user_id===item.user_id?'true':'false'}"><img src="${escapeHtml(avatarUrl(item.avatar_path))}" alt=""><span><strong>${escapeHtml(item.pseudo||item.display_name||'Membre')}</strong><small>Compte réel${unreadLabel}</small></span></button>`;
     })
     .join('')||'<p>Aucun membre trouvé.</p>';
   contacts.querySelectorAll('[data-user]').forEach(button=>{
@@ -40,8 +41,16 @@ function renderContacts(){
 }
 
 async function openPeer(id){
-  peer=all.find(item=>item.user_id===id)||null;
-  if(!peer)return;
+  if(sending)return;
+  const next=all.find(item=>item.user_id===id);
+  if(!next||peer?.user_id===id)return;
+  const draft=form.querySelector('textarea');
+  if(draft?.value&&!confirm('Changer de conversation et effacer le brouillon actuel?'))return;
+  form.reset();
+  peer=next;
+  conversationVersion++;
+  log.textContent='Chargement de la conversation…';
+  renderContacts();
   history.replaceState({},'',`?user=${encodeURIComponent(id)}`);
   title.innerHTML=`<div class="v20-social-identity"><img class="v20-social-avatar" src="${escapeHtml(avatarUrl(peer.avatar_path))}" alt=""><div><strong>${escapeHtml(peer.pseudo||peer.display_name||'Membre')}</strong><span class="v20-social-time">Conversation compte réel</span></div></div><button class="btn btn-secondary btn-small" data-block-peer>Bloquer</button>`;
   title.querySelector('[data-block-peer]')?.addEventListener('click',()=>blockPeer().catch(error=>fail(error,'Impossible de bloquer ce compte.')));
@@ -51,18 +60,23 @@ async function openPeer(id){
 
 async function messages(){
   if(!peer)return;
+  const version=conversationVersion,request=++requestVersion;
+  const selected=peer;
+  const nearBottom=log.scrollHeight-log.scrollTop-log.clientHeight<64;
   const {data,error}=await getSupabase().from('social_real_messages')
     .select('*')
     .or(`and(sender_user_id.eq.${user.id},recipient_user_id.eq.${peer.user_id}),and(sender_user_id.eq.${peer.user_id},recipient_user_id.eq.${user.id})`)
     .order('created_at');
+  if(version!==conversationVersion||request!==requestVersion)return;
   if(error)throw error;
   const rows=Array.isArray(data)?data:[];
   log.innerHTML=rows.map(message=>`<div class="v20-bubble ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez la conversation.</p>';
-  log.scrollTop=log.scrollHeight;
+  if(nearBottom)log.scrollTop=log.scrollHeight;
 
   if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
     await markConversationRead('social_real_messages',user.id,{sender_user_id:peer.user_id});
-    unreadByUser.delete(peer.user_id);
+    unreadByUser.delete(selected.user_id);
+    if(version!==conversationVersion||request!==requestVersion)return;
     renderContacts();
   }
 
@@ -95,17 +109,26 @@ async function blockPeer(){
 
     form.addEventListener('submit',async event=>{
       event.preventDefault();
-      if(!peer)return;
+      if(!peer||sending)return;
       const body=String(new FormData(form).get('body')||'').trim();
       if(!body)return;
       const button=form.querySelector('button[type="submit"]');
+      sending=true;
       if(button)button.disabled=true;
+      const draft=form.querySelector('textarea');
+      if(draft)draft.readOnly=true;
+      form.setAttribute('aria-busy','true');
       try{
         const {error}=await getSupabase().from('social_real_messages').insert({sender_user_id:user.id,recipient_user_id:peer.user_id,body});
         if(error)return fail(error,'Impossible d’envoyer ce message.');
         form.reset();
-        await messages();
+        try{await messages();}catch(error){fail(error,'Message envoyé, mais actualisation impossible.');}
+      }catch(error){
+        fail(error,'Envoi non confirmé. Vérifiez la conversation avant de réessayer.');
       }finally{
+        sending=false;
+        form.setAttribute('aria-busy','false');
+        if(draft)draft.readOnly=false;
         if(button)button.disabled=false;
       }
     });
