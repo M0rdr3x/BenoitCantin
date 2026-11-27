@@ -179,6 +179,18 @@ function friendlySecurityError(error){
   return message;
 }
 
+async function revokeCompromisedSessions(client,deviceKey){
+  // Un résultat incomplet ou une exception ne constitue jamais une confirmation.
+  try{
+    const result=await client.rpc('security_compromise_account',{p_current_device_key:deviceKey});
+    if(result?.error!==null)return 'unconfirmed';
+  }catch{return 'unconfirmed'}
+  try{
+    const result=await client.auth.signOut({scope:'others'});
+    return result?.error===null?'confirmed':'devices-only';
+  }catch{return 'devices-only'}
+}
+
 async function boot(){
   const meta=deviceMetadata();
   try{
@@ -190,9 +202,26 @@ async function boot(){
     qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
     qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
     qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-compromised]')?.addEventListener('click',async()=>{
-      if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+    let compromisePending=false;
+    qs('[data-security-compromised]')?.addEventListener('click',async e=>{
+      if(compromisePending||!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
+      const button=e.currentTarget;
+      compromisePending=true;
+      button.disabled=true;
+      try{
+        const result=await revokeCompromisedSessions(getSupabase(),meta.device_key);
+        let refreshed=true;
+        try{state=await loadState(meta,contextResult.context)}catch{refreshed=false}
+        const suffix=refreshed?'':' L’actualisation de l’état a échoué.';
+        if(result==='confirmed'){
+          status('Mesures d’urgence acceptées : révocation des autres appareils et sessions. Les jetons d’accès existants peuvent rester valides jusqu’à expiration.'+suffix,refreshed?'success':'info');
+        }else if(result==='devices-only'){
+          status('Révocation des autres appareils acceptée, mais celle des sessions n’est pas confirmée. Réessayez dès que possible.'+suffix,'error');
+        }else{
+          status('Les mesures d’urgence n’ont pas été confirmées. Réessayez dès que possible.'+suffix,'error');
+        }
+      }catch{status('Les mesures d’urgence n’ont pas été confirmées. Réessayez dès que possible.','error')}
+      finally{compromisePending=false;button.disabled=false}
     });
 
     document.addEventListener('click',async e=>{
