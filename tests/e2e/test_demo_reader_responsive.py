@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER = os.environ.get("BROWSER", "chromium").strip().lower()
-VIEWPORTS = (320, 390, 430, 540, 700, 768, 1280)
+VIEWPORTS = (240, 320, 390, 430, 540, 700, 768, 1280)
 PAGE = "projets/sinjira/romans/lire-demo.html"
 OLD_DOCUMENT = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 
@@ -54,6 +54,14 @@ def run():
                             return r.left<-1||r.right>innerWidth+1;
                         }),
                         logo:logo?.getAttribute('src'), cover:!!cover,
+                        coverSource:cover?.getAttribute('src'),
+                        coverLazy:cover?.loading === 'lazy' && cover?.decoding === 'async',
+                        coverSources:cover?.getAttribute('srcset') || '',
+                        cardFirst:wrap.firstElementChild?.classList.contains('sinjira-release-card'),
+                        cardTop:wrap.querySelector('.sinjira-release-card').getBoundingClientRect().top,
+                        cardBottom:wrap.querySelector('.sinjira-release-card').getBoundingClientRect().bottom,
+                        coverTop:cover?.getBoundingClientRect().top,
+                        mainFocusable:document.querySelector('main')?.getAttribute('tabindex') === '-1',
                         oldLinks:document.querySelectorAll('a[href*=".pdf"],iframe[data-pdf-reader]').length,
                         h1:document.querySelector('h1')?.textContent||'',
                         status:document.querySelector('main')?.textContent||''
@@ -68,6 +76,14 @@ def run():
                 check(state["logo"] == "/assets/icons/sinjira-officiel-20261120.png",
                       f"logo SINJIRA incohérent à {width} px")
                 check(state["cover"], f"couverture absente à {width} px")
+                check(state["coverSource"] == "/assets/media/sinjira-livre-1-cover-480.webp"
+                      and "768w" in state["coverSources"] and state["coverLazy"],
+                      f"couverture adaptative ou différée absente à {width}px")
+                check(state["cardFirst"] and state["mainFocusable"],
+                      f"ordre de lecture ou cible du lien d’évitement incorrecte à {width}px")
+                if width <= 700:
+                    check(state["coverTop"] >= state["cardBottom"] - 2,
+                          f"couverture avant le statut éditorial à {width}px")
                 check(state["oldLinks"] == 0, f"ancien document encore lié à {width} px")
                 check("démo précédente a été retirée" in state["h1"],
                       f"retour utilisateur non explicite à {width} px")
@@ -75,7 +91,7 @@ def run():
                       f"nouvelle version de validation mal décrite à {width} px")
                 check("pas encore hébergées" in state["status"],
                       f"nouvelle démo annoncée à tort comme publiée à {width} px")
-            print(f"OK {BROWSER}: retrait explicite, identité, absence de PDF périmé et ergonomie 320-1280 px et CSS externe")
+            print(f"OK {BROWSER}: retrait explicite, identité, absence de PDF périmé et ergonomie 240-1280 px et CSS externe")
         finally:
             context.close()
             browser.close()
