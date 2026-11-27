@@ -47,3 +47,5 @@ body[data-v20-page="messages"] :is(.v20-chat-log,.v20-contact,.v20-chat-form tex
   body[data-v20-page="messages"] .v20-contact-list{max-height:240px}
   body[data-v20-page="messages"] .v20-chat-log{padding:12px}
 }
+
+body[data-v20-page="messages"] .v20-message-shell[hidden]{display:none!important}

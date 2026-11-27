@@ -39,8 +39,8 @@ def check_page(path, expected):
         errors.append(f"{path}: cible du lien d’évitement non focalisable")
     if auth_nav and 'data-backend-state role="status" aria-atomic="true"' not in text:
         errors.append(f"{path}: état du service non annoncé")
-    css_version = "1.0.2" if auth_nav else "1.0.0"
-    if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.1" not in text:
+    css_version = "1.0.3" if auth_nav else "1.0.0"
+    if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.3" not in text:
         errors.append(f"{path}: aide de validation absente")
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
@@ -117,7 +117,12 @@ def main():
     if re.search(r'\.value\b|console\.', script):
         problems.append("Le script mot de passe ne doit lire ou journaliser aucune valeur")
     feedback = (ROOT / "assets/js/sinjira-form-feedback-v1.js").read_text("utf-8")
-    for marker in ("'invalid'", "'aria-invalid'", "'aria-describedby'", "'reset'", "validity.valid"):
+    for marker in ("'invalid'", "'aria-invalid'", "'aria-describedby'", "'reset'", "validity.valid",
+                   "event.stopImmediatePropagation()", "attributeFilter:['aria-busy']",
+                   "processing.setAttribute('role','status')", "finishProcessing()",
+                   "navigator.onLine===false", "window.clearTimeout(slowTimer)",
+                   "window.addEventListener('offline',syncProcessing)",
+                   "window.addEventListener('online',syncProcessing)"):
         if marker not in feedback:
             problems.append("Aide de validation : contrat manquant " + marker)
     forbidden_feedback = re.compile(r'\.value\b|\b(?:localStorage|sessionStorage|indexedDB|sendBeacon|XMLHttpRequest)\b|\bfetch\s*\(')

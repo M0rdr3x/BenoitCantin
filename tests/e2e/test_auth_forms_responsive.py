@@ -169,6 +169,75 @@ def assert_inline_feedback(context):
         page.close()
 
 
+def assert_processing_feedback(context):
+    page = context.new_page()
+    try:
+        page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        page.set_content("""<!doctype html><html lang="fr-CA"><body>
+          <form data-login-form aria-busy="true">
+            <label for="email">Courriel</label><input id="email" type="email">
+            <button type="submit">Continuer</button>
+          </form><div data-account-status hidden></div></body></html>""")
+        # Contrôler les transitions réseau et la temporisation sans réseau réel.
+        page.evaluate("""() => {
+          window.fakeOnline=true;
+          Object.defineProperty(navigator,'onLine',{configurable:true,get:()=>window.fakeOnline});
+          const set=window.setTimeout.bind(window), clear=window.clearTimeout.bind(window);
+          window.slowCallbacks=new Map();
+          let next=-100;
+          window.setTimeout=(cb,ms,...args)=>{
+            if(ms!==10000)return set(cb,ms,...args);
+            const id=next--;window.slowCallbacks.set(id,()=>cb(...args));return id;
+          };
+          window.clearTimeout=id=>{if(window.slowCallbacks.has(id))window.slowCallbacks.delete(id);else clear(id);};
+          window.simulateSlow=()=>{
+            const callbacks=[...window.slowCallbacks.values()];
+            window.slowCallbacks.clear();callbacks.forEach(cb=>cb());
+          };
+        }""")
+        page.add_script_tag(url=urljoin(BASE, "assets/js/sinjira-form-feedback-v1.js"))
+        page.evaluate("""() => {
+          const form=document.querySelector('form');
+          window.attempts=0;
+          form.addEventListener('submit', e => {
+            e.preventDefault();window.attempts++;
+            form.setAttribute('aria-busy','true');
+          });
+        }""")
+        form=page.locator("form")
+        feedback=page.locator(".sinjira-form-processing")
+        assert_ok(feedback.get_attribute("role") == "status", "attente non accessible")
+        assert_ok(feedback.inner_text() == "", "verrou initial présenté comme une requête")
+        submit="el => el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))"
+        form.evaluate(submit)
+        assert_ok(page.evaluate("window.attempts") == 0, "envoi accepté pendant le verrou")
+        form.evaluate("el => el.setAttribute('aria-busy','false')")
+        form.evaluate(submit)
+        page.wait_for_function("() => document.querySelector('.sinjira-form-processing').textContent.includes('Traitement')")
+        form.evaluate(submit)
+        assert_ok(page.evaluate("window.attempts") == 1, "soumission répétée non bloquée")
+        page.evaluate("() => {window.fakeOnline=false;window.dispatchEvent(new Event('offline'));}")
+        assert_ok("hors ligne" in feedback.inner_text(), "interruption réseau non annoncée")
+        page.evaluate("() => window.simulateSlow()")
+        page.evaluate("() => {window.fakeOnline=true;window.dispatchEvent(new Event('online'));}")
+        assert_ok("plus de temps" in feedback.inner_text(), "attente prolongée non annoncée")
+        assert_ok(page.evaluate("window.attempts") == 1, "relance automatique interdite")
+        assert_ok(form.get_attribute("aria-busy") == "true", "verrou levé par le réseau")
+        form.evaluate("el => el.setAttribute('aria-busy','false')")
+        page.wait_for_function("() => !document.querySelector('.sinjira-form-processing').textContent")
+        form.evaluate(submit)
+        page.wait_for_function("() => document.querySelector('.sinjira-form-processing').textContent.includes('Traitement')")
+        assert_ok(page.evaluate("window.attempts") == 2, "nouvelle tentative légitime bloquée")
+        page.locator("[data-account-status]").evaluate("el => {el.textContent='Terminé';el.hidden=false;}")
+        page.wait_for_function("() => !document.querySelector('.sinjira-form-processing').textContent")
+        assert_ok(form.get_attribute("aria-busy") == "true", "verrou Auth modifié par l'UX")
+        assert_ok(page.evaluate("window.slowCallbacks.size") == 0, "temporisation résiduelle après résultat")
+        page.evaluate("() => {window.fakeOnline=false;window.dispatchEvent(new Event('offline'));}")
+        assert_ok(feedback.inner_text() == "", "ancienne requête réaffichée après résultat")
+    finally:
+        page.close()
+
+
 def run():
     assert_ok(ENGINE in {"chromium", "firefox", "webkit"}, "moteur navigateur inconnu")
     with sync_playwright() as playwright:
@@ -185,6 +254,7 @@ def run():
                         inspect_route(page, path, width)
                 assert_password_script_is_safe(context)
                 assert_inline_feedback(context)
+                assert_processing_feedback(context)
                 print(f"OK {ENGINE}: quatre formulaires Auth à 240–1440px + révélation locale sûre")
             finally:
                 context.close()

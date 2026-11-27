@@ -215,6 +215,40 @@ async function compromiseRevocationTests(){
   checks+=4;
 }
 
+async function lostDeviceRevocationTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-security-v24-4-99.js'),'utf8');
+  const start=source.indexOf('async function reportLostDevice(');
+  const end=source.indexOf('let lostDevicePending=',start);
+  assert.ok(start>=0&&end>start);
+  const reject=Symbol('offline'), ok={error:null}, denied={error:{message:'denied'}};
+  for(const [rpcResult,authResult,expected,attempt] of [
+    [ok,ok,'confirmed',true],
+    [ok,denied,'device-only',true],
+    [ok,undefined,'device-only',true],
+    [ok,{},'device-only',true],
+    [ok,reject,'device-only',true],
+    [{error:{message:'AAL2_REQUIRED'}},ok,'mfa-required',false],
+    [denied,ok,'unconfirmed',false],
+    [undefined,ok,'unconfirmed',false],
+    [{},ok,'unconfirmed',false],
+    [reject,ok,'unconfirmed',false]
+  ]){
+    const calls=[];
+    const respond=result=>{if(result===reject)throw Error('synthetic private detail');return result};
+    const client={rpc:async(name,args)=>{calls.push(name);eq(args.p_device_id,'synthetic-id','Identifiant de l’appareil');return respond(rpcResult)},
+      auth:{signOut:async({scope})=>{calls.push(scope);return respond(authResult)}}};
+    const ctx={};
+    vm.runInNewContext(source.slice(start,end)+'\nglobalThis.report=reportLostDevice;',ctx,{timeout:1000});
+    eq(await ctx.report(client,'synthetic-id'),expected,'Résultat explicite de déclaration de perte');
+    assert.deepEqual(calls,attempt?['security_report_lost_device','others']:['security_report_lost_device']);checks++;
+  }
+  assert.ok(source.includes("if(result==='confirmed')"));
+  assert.ok(source.includes("if(result==='device-only')"));
+  assert.ok(source.includes("lostDevicePending||button.disabled"));
+  assert.ok(!/console\.(?:warn|error)\([^\n]*,\s*error\b/.test(source));
+  checks+=4;
+}
+
 function deviceEntropyTests(){
   for(const file of ['sinjira-auth-pages.js','sinjira-recovery-v24-4-99.js','sinjira-security-center-v24-4-98.js']){
     const source=fs.readFileSync(path.join(ROOT,'assets/js',file),'utf8');
@@ -343,6 +377,7 @@ async function main(){
   await recoveryRevocationTests();
   await recoveryIdentityTests();
   await compromiseRevocationTests();
+  await lostDeviceRevocationTests();
   deviceEntropyTests();
   await loginDecisionTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');

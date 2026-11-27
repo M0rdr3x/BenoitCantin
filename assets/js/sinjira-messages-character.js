@@ -1,7 +1,7 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.72';
+const UI_VERSION='24.4.73';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -69,13 +69,15 @@ function renderContacts(){
 async function openPeer(id){
   if(sending)return;
   const next=all.find(item=>item.character_id===id);
-  if(!next||peer?.character_id===id)return;
+  if(!next)return;
+  if(peer?.character_id===id){await messages();return;}
   const draft=form.querySelector('textarea');
   if(draft?.value&&!confirm('Changer de conversation et effacer le brouillon actuel?'))return;
   form.reset();
   peer=next;
   conversationVersion++;
   log.textContent='Chargement de la conversation…';
+  log.scrollTop=0;
   renderContacts();
   history.replaceState({},'',`?character=${encodeURIComponent(id)}`);
   title.innerHTML=`<div class="v20-social-identity"><img class="v20-social-avatar character" src="${escapeHtml(portrait(peer))}" alt=""><div><strong>${escapeHtml(peer.public_name)}</strong><span class="v20-social-time">Conversation personnage · rôle-play</span></div></div>`;
@@ -94,17 +96,13 @@ async function messages(){
     .or(`and(sender_character_id.eq.${me.character_id},recipient_character_id.eq.${peer.character_id}),and(sender_character_id.eq.${peer.character_id},recipient_character_id.eq.${me.character_id})`)
     .order('created_at');
   if(version!==conversationVersion||request!==requestVersion)return;
-  if(error)throw error;
+  if(error){
+    if(log.textContent==='Chargement de la conversation…')log.textContent='Chargement impossible. Sélectionnez de nouveau cette conversation pour réessayer.';
+    throw error;
+  }
   const rows=Array.isArray(data)?data:[];
   log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
   if(nearBottom)log.scrollTop=log.scrollHeight;
-
-  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
-    await markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id});
-    unreadByCharacter.delete(selected.character_id);
-    if(version!==conversationVersion||request!==requestVersion)return;
-    renderContacts();
-  }
 
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
@@ -117,6 +115,13 @@ async function messages(){
       alert('Message signalé à l’administration.');
     }catch(error){fail(error,'Signalement impossible pour le moment.');}
   }));
+  // Les commandes de signalement restent actives même si l’état lu échoue.
+  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
+    await markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id});
+    if(version!==conversationVersion||request!==requestVersion)return;
+    unreadByCharacter.delete(selected.character_id);
+    renderContacts();
+  }
 }
 
 function showLocked(owner){
@@ -167,7 +172,7 @@ function showLocked(owner){
         });
         if(error)return fail(error,'Impossible d’envoyer ce message personnage.');
         form.reset();
-        try{await messages();}catch(error){fail(error,'Message envoyé, mais actualisation impossible.');}
+        try{await messages();socialStatus(status,'Message envoyé.','success');}catch(error){socialStatus(status,'Message envoyé, mais actualisation impossible.','error');}
       }catch(error){
         fail(error,'Envoi non confirmé. Vérifiez la conversation avant de réessayer.');
       }finally{
