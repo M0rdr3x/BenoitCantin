@@ -472,6 +472,54 @@ def test_home_partial_stylesheet_failure(browser):
         finally:
             context.close()
 
+def test_home_session_intent(browser):
+    """Aucune personnalisation pendant la lecture; module fictif, sans compte réel."""
+    context = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 760},
+        service_workers="block", reduced_motion="reduce",
+    )
+    try:
+        requests = []
+
+        def mock_session(route):
+            requests.append(route.request.url)
+            route.fulfill(
+                status=200, content_type="application/javascript",
+                body="window.__testHomeSessionImports=(window.__testHomeSessionImports||0)+1; export {};",
+            )
+
+        context.route("**/assets/js/v19-session.js?*", mock_session)
+        page = context.new_page()
+        page.goto(BASE, wait_until="load", timeout=30_000)
+        page.wait_for_function(
+            "() => document.documentElement.hasAttribute('data-sinjira-nav-initialized')",
+            timeout=12_000,
+        )
+        account = page.locator("[data-sinjira-session-nav]")
+        verify(account.get_attribute("href") == "/compte/", "lien Compte natif absent")
+        verify(not requests, "session importée au chargement")
+        page.locator("h1").click()
+        page.keyboard.press("Escape")
+        toggle = page.locator("[data-menu-toggle]")
+        toggle.click()
+        verify(page.locator("[data-main-nav]").is_visible(), "menu mobile indisponible")
+        verify(not requests, "lecture ou ouverture du menu déclenche la session")
+        context.set_offline(True)
+        page.wait_for_function("() => document.documentElement.classList.contains('offline')")
+        context.set_offline(False)
+        page.wait_for_function("() => !document.documentElement.classList.contains('offline')")
+        verify(not requests, "mode hors ligne dépend de la session")
+        account.focus()
+        page.wait_for_function("() => window.__testHomeSessionImports === 1", timeout=10_000)
+        account.dispatch_event("pointerdown")
+        page.locator("[data-menu-toggle]").focus()
+        account.focus()
+        verify(len(requests) == 1, "import de session répété")
+        verify(account.get_attribute("href") == "/compte/", "lien Compte modifié")
+    finally:
+        context.close()
+
+
 def run():
     verify(BROWSER in {"chromium", "firefox", "webkit"}, "navigateur inconnu")
     verify((urlparse(BASE).hostname or "") in {"localhost", "127.0.0.1"},
@@ -494,6 +542,7 @@ def run():
             test_without_javascript(browser)
             test_public_navigation_fallback(browser)
             test_home_partial_stylesheet_failure(browser)
+            test_home_session_intent(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")
