@@ -692,7 +692,11 @@ function lockPrivateReader(){
   $('reader-note-input').value='';
   $('reader-search-field').value='';
   $('reader-canvas').width=0;$('reader-canvas').height=0;
+  const restoreFocus=$('reader-content').contains(document.activeElement)||$('reader-sidebar').contains(document.activeElement);
   $('reader-content').hidden=true;
+  $('reader-sidebar').hidden=true;
+  $('contenu').dataset.readerReady='false';
+  if(restoreFocus)$('reader-stage').focus();
   $('reader-loading').hidden=true;$('reader-error').hidden=false;
   message('Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
   try{Promise.resolve(book?.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
@@ -783,7 +787,7 @@ async function init(){
     $('reader-privacy').textContent='L’ancienne édition a été retirée. La nouvelle démo de 62 pages n’est pas encore publiée sur le site.';
     $('reader-demo-link').hidden=true;
     $('reader-download-demo').hidden=true;
-    $('reader-native-demo').hidden=true;
+    $('reader-native-demo').hidden=false;
     $('reader-loading').hidden=true;
     $('reader-error').hidden=false;
     message('Démo temporairement indisponible : la nouvelle édition de validation n’est pas encore distribuée.','info');
@@ -858,6 +862,8 @@ async function init(){
     });
     $('reader-loading').hidden=true;
     $('reader-content').hidden=false;
+    $('reader-sidebar').hidden=false;
+    $('contenu').dataset.readerReady='true';
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
@@ -868,6 +874,9 @@ async function init(){
     if(isFull&&state.cloudDirty)void retryCloudProgress();
   }catch(error){
     state.loadController=null;
+    $('reader-sidebar').hidden=true;
+    $('reader-content').hidden=true;
+    $('contenu').dataset.readerReady='false';
     if(loadedPdf){
       if(state.pdf===loadedPdf)state.pdf=null;
       try{await loadedPdf.destroy?.()}catch{/* Destruction best effort */}

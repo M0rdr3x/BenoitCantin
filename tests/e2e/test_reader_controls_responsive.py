@@ -77,7 +77,11 @@ def run():
                 response=page.goto(urljoin(BASE,"compte/liseuse.html"),
                     wait_until="domcontentloaded",timeout=30_000)
                 check(response is not None and response.status<400, "page liseuse inaccessible")
+                check(page.locator("#reader-sidebar").is_hidden(), "réglages exposés avant autorisation")
+                check(page.locator("#reader-stage").get_attribute("tabindex") == "-1", "destination de lecture non focalisable")
                 page.evaluate("""() => {
+                  document.getElementById('reader-sidebar').hidden=false;
+                  document.getElementById('contenu').dataset.readerReady='true';
                   document.getElementById('reader-content').hidden=false;
                   document.getElementById('reader-loading').hidden=true;
                   document.getElementById('reader-status').hidden=true;
