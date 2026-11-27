@@ -48,7 +48,7 @@ function empty(text){return `<p class="security-empty">${escapeHtml(text)}</p>`}
 
 async function rpc(name,args={}){
   const {data,error}=await getSupabase().rpc(name,args);
-  if(error)throw error;
+  if(error!==null)throw error||new Error('SECURITY_STATE_UNAVAILABLE');
   return data;
 }
 
@@ -61,7 +61,7 @@ async function registerContext(meta){
     if(error)throw error;
     return {registered,context:data};
   }catch(error){
-    console.warn('[SINJIRA security-context]',error?.message||error);
+    console.warn('[SINJIRA security-context] vérification indisponible');
     return {registered,context:null};
   }
 }
@@ -149,11 +149,20 @@ function renderChallenges(rows,devices){
   }).join('');
 }
 
+const SECURITY_SETTING_KEYS=['remember_usual_region','sensitive_step_up','notify_new_device','notify_high_risk','notify_security_changes'];
+function validatedSecuritySettings(settings,userId){
+  if(!settings||typeof settings!=='object'||Array.isArray(settings)||
+     typeof userId!=='string'||!userId||settings.user_id!==userId||
+     !SECURITY_SETTING_KEYS.every(key=>Object.hasOwn(settings,key)&&typeof settings[key]==='boolean')){
+    throw new Error('SECURITY_STATE_UNAVAILABLE');
+  }
+  return settings;
+}
 function fillSettings(settings){
-  qsa('[data-security-setting]').forEach(input=>{const key=input.name;if(key in settings)input.checked=Boolean(settings[key])});
+  qsa('[data-security-setting]').forEach(input=>{if(SECURITY_SETTING_KEYS.includes(input.name))input.checked=settings[input.name]});
 }
 
-async function loadState(meta,context=null){
+async function loadState(meta,context,userId){
   const [settings,devices,sessions,travel,connections,events,challenges]=await Promise.all([
     rpc('security_get_settings'),
     rpc('security_list_devices',{p_current_device_key:meta.device_key}),
@@ -163,13 +172,16 @@ async function loadState(meta,context=null){
     getSupabase().from('security_events').select('*').order('created_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]}),
     getSupabase().from('security_connection_challenges').select('*').order('created_at',{ascending:false}).limit(MAX_RECENT).then(({data,error})=>{if(error)throw error;return data||[]})
   ]);
+  validatedSecuritySettings(settings,userId);
   fillSettings(settings);renderDevices(devices);renderSessions(sessions);renderTravel(travel);renderConnections(connections);renderSecurityEvents(events);renderChallenges(challenges,devices);renderOverview({devices,connections,travel,challenges,settings,context});
   return {settings,devices,sessions,travel,connections,events,challenges};
 }
 
-async function saveSettings(){
-  const values={};qsa('[data-security-setting]').forEach(input=>values[`p_${input.name}`]=Boolean(input.checked));
-  await rpc('security_update_settings',values);status('Préférences de sécurité enregistrées.','success');
+async function saveSettings(userId){
+  const values={};qsa('[data-security-setting]').forEach(input=>{if(SECURITY_SETTING_KEYS.includes(input.name))values[`p_${input.name}`]=Boolean(input.checked)});
+  const saved=validatedSecuritySettings(await rpc('security_update_settings',values),userId);
+  if(Object.entries(values).some(([key,value])=>saved[key.slice(2)]!==value))throw new Error('SECURITY_STATE_UNAVAILABLE');
+  status('Préférences de sécurité enregistrées.','success');
 }
 
 async function createTravel(form){
@@ -187,7 +199,8 @@ function friendlySecurityError(error){
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
-  return message;
+  if(message==='Indiquez une période et au moins une destination approximative.')return message;
+  return 'L’opération de sécurité n’a pas pu être confirmée. Réessayez ou reconnectez-vous.';
 }
 
 async function revokeCompromisedSessions(client,deviceKey){
@@ -205,14 +218,14 @@ async function revokeCompromisedSessions(client,deviceKey){
 async function boot(){
   const meta=deviceMetadata();
   try{
-    await requireUser();
+    const user=await requireUser();
     status('Initialisation du Centre de sécurité…');
     const contextResult=await registerContext(meta);
-    let state=await loadState(meta,contextResult.context);
+    let state=await loadState(meta,contextResult.context,user.id);
 
-    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
-    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings(user.id);state=await loadState(meta,contextResult.context,user.id)}catch(e){status(friendlySecurityError(e),'error')}});
+    qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context,user.id)}catch(err){status(friendlySecurityError(err),'error')}});
+    qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context,user.id);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
     let compromisePending=false;
     qs('[data-security-compromised]')?.addEventListener('click',async e=>{
       if(compromisePending||!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
@@ -222,7 +235,7 @@ async function boot(){
       try{
         const result=await revokeCompromisedSessions(getSupabase(),meta.device_key);
         let refreshed=true;
-        try{state=await loadState(meta,contextResult.context)}catch{refreshed=false}
+        try{state=await loadState(meta,contextResult.context,user.id)}catch{refreshed=false}
         const suffix=refreshed?'':' L’actualisation de l’état a échoué.';
         if(result==='confirmed'){
           status('Mesures d’urgence acceptées : révocation des autres appareils et sessions. Les jetons d’accès existants peuvent rester valides jusqu’à expiration.'+suffix,refreshed?'success':'info');
@@ -246,12 +259,12 @@ async function boot(){
         else if(target.dataset.challengeApprove){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeApprove,p_device_key:meta.device_key,p_decision:'approved'});status('Connexion autorisée.','success')}
         else if(target.dataset.challengeDeny){await rpc('security_resolve_connection_challenge',{p_challenge_id:target.dataset.challengeDeny,p_device_key:meta.device_key,p_decision:'denied'});status('Connexion refusée. Vérifiez vos appareils si vous ne reconnaissez pas cette tentative.','success')}
         else return;
-        state=await loadState(meta,contextResult.context);
+        state=await loadState(meta,contextResult.context,user.id);
       }catch(err){status(friendlySecurityError(err),'error')}
     });
 
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
+  }catch(error){console.error('[SINJIRA security center] initialisation non confirmée');status(friendlySecurityError(error),'error')}
 }
 
 boot();
