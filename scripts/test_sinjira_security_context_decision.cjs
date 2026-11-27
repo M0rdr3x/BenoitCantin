@@ -54,4 +54,42 @@ const push=source.indexOf('EdgeRuntime.waitUntil(runSecurityPushBackground');
 const success=source.indexOf('security: data,',push);
 assert.ok(check>=0&&check<push&&push<success,'La décision doit être vérifiée avant les notifications et le succès');checks++;
 assert.ok(!source.includes("console.error('[security-context]', error)"),'Pas de journalisation brute des erreurs');checks++;
-console.log('PASS: '+checks+' contrôles de frontière security-context.');
+async function handlerTests(){
+  const handlerStart=source.indexOf('Deno.serve(async (req) => {');
+  assert.ok(handlerStart>=0);
+  const decision={outcome:'allow',device_id:id};
+  for(const [body,result,expected,calls] of [
+    [{device_key:id},{data:decision,error:null},200,1],
+    [{device_key:id},{data:decision},503,1],
+    [{device_key:id},{data:decision,error:false},503,1],
+    [{device_key:id},{data:decision,error:0},503,1],
+    [{device_key:id},{data:decision,error:''},503,1],
+    [{device_key:id},{data:decision,error:{code:'42501',message:'USER_SESSION_INVALID'}},401,1],
+    [{device_key:id},{data:decision,error:{code:'42501',message:'other'}},503,1],
+    [{device_key:id},{data:{...decision,device_id:id+'\n'},error:null},503,1],
+    [[],null,400,0],[null,null,400,0],['invalid',null,400,0],[42,null,400,0],
+    [{device_key:id+'\n'},null,400,0]
+  ]){
+    let handler,rpcCalls=0,pushCalls=0;
+    const sandbox={
+      Deno:{serve:fn=>{handler=fn}},
+      requiredUser:async()=>({id:'synthetic-user'}),
+      sessionIdFromVerifiedRequest:()=>id,
+      readLimitedJson:async()=>({body}),
+      trustedGeo:()=>({country:null,region:null}),
+      safeText:(value,max)=>typeof value==='string'?value.trim().slice(0,max):'',
+      safeDeviceType:()=> 'browser',
+      serviceClient:()=>({rpc:async(_name,args)=>{rpcCalls++;assert.equal(args.p_session_id,id);return result}}),
+      privateJson:(body,status=200)=>({body,status}),
+      runSecurityPushBackground:()=>{pushCalls++;return Promise.resolve()},
+      EdgeRuntime:{waitUntil(){}},console:{error(){}}
+    };
+    vm.runInNewContext(code+'\n'+source.slice(handlerStart),sandbox,{timeout:1000});
+    const response=await handler({method:'POST'});
+    assert.equal(response.status,expected);checks++;
+    assert.equal(rpcCalls,calls);checks++;
+    assert.equal(pushCalls,expected===200?1:0);checks++;
+    assert.equal(response.body.ok,expected===200);checks++;
+  }
+}
+handlerTests().then(()=>console.log('PASS: '+checks+' contrôles de frontière security-context.')).catch(error=>{console.error(error);process.exitCode=1;});
