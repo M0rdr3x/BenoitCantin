@@ -195,7 +195,7 @@ async function createTravel(form){
 function confirmAction(message){return globalThis.confirm(message)}
 
 function friendlySecurityError(error){
-  const message=error?.message||String(error||'Erreur de sécurité.');
+  const message=typeof error?.message==='string'?error.message:typeof error==='string'?error:'';
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
