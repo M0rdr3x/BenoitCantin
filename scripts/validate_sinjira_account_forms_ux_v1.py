@@ -39,7 +39,7 @@ def check_page(path, expected):
         errors.append(f"{path}: cible du lien d’évitement non focalisable")
     if auth_nav and 'data-backend-state role="status" aria-atomic="true"' not in text:
         errors.append(f"{path}: état du service non annoncé")
-    css_version = "1.0.3" if auth_nav else "1.0.0"
+    css_version = "1.0.3" if auth_nav else "1.0.4"
     if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.3" not in text:
         errors.append(f"{path}: aide de validation absente")
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
@@ -74,7 +74,13 @@ def check_page(path, expected):
                        'name="formspree_receipt_opt_in"'):
             if marker not in text:
                 errors.append(f"Inscription : champ de sécurité manquant {marker}")
+    if not auth_nav:
+        for marker in ('role="status" aria-live="polite" aria-atomic="true"',):
+            if marker not in text:
+                errors.append(f"{path}: annonce du résultat absente")
     if path.endswith("profil.html"):
+        if 'aria-describedby="profile-languages-help"' not in text or 'id="profile-languages-help"' not in text:
+            errors.append("Profil : aide de saisie des langues non associée")
         if text.count('data-optional-private-profile') != 1:
             errors.append("Profil privé : section complémentaire manquante")
         if 'data-private-profile-form' not in text or 'data-private-profile-save' not in text:

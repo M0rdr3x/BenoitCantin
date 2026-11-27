@@ -238,6 +238,40 @@ def assert_processing_feedback(context):
         page.close()
 
 
+def inspect_member_forms(browser):
+    # Recette de présentation : aucun module applicatif, aucune session ni
+    # soumission. Les valeurs et autorisations du serveur ne sont pas testées.
+    context=browser.new_context(java_script_enabled=False,service_workers="block",
+        locale="fr-CA",reduced_motion="reduce",viewport={"width":390,"height":844})
+    try:
+        context.route("**/*", lambda route: route.continue_() if route.request.url.startswith(BASE) else route.abort())
+        page=context.new_page()
+        for path in ("compte/profil.html","compte/parametres.html"):
+            response=page.goto(urljoin(BASE,path),wait_until="domcontentloaded",timeout=30_000)
+            assert_ok(response is not None and response.ok,"page membre inaccessible")
+            if path.endswith("profil.html"):
+                page.locator("[data-optional-private-profile] summary").click()
+                assert_ok(page.locator("[data-optional-private-profile]").get_attribute("open") is not None,
+                          "réglages facultatifs inaccessibles")
+            for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(768,"100%"),(1440,"100%")):
+                page.set_viewport_size({"width":width,"height":844})
+                page.evaluate("(zoom)=>document.documentElement.style.fontSize=zoom",zoom)
+                state=page.evaluate("""() => {
+                  const controls=[...document.querySelectorAll('main .account-form .field input:not([type=hidden]),main .account-form select,main .account-form textarea,main .btn,main summary,main .account-check')].filter(e=>e.getBoundingClientRect().width>0);
+                  return {count:controls.length,overflow:document.documentElement.scrollWidth>innerWidth+2,
+                    offenders:controls.filter(e=>{const r=e.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2||r.height<47.5}).map(e=>e.id||e.className||e.tagName),
+                    status:[...document.querySelectorAll('main .account-status')].every(e=>e.getAttribute('role')==='status'&&e.getAttribute('aria-live')==='polite')};
+                }""")
+                assert_ok(state["count"]>=5 and not state["overflow"] and not state["offenders"] and state["status"],
+                          f"formulaire {path}, {width}px / {zoom}: {state}")
+            page.evaluate("document.documentElement.style.fontSize=''")
+            if path.endswith("parametres.html"):
+                assert_ok(page.locator('[name="allow_ai_personal_data"]').is_disabled(),
+                          "option IA privée doit rester désactivée")
+    finally:
+        context.close()
+
+
 def run():
     assert_ok(ENGINE in {"chromium", "firefox", "webkit"}, "moteur navigateur inconnu")
     with sync_playwright() as playwright:
@@ -255,6 +289,7 @@ def run():
                 assert_password_script_is_safe(context)
                 assert_inline_feedback(context)
                 assert_processing_feedback(context)
+                inspect_member_forms(browser)
                 print(f"OK {ENGINE}: quatre formulaires Auth à 240–1440px + révélation locale sûre")
             finally:
                 context.close()
