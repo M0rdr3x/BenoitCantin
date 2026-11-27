@@ -26,7 +26,25 @@
 
   function registerWorker(){
     if(!('serviceWorker' in navigator))return;
-    navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
+    var started=false;
+    function start(){
+      if(started)return;
+      started=true;
+      navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
+    }
+    // Sur l'accueil uniquement, ne pas concurrencer le premier rendu.
+    // Les autres routes conservent leur enregistrement immédiat.
+    var path=location.pathname.toLowerCase();
+    if(path!=='/'&&path!=='/index.html'){start();return;}
+    function schedule(){
+      if(typeof w.requestIdleCallback==='function'){
+        w.requestIdleCallback(start,{timeout:2000});
+      }else{
+        w.setTimeout(start,1000);
+      }
+    }
+    if(d.readyState==='complete')schedule();
+    else w.addEventListener('load',schedule,{once:true});
   }
 
   function loadMobileAccountShell(){

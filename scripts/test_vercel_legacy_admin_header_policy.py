@@ -19,7 +19,8 @@ def base() -> dict:
         "headers": [{
             "source": "/Admin/(.*)",
             "headers": [
-                {"key": "Cache-Control", "value": "no-store"},
+                {"key": "Cache-Control", "value": "private, no-store, max-age=0"},
+                {"key": "X-Frame-Options", "value": "DENY"},
                 {"key": "Referrer-Policy", "value": "no-referrer"},
                 {"key": "Pragma", "value": "no-cache"},
             ],
@@ -49,7 +50,7 @@ class LegacyAdminHeaderSecurityTests(unittest.TestCase):
                 ))
 
     def test_missing_private_headers_fails_closed(self) -> None:
-        for item in ("Cache-Control", "Referrer-Policy", "Pragma"):
+        for item in ("Cache-Control", "Referrer-Policy", "Pragma", "X-Frame-Options"):
             doc = base()
             doc["headers"][0]["headers"] = [
                 v for v in doc["headers"][0]["headers"] if v["key"] != item
@@ -58,6 +59,25 @@ class LegacyAdminHeaderSecurityTests(unittest.TestCase):
                 self.assertTrue(validator.contains_unsafe_legacy_admin_link(
                     "vercel.json", json.dumps(doc)
                 ))
+
+    def test_weakened_cache_and_framing_and_duplicate_headers_denied(self) -> None:
+        for key, value in (
+            ("Cache-Control", "no-store"),
+            ("Cache-Control", "private, no-store, max-age=3600"),
+            ("Cache-Control", "private, no-store, public, max-age=0"),
+            ("X-Frame-Options", "SAMEORIGIN"),
+        ):
+            doc = base()
+            for header in doc["headers"][0]["headers"]:
+                if header["key"] == key:
+                    header["value"] = value
+            with self.subTest(key=key, value=value):
+                self.assertTrue(validator.contains_unsafe_legacy_admin_link("vercel.json", json.dumps(doc)))
+        for key in ("Cache-Control", "cache-control"):
+            doc = base()
+            doc["headers"][0]["headers"].append({"key": key, "value": "public"})
+            with self.subTest(duplicate=key):
+                self.assertTrue(validator.contains_unsafe_legacy_admin_link("vercel.json", json.dumps(doc)))
 
     def test_malformed_document_and_unprotected_rule_denied(self) -> None:
         self.assertTrue(validator.contains_unsafe_legacy_admin_link("vercel.json", "{invalid-json"))

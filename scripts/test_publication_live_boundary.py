@@ -171,6 +171,58 @@ class PublicationMonitorSecurityTests(unittest.TestCase):
                 self.assertEqual(request.get_method(), "GET")
                 self.assertEqual(timeout, boundary.TIMEOUT_SECONDS)
 
+    def test_private_live_header_contract(self):
+        expected = {
+            "Cache-Control": "private, no-store, max-age=0",
+            "X-Frame-Options": "DENY",
+            "Referrer-Policy": "no-referrer",
+            "Pragma": "no-cache",
+            "X-Content-Type-Options": "nosniff",
+            "Strict-Transport-Security": "max-age=31536000",
+            "Content-Security-Policy": "default-src 'self'; script-src 'self'; script-src-attr 'none'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests",
+        }
+        def make_headers(values):
+            message = Message()
+            for key, value in values.items():
+                message[key] = value
+            return message
+        good = make_headers(expected)
+        self.assertEqual(boundary.validate_private_headers(200, good), [])
+        for key in expected:
+            with self.subTest(missing=key):
+                self.assertTrue(boundary.validate_private_headers(200, make_headers(
+                    {k: v for k, v in expected.items() if k != key})))
+            with self.subTest(duplicate=key):
+                duplicated = make_headers(expected)
+                duplicated[key.lower()] = expected[key]
+                self.assertTrue(boundary.validate_private_headers(200, duplicated))
+        for code in (301, 302, 403, 404, 500):
+            self.assertTrue(boundary.validate_private_headers(code, good))
+        for key, value in (
+            ("Cache-Control", "public, no-store, max-age=0"),
+            ("X-Frame-Options", "SAMEORIGIN"),
+            ("Strict-Transport-Security", "max-age=31536000; max-age=0"),
+            ("Content-Security-Policy", expected["Content-Security-Policy"].replace("frame-ancestors 'none'", "frame-ancestors *")),
+            ("Content-Security-Policy", expected["Content-Security-Policy"] + "; script-src 'self' 'unsafe-inline'"),
+            ("Content-Security-Policy", expected["Content-Security-Policy"].replace("script-src 'self'", "script-src 'self' https:")),
+            ("Content-Security-Policy", expected["Content-Security-Policy"].replace("script-src 'self'", "script-src 'self' https://example.invalid")),
+            ("Content-Security-Policy", expected["Content-Security-Policy"] + "; script-src-elem *"),
+        ):
+            with self.subTest(key=key, value=value):
+                self.assertTrue(boundary.validate_private_headers(200, make_headers({**expected, key: value})))
+        self.assertEqual(boundary.PRIVATE_HEADER_ROUTES, (
+            "/compte/connexion.html", "/admin/sinjira/", "/app/", "/histoire-de-vie/remise.html"))
+        response = FakeResponse(good)
+        response.status = 200
+        opener = FakeOpener(response)
+        with patch.object(boundary, "build_opener", return_value=opener), redirect_stdout(StringIO()):
+            self.assertEqual(boundary.live_private_headers(), 0)
+            response.status = 404
+            self.assertEqual(boundary.live_private_headers(), 1)
+        self.assertFalse(response.read_called)
+        self.assertEqual([r.full_url for r, _ in opener.requests],
+                         [boundary.BASE_URL + route for route in boundary.PRIVATE_HEADER_ROUTES] * 2)
+
     def test_redirect_is_never_followed(self):
         handler = boundary.RefuseRedirect()
         self.assertIsNone(handler.redirect_request(None, None, 302, "redirect", {}, "https://evil.invalid/"))

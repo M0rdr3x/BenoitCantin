@@ -75,3 +75,22 @@ jobs:
           python-version: '3.12.14'
       - name: Détecter la migration Netlify sans masquer les fuites techniques
         run: python3 scripts/validate_publication_live_boundary.py --live-hosting
+
+  live-private-headers:
+    name: En-têtes HTTP privés effectifs — contrôle indépendant
+    needs: contract
+    # Un défaut des en-têtes ne doit pas masquer le verdict de confinement.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier les en-têtes réellement servis sans lire les corps
+        run: python3 scripts/validate_publication_live_boundary.py --live-private-headers

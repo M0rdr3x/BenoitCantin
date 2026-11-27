@@ -105,6 +105,30 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
                 self.assertIn("no-store", netlify_headers[netlify_path]["Cache-Control"])
                 self.assertIn("no-store", vercel_headers[vercel_path]["Cache-Control"])
 
+    def test_private_http_headers_are_consistent(self) -> None:
+        netlify = {row["for"]: row["values"] for row in self.netlify["headers"]}
+        vercel = {row["source"]: {h["key"]: h["value"] for h in row["headers"]}
+                  for row in self.vercel["headers"]}
+        generated = render_standalone_headers(deploy_context="production")
+        scopes = [*SCOPES.values(), ("/administration.html", "/administration.html"),
+                  ("/histoire-de-vie/*", "/histoire-de-vie/(.*)")]
+        expected = {"X-Frame-Options": "DENY",
+                    "Cache-Control": "private, no-store, max-age=0",
+                    "Referrer-Policy": "no-referrer", "Pragma": "no-cache"}
+        for n, v in scopes:
+            with self.subTest(scope=n):
+                for key, value in expected.items():
+                    self.assertEqual(netlify[n].get(key), value)
+                    self.assertEqual(vercel[v].get(key), value)
+                    self.assertEqual(sum(h["key"].lower() == key.lower()
+                                         for row in self.vercel["headers"] if row["source"] == v
+                                         for h in row["headers"]), 1)
+                block = generated.split("\n" + n + "\n", 1)
+                self.assertEqual(len(block), 2)
+                scoped = block[1].split("\n\n", 1)[0]
+                for key, value in expected.items():
+                    self.assertIn(f"{key}: {value}", scoped)
+
     def test_entetes_produits_conservent_les_csp_privees(self) -> None:
         headers = render_standalone_headers(deploy_context="production")
         for netlify_path, _ in SCOPES.values():

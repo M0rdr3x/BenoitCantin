@@ -58,7 +58,7 @@
   function appendPwaAssets() {
     if (doc.querySelector('script[data-sinjira-pwa-install]')) return;
     var pwaScript = doc.createElement('script');
-    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.102';
+    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.103';
     pwaScript.defer = true;
     pwaScript.setAttribute('data-sinjira-pwa-install', '');
     // Conserver l'invite éventuellement émise pendant le chargement du module.

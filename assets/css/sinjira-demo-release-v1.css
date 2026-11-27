@@ -11,7 +11,7 @@ body[data-reader-page="demo-pending"] .sinjira-release-main{
 }
 body[data-reader-page="demo-pending"] .container.sinjira-release-layout{
   display:grid;
-  grid-template-columns:minmax(0,300px) minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr) minmax(0,300px);
   align-items:start;
   gap:clamp(20px,4vw,46px);
   min-width:0;
@@ -89,6 +89,7 @@ body[data-reader-page="demo-pending"] .footer-bottom{
   body[data-reader-page="demo-pending"] .sinjira-release-cover{
     max-width:min(240px,100%);
     margin-inline:auto;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
   }
   body[data-reader-page="demo-pending"] .sinjira-release-actions{
     display:grid;
@@ -112,4 +113,9 @@ body[data-reader-page="demo-pending"] .footer-bottom{
   body[data-reader-page="demo-pending"] .sinjira-release-actions .btn{
     transition:none;
   }
+}
+
+body[data-reader-page="demo-pending"] .sinjira-release-main:focus-visible,
+body[data-reader-page="demo-pending"] .sinjira-release-actions .btn:focus-visible{
+  outline:3px solid #ffbba6;outline-offset:3px
 }

@@ -107,6 +107,10 @@ def test_home(page):
                    f"carte de rubrique débordante à {width}px : {state}")
 
         if width <= 1020:
+            verify(nav.evaluate("(el) => parseFloat(getComputedStyle(el).minWidth) === 0"),
+                   f"largeur intrinsèque du menu non bornée à {width}px")
+            verify(nav.evaluate("(el) => getComputedStyle(el).flexWrap === 'nowrap'"),
+                   f"menu mobile ne doit pas créer de colonnes à {width}px")
             verify(toggle.is_visible() and not nav.is_visible(),
                    f"menu mobile non replié à {width}px")
             toggle.click()

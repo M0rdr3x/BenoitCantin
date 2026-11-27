@@ -701,6 +701,7 @@ def validate_vercel_config() -> list[str]:
 
     for source in (
         "/.well-known/release.json",
+        "/administration.html",
         "/compte/(.*)",
         "/admin/(.*)",
         "/Admin/(.*)",
@@ -711,9 +712,12 @@ def validate_vercel_config() -> list[str]:
         if values is None:
             errors.append(f"Preview Vercel: en-têtes privés absents: {source}")
             continue
-        if values.get("Cache-Control", "").lower() != "no-store":
-            errors.append(f"Preview Vercel: Cache-Control no-store requis: {source}")
+        expected_cache = "no-store" if source == "/.well-known/release.json" else "private, no-store, max-age=0"
+        if values.get("Cache-Control", "").lower() != expected_cache:
+            errors.append(f"Preview Vercel: Cache-Control {expected_cache} requis: {source}")
         if source != "/.well-known/release.json":
+            if values.get("X-Frame-Options") != "DENY":
+                errors.append(f"Preview Vercel: X-Frame-Options DENY requis: {source}")
             if values.get("Referrer-Policy") != "no-referrer":
                 errors.append(f"Preview Vercel: Referrer-Policy no-referrer requis: {source}")
             if values.get("Pragma") != "no-cache":
