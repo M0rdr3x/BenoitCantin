@@ -10,6 +10,7 @@ on:
       - 'supabase/migrations/**'
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_preorder_admin_v24_5_4.py'
+      - 'scripts/test_preorder_admin_ux.cjs'
       - 'scripts/validate_production_migration_ledger.py'
       - 'scripts/validate_production_schema_manifest.py'
       - 'SERVICES_EXTERNES_PAYANTS.md'
@@ -30,7 +31,9 @@ jobs:
         with:
           python-version: '3.12.14'
       - name: Contrat administration précommandes V24.5.4
-        run: python scripts/validate_preorder_admin_v24_5_4.py
+        run: |
+          python scripts/validate_preorder_admin_v24_5_4.py
+          node scripts/test_preorder_admin_ux.cjs
       - name: Validation statique du site
         run: python scripts/validate_site.py
       - name: Contrat Supabase

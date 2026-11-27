@@ -1,0 +1,28 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const source=fs.readFileSync(path.join(__dirname,'../assets/js/sinjira-admin-preorders-v24-5-4.js'),'utf8').replace(/^import [^\n]+\n/,'').replace(/\ninit\(\);\s*$/,'');
+const nodes=new Map(),calls=[];
+const form={setAttribute(){},querySelectorAll(){return [];}};
+for(const k of ['[data-pa-save-draft]','[data-pa-mark-ready]','[data-pa-send-internal]','[data-pa-refresh]','[data-pa-list]','[data-preorder-admin-status]','[data-pa-filter-status]'])nodes.set(k,{disabled:true,dataset:{},setAttribute(k,v){this[k]=v;}});
+nodes.set('[data-pa-announcement-form]',form);
+const api=vm.runInNewContext(source+'\n({loadRows,syncActions,canAct,runAction,setAuth(v){authorized=v},setState(v){state.overview=v},setBusy(v){actionBusy=v},setNeeds(v){needsRefresh=v}})',{
+ document:{querySelector:k=>nodes.get(k)||null},getSupabase:()=>({rpc(name,args){return new Promise(resolve=>calls.push({name,args,resolve}));}}),escapeHtml:String,friendlyBackendMessage:(e,f)=>f,Intl,Date
+});
+(async()=>{
+ const ready=nodes.get('[data-pa-mark-ready]'),send=nodes.get('[data-pa-send-internal]');
+ api.setState({announcement:{status:'draft'}});
+ api.syncActions();assert.equal(ready.disabled,true);
+ api.setAuth(true);api.syncActions();assert.equal(ready.disabled,false);assert.equal(send.disabled,true);
+ api.setBusy(true);api.syncActions();assert.equal(ready.disabled,true);assert.equal(api.canAct(),false);
+ await api.runAction('fixture',{},'',()=> 'ok');assert.equal(calls.length,0);
+ api.setBusy(false);api.setState({announcement:{status:'ready'}});api.syncActions();assert.equal(ready.disabled,true);assert.equal(send.disabled,false);
+ api.setNeeds(true);api.syncActions();assert.equal(send.disabled,true);
+ api.setNeeds(false);
+ const first=api.loadRows();nodes.get('[data-pa-filter-status]').value='reserved';const second=api.loadRows();
+ assert.equal(calls[1].args.p_status,'reserved');
+ calls[1].resolve({data:[{user_label:'Fixture B'}]});await second;
+ calls[0].resolve({data:[{user_label:'Fixture A'}]});await first;
+ assert.match(nodes.get('[data-pa-list]').innerHTML,/Fixture B/);
+ assert.equal(nodes.get('[data-pa-list]')['aria-busy'],'false');
+ console.log('OK précommandes : verrou des commandes et réponses de filtres dans le bon ordre.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

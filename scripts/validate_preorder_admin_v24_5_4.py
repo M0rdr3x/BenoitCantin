@@ -81,7 +81,9 @@ def main():
         'Réservations actives', 'Exemplaires souhaités', 'À avertir dans SINJIRA',
         'Enregistrer le brouillon', 'Marquer prêt', 'Envoyer l’avis interne',
         'Transport externe', 'désactivé', 'Paiement', 'Conversion automatique en commande',
-        'Aucun courriel, adresse postale ou identifiant technique n’est affiché ici.'
+        'Aucun courriel, adresse postale ou identifiant technique n’est affiché ici.',
+        'data-pa-save-draft type="submit" disabled', 'data-pa-mark-ready type="button" disabled',
+        'data-pa-send-internal type="button" disabled', 'data-pa-list aria-busy="true"'
     ], 'Interface admin')
     require_any(errors, html, [
         'Préparer l’ouverture future des ventes',
@@ -97,6 +99,9 @@ def main():
         'Aucun courriel, SMS ou paiement ne sera déclenché.',
         'Aucun service externe n’a été utilisé.',
         "p_limit: 250",
+        'function syncActions()', 'function canAct()', 'needsRefresh = true',
+        'if (version !== rowsVersion) return;', 'await requireAdminAal2();',
+        'form?.setAttribute(\'aria-busy\', \'true\')',
     ], 'Runtime admin')
     forbid(errors, js, [
         '.functions.invoke(', 'fetch(', 'stripe', 'paypal', 'resend', 'sendgrid', 'mailgun', 'twilio',

@@ -8,6 +8,48 @@ const form = document.querySelector('[data-pa-announcement-form]');
 const filterStatus = document.querySelector('[data-pa-filter-status]');
 const filterFormat = document.querySelector('[data-pa-filter-format]');
 const state = { overview: null, rows: [] };
+let authorized = false, actionBusy = false, needsRefresh = false, refreshing = false, rowsVersion = 0;
+function syncActions() {
+  const current = state.overview?.announcement?.status;
+  const blocked = !authorized || actionBusy || needsRefresh || refreshing;
+  const save = document.querySelector('[data-pa-save-draft]');
+  const ready = document.querySelector('[data-pa-mark-ready]');
+  const send = document.querySelector('[data-pa-send-internal]');
+  const refresh = document.querySelector('[data-pa-refresh]');
+  if (save) save.disabled = blocked || current === 'sent';
+  if (ready) ready.disabled = blocked || current !== 'draft';
+  if (send) send.disabled = blocked || current !== 'ready';
+  if (refresh) refresh.disabled = !authorized || actionBusy || refreshing;
+}
+function canAct() { return authorized && !actionBusy && !needsRefresh && !refreshing; }
+async function runAction(action, args, confirmation, message, validate = () => true) {
+  if (!canAct()) return;
+  actionBusy = true;
+  form?.setAttribute('aria-busy', 'true');
+  // Capturer le brouillon avant de bloquer les champs.
+  const inputs = Array.from(form?.querySelectorAll('input,textarea,select') || []);
+  const previous = inputs.map(el => el.disabled);
+  inputs.forEach(el => { el.disabled = true; });
+  syncActions();
+  showStatus('Traitement en cours…', 'info');
+  let confirmed = false;
+  try {
+    const result = await rpc(action, args);
+    if (!validate(result)) throw new Error(confirmation);
+    confirmed = true;
+    await refreshAll(message(result));
+  } catch (error) {
+    needsRefresh = true;
+    showStatus(confirmed
+      ? 'Opération confirmée, mais actualisation impossible. Actualisez les données avant toute nouvelle action.'
+      : friendlyBackendMessage(error?.message, 'Résultat non confirmé. Actualisez les données avant toute nouvelle action.'), 'error');
+  } finally {
+    actionBusy = false;
+    form?.setAttribute('aria-busy', 'false');
+    if (!confirmed || needsRefresh) inputs.forEach((el, i) => { el.disabled = previous[i]; });
+    syncActions();
+  }
+}
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium', timeStyle: 'short' });
 
 function showStatus(message, kind = '') {
@@ -90,7 +132,10 @@ async function lookupReference(event) {
     input?.focus();
     return;
   }
+  if (!authorized || button?.disabled) return;
   if (button) button.disabled = true;
+  if (resultNode) resultNode.hidden = true;
+  setLookupStatus('Recherche en cours…', 'info');
   try {
     const rows = await rpc('admin_preorder_find_by_reference', { p_reservation_reference: reference });
     const row = Array.isArray(rows) ? (rows[0] || null) : rows;
@@ -138,8 +183,7 @@ function renderOverview() {
     pill.dataset.state = a?.status || 'none';
   }
   if (sentMeta) sentMeta.textContent = a?.sent_at ? `${dt(a.sent_at)} · ${a.recipient_count ?? 0} destinataire(s)` : '—';
-  if (markReady) markReady.disabled = !a || a.status !== 'draft';
-  if (send) send.disabled = !a || a.status !== 'ready';
+  syncActions();
 
   if (!form || !a) return;
   form.elements.title.value = a.title || '';
@@ -156,22 +200,33 @@ function renderOverview() {
     el.disabled = locked;
   });
   const save = document.querySelector('[data-pa-save-draft]');
-  if (save) save.disabled = locked;
+  syncActions();
 }
 async function loadOverview() {
   state.overview = await rpc('admin_preorder_overview', { p_product_slug: PRODUCT_SLUG });
   renderOverview();
 }
 async function loadRows() {
-  const rows = await rpc('admin_preorder_list', {
-    p_product_slug: PRODUCT_SLUG,
-    p_status: filterStatus?.value || null,
-    p_format: filterFormat?.value || null,
-    p_limit: 250,
-    p_offset: 0
-  });
-  state.rows = Array.isArray(rows) ? rows : [];
-  renderRows();
+  const version = ++rowsVersion;
+  listNode?.setAttribute('aria-busy', 'true');
+  try {
+    const rows = await rpc('admin_preorder_list', {
+      p_product_slug: PRODUCT_SLUG,
+      p_status: filterStatus?.value || null,
+      p_format: filterFormat?.value || null,
+      p_limit: 250,
+      p_offset: 0
+    });
+    if (version !== rowsVersion) return;
+    state.rows = Array.isArray(rows) ? rows : [];
+    renderRows();
+  } catch (error) {
+    if (version !== rowsVersion) return;
+    if (listNode) listNode.textContent = 'Liste indisponible. Actualisez les données pour réessayer.';
+    throw error;
+  } finally {
+    if (version === rowsVersion) listNode?.setAttribute('aria-busy', 'false');
+  }
 }
 function renderRows() {
   if (!listNode) return;
@@ -206,47 +261,35 @@ function formArgs() {
 }
 async function saveDraft(event) {
   event.preventDefault();
-  const button = document.querySelector('[data-pa-save-draft]');
-  if (button) button.disabled = true;
-  try {
-    await rpc('admin_preorder_save_announcement_draft', formArgs());
-    await refreshAll('Brouillon enregistré. Aucun avis n’a été envoyé.');
-  } catch (error) {
-    showStatus(friendlyBackendMessage(error?.message, 'Impossible d’enregistrer le brouillon.'), 'error');
-  } finally {
-    if (button && state.overview?.announcement?.status !== 'sent') button.disabled = false;
-  }
+  if (!canAct() || state.overview?.announcement?.status === 'sent') return;
+  await runAction('admin_preorder_save_announcement_draft', formArgs(), '', () => 'Brouillon enregistré. Aucun avis n’a été envoyé.');
 }
 async function markReady() {
   const a = state.overview?.announcement;
-  if (!a || a.status !== 'draft') return;
+  if (!canAct() || !a || a.status !== 'draft') return;
   if (!confirm('Marquer cet avis comme prêt ? Cela ne l’envoie pas encore et n’active aucun paiement.')) return;
-  const button = document.querySelector('[data-pa-mark-ready]');
-  if (button) button.disabled = true;
-  try {
-    const ok = await rpc('admin_preorder_mark_announcement_ready', { p_product_slug: PRODUCT_SLUG });
-    if (!ok) throw new Error('ANNOUNCEMENT_NOT_READY');
-    await refreshAll('Avis marqué prêt. Il n’a pas encore été envoyé.');
-  } catch (error) {
-    showStatus(friendlyBackendMessage(error?.message, 'Impossible de marquer l’avis prêt.'), 'error');
-  } finally {
-    if (button) button.disabled = false;
-  }
+  await runAction('admin_preorder_mark_announcement_ready', { p_product_slug: PRODUCT_SLUG }, 'ANNOUNCEMENT_NOT_READY', () => 'Avis marqué prêt. Il n’a pas encore été envoyé.', Boolean);
 }
 async function sendInternal() {
   const a = state.overview?.announcement;
-  if (!a || a.status !== 'ready') return;
+  if (!canAct() || !a || a.status !== 'ready') return;
   const count = state.overview?.summary?.notify_opt_in ?? 0;
   if (!confirm(`Envoyer maintenant cet avis dans SINJIRA™ aux ${count} réservation(s) actives ayant demandé à être averties ? Aucun courriel, SMS ou paiement ne sera déclenché.`)) return;
-  const button = document.querySelector('[data-pa-send-internal]');
-  if (button) button.disabled = true;
+  await runAction('admin_preorder_send_internal_announcement', { p_product_slug: PRODUCT_SLUG }, '', sent => `Avis interne envoyé à ${sent ?? 0} compte(s). Aucun service externe n’a été utilisé.`);
+}
+async function manualRefresh() {
+  if (!authorized || actionBusy || refreshing) return;
+  refreshing = true;
+  syncActions();
   try {
-    const sent = await rpc('admin_preorder_send_internal_announcement', { p_product_slug: PRODUCT_SLUG });
-    await refreshAll(`Avis interne envoyé à ${sent ?? 0} compte(s). Aucun service externe n’a été utilisé.`);
+    await refreshAll('Données actualisées.');
+    needsRefresh = false;
   } catch (error) {
-    showStatus(friendlyBackendMessage(error?.message, 'L’envoi interne a été refusé.'), 'error');
+    needsRefresh = true;
+    showStatus(friendlyBackendMessage(error?.message, 'Actualisation impossible. Réessayez.'), 'error');
   } finally {
-    if (button && state.overview?.announcement?.status === 'ready') button.disabled = false;
+    refreshing = false;
+    syncActions();
   }
 }
 function bind() {
@@ -254,17 +297,25 @@ function bind() {
   form?.addEventListener('submit', saveDraft);
   document.querySelector('[data-pa-mark-ready]')?.addEventListener('click', markReady);
   document.querySelector('[data-pa-send-internal]')?.addEventListener('click', sendInternal);
-  document.querySelector('[data-pa-refresh]')?.addEventListener('click', () => refreshAll('Données actualisées.'));
-  filterStatus?.addEventListener('change', loadRows);
-  filterFormat?.addEventListener('change', loadRows);
+  document.querySelector('[data-pa-refresh]')?.addEventListener('click', manualRefresh);
+  const applyFilters = () => loadRows().catch(error => showStatus(friendlyBackendMessage(error?.message, 'Impossible de charger les réservations.'), 'error'));
+  filterStatus?.addEventListener('change', applyFilters);
+  filterFormat?.addEventListener('change', applyFilters);
 }
 async function init() {
-  bind();
   try {
     await requireAdminAal2();
+    authorized = true;
+    needsRefresh = true;
+    bind();
     await refreshAll();
+    needsRefresh = false;
+    syncActions();
     showStatus('Administration des précommandes chargée. Aucun paiement ni transport externe n’est actif.', 'success');
   } catch (error) {
+    syncActions();
+    listNode?.setAttribute('aria-busy', 'false');
+    if (listNode) listNode.textContent = 'Données indisponibles.';
     if (!['AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED'].includes(error?.message)) {
       showStatus(friendlyBackendMessage(error?.message, 'Impossible de charger l’administration des précommandes.'), 'error');
     }
