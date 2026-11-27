@@ -19,7 +19,7 @@ function harness() {
     const store = stores.get(name);
     return {
       async put(req, response) { writes.push({ cache: name, url: key(req) }); store.set(key(req), response); },
-      async match(req) { return store.get(key(req)); },
+      async match(req) { return store.get(key(req))?.clone(); },
     };
   };
   const caches = {
@@ -27,7 +27,7 @@ function harness() {
     keys: async () => [...stores.keys()],
     delete: async name => stores.delete(name),
     async match(req) {
-      for (const store of stores.values()) if (store.has(key(req))) return store.get(key(req));
+      for (const store of stores.values()) if (store.has(key(req))) return store.get(key(req)).clone();
     },
   };
   const self = {
@@ -322,4 +322,26 @@ test('précache : échec tardif annule également les lots précédents', async 
   assert.ok(h.requests.length>4);
   assert.equal(h.writes.length,0);
   assert.deepEqual([...h.stores.keys()],['another-app-cache']);
+});
+
+
+test('accueil hors ligne : signature, icône, navigation et chargeur public disponibles', async () => {
+  const h=harness(); await h.lifecycle('install');
+  h.writes.length=0; h.setOnline(false);
+  for (const [path,destination] of [
+    ['/assets/css/site-personality-v25.css','style'],
+    ['/assets/js/site-personality-v25.js','script'],
+    ['/assets/css/sinjira-universe-nav-v2.css','style'],
+    ['/assets/js/sinjira-universe-nav-v2.js','script'],
+    ['/assets/js/home-session-lazy-v24-5-1.js','script'],
+    ['/assets/icons/favicon.svg','image'],
+  ]) {
+    const asset=await h.request(path+'?v=offline-fixture',{destination});
+    assert.equal(await asset.text(),'precache:'+path);
+  }
+  assert.equal(await (await h.request('/')).text(),'precache:/');
+  assert.equal(await (await h.request('/compte/')).text(),'precache:/offline.html');
+  assert.equal(await (await h.request('/admin/sinjira/')).text(),'precache:/offline.html');
+  assert.equal((await h.request('/assets/js/v19-session.js?v=offline-fixture',{destination:'script'})).type,'error');
+  assert.equal(h.writes.length,0);
 });
