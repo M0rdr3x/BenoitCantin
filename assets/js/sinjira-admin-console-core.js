@@ -2,6 +2,22 @@ import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.j
 
 const status=document.querySelector('[data-admin-status]');
 let projects=[];
+const busyForms=new WeakSet();
+function beginForm(form){
+  if(busyForms.has(form))return null;
+  busyForms.add(form);
+  const controls=Array.from(form.elements),previous=controls.map(el=>el.disabled);
+  controls.forEach(el=>{el.disabled=true;});
+  form.setAttribute('aria-busy','true');
+  return ()=>{controls.forEach((el,i)=>{el.disabled=previous[i];});form.setAttribute('aria-busy','false');busyForms.delete(form);};
+}
+async function saveForm(form,write,refresh,message){
+  const release=beginForm(form);if(!release)return;
+  let saved=false;
+  try{setStatus(status,'Enregistrement en cours…','info');await write();saved=true;form.reset();await refresh();setStatus(status,message,'success');}
+  catch(error){setStatus(status,saved?'Enregistrement confirmé, mais actualisation impossible. Rechargez la page avant une nouvelle opération.':(error?.message||'Enregistrement non confirmé. Vérifiez les données avant de réessayer.'),'error');}
+  finally{release();}
+}
 
 async function requireSinjiraAdmin(){
   const s=getSupabase();
@@ -62,15 +78,15 @@ async function loadProjects(){
   const opts=projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   document.querySelectorAll('[data-project-select]').forEach(s=>{const old=s.value;s.innerHTML=opts;if(old)s.value=old});
   list.querySelectorAll('[data-edit-project]').forEach(b=>b.addEventListener('click',()=>{
-    const p=projects.find(x=>x.id===b.dataset.editProject),f=document.querySelector('[data-project-form]');if(!p)return;
+    const p=projects.find(x=>x.id===b.dataset.editProject),f=document.querySelector('[data-project-form]');if(!p||busyForms.has(f))return;
     Object.entries(p).forEach(([k,v])=>{if(f.elements[k]){if(f.elements[k].type==='checkbox')f.elements[k].checked=!!v;else f.elements[k].value=v??''}});
     f.scrollIntoView({behavior:'smooth'});
   }));
 }
 function bindProject(){
   const f=document.querySelector('[data-project-form]');
-  f.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(f),obj=Object.fromEntries(fd.entries());obj.allow_tester_requests=f.elements.allow_tester_requests.checked;
-    try{await call('save_project',{project:obj});setStatus(status,'Projet enregistré.','success');f.reset();await loadProjects();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
+  f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const fd=new FormData(f),obj=Object.fromEntries(fd.entries());obj.allow_tester_requests=f.elements.allow_tester_requests.checked;
+    await saveForm(f,()=>call('save_project',{project:obj}),async()=>{await loadProjects();await dashboard();},'Projet enregistré.');})
 }
 async function loadDocs(){
   const rows=(await call('list_documents')).documents||[],box=document.querySelector('[data-admin-document-list]');
@@ -79,16 +95,16 @@ async function loadDocs(){
 }
 function bindUpload(){
   const f=document.querySelector('[data-document-upload-form]');
-  f.addEventListener('submit',async e=>{e.preventDefault();const file=f.elements.file.files?.[0],project=projects.find(p=>p.id===f.elements.project_id.value);
+  f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const file=f.elements.file.files?.[0],project=projects.find(p=>p.id===f.elements.project_id.value);
     if(!file||!project){setStatus(status,'Choisissez un projet et un fichier.','error');return}
-    try{
+    const publishStatus=f.elements.publish_status.value;
+    await saveForm(f,async()=>{
       setStatus(status,'Préparation du téléversement sécurisé…','info');
       const prep=await call('prepare_document_upload',{document:{project_id:project.id,project_slug:project.slug,title:f.elements.title.value,description:f.elements.description.value,document_type:f.elements.document_type.value,version:f.elements.version.value,access_level:f.elements.access_level.value,sort_order:f.elements.sort_order.value,filename:file.name,mime_type:file.type||'application/octet-stream',file_size_bytes:file.size}});
       const {error}=await getSupabase().storage.from(prep.upload.bucket).uploadToSignedUrl(prep.upload.path,prep.upload.token,file,{contentType:file.type||'application/octet-stream'});
       if(error)throw error;
-      await call('finalize_document',{document_id:prep.document.id,status:f.elements.publish_status.value});
-      setStatus(status,'Document téléversé.','success');f.reset();await loadDocs();await dashboard();
-    }catch(x){setStatus(status,x.message,'error')}
+      await call('finalize_document',{document_id:prep.document.id,status:publishStatus});
+    },async()=>{await loadDocs();await dashboard();},'Document téléversé.');
   });
 }
 async function loadRequests(){
@@ -107,7 +123,7 @@ async function loadPlaytests(){
   box.querySelectorAll('[data-pt]').forEach(b=>b.addEventListener('click',async()=>{try{await call('review_playtest_participant',{playtest_id:b.dataset.pt,user_id:b.dataset.user,status:b.dataset.state});await loadPlaytests()}catch(x){setStatus(status,x.message,'error')}}));
 }
 function bindPlaytest(){
-  const f=document.querySelector('[data-playtest-form]');f.addEventListener('submit',async e=>{e.preventDefault();try{await call('save_playtest',{playtest:Object.fromEntries(new FormData(f).entries())});setStatus(status,'Playtest enregistré.','success');f.reset();await loadPlaytests();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
+  const f=document.querySelector('[data-playtest-form]');f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const playtest=Object.fromEntries(new FormData(f).entries());await saveForm(f,()=>call('save_playtest',{playtest}),async()=>{await loadPlaytests();await dashboard();},'Playtest enregistré.');})
 }
 async function loadExtensions(){
   const d=await call('list_extensions'),box=document.querySelector('[data-admin-extension-list]'),signals=document.querySelector('[data-extension-signals]');
@@ -115,12 +131,26 @@ async function loadExtensions(){
   signals.innerHTML=(d.signals||[]).slice(0,100).map(s=>`<article class="extension-signal"><strong>${escapeHtml(s.game_slug)}</strong>${s.idea?`<p><b>Extension :</b> ${escapeHtml(s.idea)}</p>`:''}${s.favorite?`<p><b>Mécanique appréciée :</b> ${escapeHtml(s.favorite)}</p>`:''}${s.unclear?`<p><b>À clarifier :</b> ${escapeHtml(s.unclear)}</p>`:''}</article>`).join('')||'<p>Aucun signal partagé.</p>';
 }
 function bindExtension(){
-  const f=document.querySelector('[data-extension-form]');f.addEventListener('submit',async e=>{e.preventDefault();const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;try{await call('save_extension',{extension:o});setStatus(status,'Extension enregistrée.','success');f.reset();await loadExtensions()}catch(x){setStatus(status,x.message,'error')}})
+  const f=document.querySelector('[data-extension-form]');f.addEventListener('submit',async e=>{e.preventDefault();if(busyForms.has(f))return;const o=Object.fromEntries(new FormData(f).entries());o.is_public=f.elements.is_public.checked;await saveForm(f,()=>call('save_extension',{extension:o}),loadExtensions,'Extension enregistrée.');})
 }
 function reportModeLabel(v){return v==='solo'?'Solo':v==='duo'?'Duo':v==='multiplayer'?'Multijoueur':(v||'—')}
 function reportDate(v){try{return new Date(v).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'})}catch{return v||'—'}}
+const REPORT_PAGE_SIZE=25;
+function reportPage(rows,mode,query,page){
+  const term=String(query||'').trim().toLowerCase();
+  const visible=rows.filter(r=>(!mode||r.play_mode===mode)&&(!term||String(r.party_code||'').toLowerCase().includes(term)));
+  const pages=Math.max(1,Math.ceil(visible.length/REPORT_PAGE_SIZE));
+  const index=Math.max(0,Math.min(page,pages-1));
+  const start=index*REPORT_PAGE_SIZE;
+  return {index,pages,start,total:visible.length,items:visible.slice(start,start+REPORT_PAGE_SIZE)};
+}
 async function loadGameReports(){
-  const d=await callReports('list_game_reports'),rows=d.reports||[],s=d.summary||{},box=document.querySelector('[data-admin-report-list]'),filter=document.querySelector('[data-report-filter]');
+  const box=document.querySelector('[data-admin-report-list]'),filter=document.querySelector('[data-report-filter]');
+  const search=document.querySelector('[data-report-search]'),prev=document.querySelector('[data-report-prev]'),next=document.querySelector('[data-report-next]'),info=document.querySelector('[data-report-page]');
+  let page=0,d;
+  try{d=await callReports('list_game_reports');if(!Array.isArray(d.reports))throw new Error('REPORTS_UNAVAILABLE');}
+  catch(error){box.textContent='Rapports indisponibles. Rechargez la page pour réessayer.';box.setAttribute('aria-busy','false');if(info)info.textContent='Données indisponibles.';throw error;}
+  const rows=d.reports,s=d.summary||{};
   const counts={
     '[data-report-total]':s.count||0,
     '[data-report-resistance]':s.resistance_wins||0,
@@ -129,8 +159,12 @@ async function loadGameReports(){
   };
   Object.entries(counts).forEach(([sel,val])=>{const n=document.querySelector(sel);if(n)n.textContent=String(val)});
   const render=()=>{
-    const visible=filter?.value?rows.filter(r=>r.play_mode===filter.value):rows;
-    box.innerHTML=visible.map(r=>{
+    const result=reportPage(rows,filter?.value,search?.value,page);
+    page=result.index;
+    if(prev)prev.disabled=page===0;
+    if(next)next.disabled=page>=result.pages-1;
+    if(info)info.textContent=result.total?`${result.start+1}–${result.start+result.items.length} sur ${result.total} · Page ${page+1}/${result.pages}`:'Aucun rapport correspondant.';
+    box.innerHTML=result.items.map(r=>{
       const f=r.fields||{},who=r.owner?.pseudo||r.owner?.display_name||r.owner?.email||'Compte joueur';
       return `<article class="admin-management-row" style="align-items:flex-start">
         <div style="min-width:0">
@@ -143,8 +177,13 @@ async function loadGameReports(){
       </article>`;
     }).join('')||'<p>Aucun rapport de fin de partie transmis pour ce filtre.</p>';
   };
-  if(filter&&!filter.dataset.bound){filter.dataset.bound='1';filter.addEventListener('change',render)}
+  const reset=()=>{page=0;render();};
+  if(filter){filter.disabled=false;filter.onchange=reset;}
+  if(search){search.disabled=false;search.oninput=reset;}
+  if(prev)prev.onclick=()=>{page--;render();};
+  if(next)next.onclick=()=>{page++;render();};
   render();
+  box.setAttribute('aria-busy','false');
 }
 
 async function analytics(){

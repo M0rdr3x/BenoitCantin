@@ -1,0 +1,14 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const source=fs.readFileSync(path.join(__dirname,'../assets/js/sinjira-admin-console-core.js'),'utf8');
+const start=source.indexOf('const REPORT_PAGE_SIZE='),end=source.indexOf('async function loadGameReports()',start);
+assert.ok(start>=0&&end>start);
+const page=vm.runInNewContext(source.slice(start,end)+'\nreportPage');
+const rows=Array.from({length:51},(_,i)=>({party_code:'PARTIE-'+i,play_mode:i%2?'duo':'solo'}));
+let r=page(rows,'','',0);assert.equal(r.total,51);assert.equal(r.items.length,25);assert.equal(r.pages,3);
+r=page(rows,'','',99);assert.equal(r.index,2);assert.equal(r.items.length,1);
+r=page(rows,'duo','',0);assert.equal(r.total,25);assert.equal(r.pages,1);
+r=page(rows,'',' partie-50 ',2);assert.equal(r.total,1);assert.equal(r.index,0);assert.equal(r.items[0].party_code,'PARTIE-50');
+r=page(rows,'duo','PARTIE-50',0);assert.equal(r.total,0);assert.equal(r.items.length,0);
+assert.equal(rows.length,51);
+console.log('OK rapports : pagination, filtre combiné, recherche par code, bornes et absence de mutation.');

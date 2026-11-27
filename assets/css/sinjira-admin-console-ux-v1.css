@@ -22,3 +22,9 @@
 @media(forced-colors:active){
   .admin-sinjira-page .admin-console-tabs button[aria-current="page"]{outline:2px solid Highlight;outline-offset:-2px}
 }
+
+.admin-sinjira-page .admin-report-search{display:grid;gap:6px;margin-block:12px;max-width:100%}
+.admin-sinjira-page .admin-report-search input{width:100%}
+.admin-sinjira-page .admin-report-pagination{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-top:16px}
+.admin-sinjira-page .admin-report-pagination p{margin:0;overflow-wrap:anywhere}
+@media(max-width:480px){.admin-sinjira-page .admin-report-pagination{display:grid;grid-template-columns:minmax(0,1fr)}.admin-sinjira-page .admin-report-pagination .btn{width:100%;white-space:normal}}
