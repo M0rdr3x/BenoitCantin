@@ -181,6 +181,40 @@ async function recoveryIdentityTests(){
   checks+=4;
 }
 
+async function compromiseRevocationTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-security-center-v24-4-98.js'),'utf8');
+  const start=source.indexOf('async function revokeCompromisedSessions(');
+  const end=source.indexOf('async function boot(',start);
+  assert.ok(start>=0&&end>start);
+  const reject=Symbol('offline');
+  const ok={error:null}, denied={error:{message:'denied'}};
+  for(const [rpcResult,authResult,expected,attempt] of [
+    [ok,ok,'confirmed',true],
+    [ok,denied,'devices-only',true],
+    [ok,undefined,'devices-only',true],
+    [ok,{},'devices-only',true],
+    [ok,reject,'devices-only',true],
+    [denied,ok,'unconfirmed',false],
+    [undefined,ok,'unconfirmed',false],
+    [{},ok,'unconfirmed',false],
+    [reject,ok,'unconfirmed',false]
+  ]){
+    const calls=[];
+    const respond=result=>{if(result===reject)throw Error('offline');return result};
+    const client={rpc:async(name,args)=>{calls.push(name);eq(args.p_current_device_key,'synthetic-device','Appareil courant');return respond(rpcResult)},
+      auth:{signOut:async({scope})=>{calls.push(scope);return respond(authResult)}}};
+    const ctx={};
+    vm.runInNewContext(source.slice(start,end)+'\nglobalThis.revoke=revokeCompromisedSessions;',ctx,{timeout:1000});
+    eq(await ctx.revoke(client,'synthetic-device'),expected,'Confirmation explicite des mesures d’urgence');
+    assert.deepEqual(calls,attempt?['security_compromise_account','others']:['security_compromise_account']);checks++;
+  }
+  assert.ok(source.includes("if(result==='confirmed')"));
+  assert.ok(source.includes("else if(result==='devices-only')"));
+  assert.ok(source.includes('compromisePending||!confirmAction'));
+  assert.ok(source.includes('finally{compromisePending=false;button.disabled=false}'));
+  checks+=4;
+}
+
 function deviceEntropyTests(){
   for(const file of ['sinjira-auth-pages.js','sinjira-recovery-v24-4-99.js','sinjira-security-center-v24-4-98.js']){
     const source=fs.readFileSync(path.join(ROOT,'assets/js',file),'utf8');
@@ -308,6 +342,7 @@ async function main(){
   await assuranceTests();
   await recoveryRevocationTests();
   await recoveryIdentityTests();
+  await compromiseRevocationTests();
   deviceEntropyTests();
   await loginDecisionTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');
