@@ -21,6 +21,8 @@ jobs:
       - name: Vérifier Python 3.12 sur Ubuntu 24.04
         run: |
           python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
+      - name: Vérifier la pagination logistique locale
+        run: node scripts/test_preorder_logistics_ux.cjs
       - name: Vérifier V24.5.36
         run: python3 scripts/validate_preorder_admin_workflow_v24_5_36.py
       - name: Vérifier V24.5.35 historique
