@@ -84,7 +84,9 @@ if JS.count("catch(error){clearWorkspace();status(friendlyError(error),'error')}
 for marker in ("if(!data?.ok)", "state=result.state||{}", "globalThis.crypto?.getRandomValues?.(bytes)"):
     forbid(JS,marker,f'Web: succès ou entropie ambiguë {marker}')
 
-SESSION=(ROOT/'supabase/functions/personal-ai/session.ts').read_text('utf-8')
+SESSION=(ROOT/'supabase/functions/_shared/active-aal2-session.ts').read_text('utf-8')
+SESSION_ALIAS=(ROOT/'supabase/functions/personal-ai/session.ts').read_text('utf-8')
+need(SESSION_ALIAS,"requireActiveAal2Session as requireActivePersonalAiSession",'Session: garde commune obligatoire')
 for marker in ("claims.sub !== userId", "claims.aal !== 'aal2'", "claims.session_id.length !== 36",
                "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS", "client.rpc('security_list_sessions')",
                "result.error !== null", "Array.isArray(result.data)", "current.length !== 1",

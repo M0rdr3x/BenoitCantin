@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredVaultUser } from '../_shared/auth.ts';
+import { requireActiveAal2Session } from '../_shared/active-aal2-session.ts';
 
 const MAX_CONTENT_BYTES = 1024 * 1024;
 // Un JSON peut représenter un même texte avec des séquences \uXXXX plus longues.
@@ -211,6 +212,7 @@ Deno.serve(async (req) => {
 
     // L'identité vient exclusivement du JWT vérifié par requiredVaultUser().
     rejectClientIdentity(body);
+    await requireActiveAal2Session(token, user.id);
 
     const action = safeText(body.action, 40);
 

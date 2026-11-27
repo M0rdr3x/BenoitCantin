@@ -36,6 +36,12 @@ def function_block(text: str, start_marker: str, end_marker: str) -> str:
 def main() -> int:
     auth = read('supabase/functions/_shared/auth.ts')
     edge = read('supabase/functions/conscience-vault/index.ts')
+    active_session = read('supabase/functions/_shared/active-aal2-session.ts')
+    require(active_session, ["claims.sub !== userId", "claims.aal !== 'aal2'", "client.rpc('security_list_sessions')", 'result.error !== null', 'current.length !== 1', 'current[0].id !== sessionId'], 'session Auth active commune')
+    forbid(active_session, ["Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')"], 'session à moindre privilège')
+    require(edge, ['await requireActiveAal2Session(token, user.id);'], 'session active sur toutes les actions')
+    if edge.index('await requireActiveAal2Session(token, user.id);') > edge.index("if (action === 'open_session')"):
+        raise AssertionError('La garde commune doit précéder toutes les actions du coffre')
     security_ui = read('assets/js/sinjira-security-center-v24-4-98.js')
     config = read('supabase/config.toml')
     migration = read('supabase/migrations/20260902223000_sinjira_v25_0_personal_consciousness_vault.sql')

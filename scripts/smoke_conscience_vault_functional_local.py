@@ -202,6 +202,25 @@ def main() -> int:
                 "capacité révoquée")
     expect_code(vault(aal2, "list_entries"), 403, "VAULT_SESSION_REQUIRED", "capacité absente")
 
+    # Une capacité encore valable ne suffit plus après déconnexion Auth.
+    session3 = open_session(aal2)
+    require(ok(aal2, "list_entries", vault_session_id=session3).get("entries") == [],
+            "capacité fraîche valide avant révocation Auth")
+    logout = request("POST", "/auth/v1/logout?scope=local", token=aal2)
+    require(logout.status in (200, 204), "révocation Auth locale non confirmée")
+    for action, extra in (
+        ("open_session", {"device_key": DEVICE_KEY, "ttl_seconds": 60}),
+        ("list_entries", {}),
+        ("create_entry", {"entry_type": ENTRY_TYPE, "content_payload": CONTENT_1}),
+        ("update_entry", {"entry_id": entry_id, "entry_type": ENTRY_TYPE, "content_payload": CONTENT_2}),
+        ("delete_entry", {"entry_id": entry_id, "human_confirmed_delete": True}),
+        ("revoke_session", {}),
+    ):
+        refused = vault(aal2, action, vault_session_id=session3, **extra)
+        require(refused.status in (401, 403), f"{action}: session Auth révoquée doit être refusée")
+        require(not isinstance(refused.body, dict) or refused.body.get("ok") is not True,
+                f"{action}: aucun succès après révocation Auth")
+
     print("OK smoke Coffre V25: TOTP/AAL2 réel, premier appareil courant fiable sans privilège, capacité 60 s, CRUD synthétique, suppression refusée sans confirmation puis appliquée avec confirmation humaine, rotation et révocation vérifiées sans contenu intime réel.")
     return 0
 
