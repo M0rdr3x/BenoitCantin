@@ -71,7 +71,7 @@ def main()->int:
 
     require(reads_html,[
         'data-v18-page="reads-v24-4-61"',
-        'sinjira-reads-v24-4-61.js?v=24.4.61',
+        'sinjira-reads-v24-4-61.js?v=26.11.27.1',
         'data-reader-library'
     ],'mes-lectures.html')
 
