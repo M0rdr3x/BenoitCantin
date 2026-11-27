@@ -169,6 +169,7 @@ jobs:
           python scripts/validate_admin_console.py
           node scripts/test_admin_report_pagination.cjs
           node scripts/test_admin_form_lock.cjs
+          node scripts/test_personal_ai_browser_security.cjs
       - name: Auto-tester la confidentialité et les purges admin V18
         run: python scripts/validate_admin_v18_privacy_security.py --self-test
       - name: Vérifier la confidentialité et les purges admin V18

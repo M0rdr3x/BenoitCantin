@@ -9,7 +9,8 @@ const q=(selector)=>document.querySelector(selector);
 function randomDeviceKey(){
   if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
   const bytes=new Uint8Array(24);
-  globalThis.crypto?.getRandomValues?.(bytes);
+  if(typeof globalThis.crypto?.getRandomValues!=='function')throw new Error('SECURITY_STATE_UNAVAILABLE');
+  globalThis.crypto.getRandomValues(bytes);
   return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
 }
 
@@ -44,6 +45,39 @@ function setBusy(value){
   document.querySelectorAll('button,input,select').forEach(node=>{if(node.dataset?.logout===undefined)node.disabled=busy});
 }
 
+function validSettings(value){
+  return !!value&&typeof value==='object'&&!Array.isArray(value)&&typeof value.enabled==='boolean'&&
+    (value.display_name===null||typeof value.display_name==='string')&&
+    typeof value.language_code==='string'&&value.language_code.length>=2&&value.runtime_status==='not_configured';
+}
+function validState(value){
+  if(!value||typeof value!=='object'||Array.isArray(value)||!validSettings(value.settings)||!Array.isArray(value.source_permissions))return false;
+  const runtime=value.runtime;
+  if(!runtime||typeof runtime!=='object'||Array.isArray(runtime)||!['conversation_enabled','memory_enabled','source_retrieval_enabled','provider_configured'].every(key=>runtime[key]===false))return false;
+  const seen=new Set();
+  return value.source_permissions.every(row=>{
+    if(!row||typeof row!=='object'||Array.isArray(row)||!['life_story','employment'].includes(row.source_type)||typeof row.granted!=='boolean'||seen.has(row.source_type))return false;
+    seen.add(row.source_type);return true;
+  });
+}
+function validSuccess(data,body){
+  const risk=data?.security;
+  if(!data||typeof data!=='object'||Array.isArray(data)||data.ok!==true||!risk||typeof risk!=='object'||Array.isArray(risk)||risk.risk_model_version!=='v25.0'||risk.mandatory_step_up!==true||risk.requires_step_up!==true||!['allow','approved'].includes(risk.outcome)||!Number.isInteger(risk.risk_score)||risk.risk_score<0||risk.risk_score>=75)return false;
+  switch(body.action){
+    case 'get_state':return validState(data.state);
+    case 'update_settings':return validSettings(data.settings)&&data.settings.enabled===body.enabled;
+    case 'set_source_permission':return data.source_type===body.source_type&&data.granted===body.granted&&data.runtime_access_enabled===false;
+    case 'delete_personal_ai_data':return data.deleted===true;
+    default:return false;
+  }
+}
+function clearWorkspace(){
+  state=null;
+  const form=q('[data-personal-ai-settings-form]');
+  if(form){form.reset();form.elements.namedItem('enabled').checked=false;form.elements.namedItem('ai_display_name').value='';}
+  document.querySelectorAll('[data-personal-ai-source]').forEach(node=>{node.checked=false});
+  document.querySelectorAll('[data-personal-ai-workspace]').forEach(node=>{node.hidden=true});
+}
 async function errorPayload(error,data){
   if(data&&typeof data==='object')return data;
   const response=error?.context;
@@ -55,15 +89,15 @@ async function errorPayload(error,data){
 
 async function invokePersonalAi(body){
   const {data,error}=await getSupabase().functions.invoke('personal-ai',{body:{...deviceMetadata(),...body}});
-  if(error){
+  if(error!==null){
     const payload=await errorPayload(error,data);
-    const wrapped=new Error(String(payload?.error||error.message||'Opération Mon IA refusée.'));
+    const wrapped=new Error('Opération Mon IA refusée.');
     wrapped.code=String(payload?.code||'PERSONAL_AI_OPERATION_REFUSED');
     wrapped.security=payload?.security||null;
     throw wrapped;
   }
-  if(!data?.ok){
-    const wrapped=new Error(String(data?.error||'Opération Mon IA refusée.'));
+  if(!validSuccess(data,body)){
+    const wrapped=new Error('Opération Mon IA refusée.');
     wrapped.code=String(data?.code||'PERSONAL_AI_OPERATION_REFUSED');
     wrapped.security=data?.security||null;
     throw wrapped;
@@ -82,7 +116,7 @@ function friendlyError(error){
   if(code==='SECURITY_BLOCKED')return 'La protection du compte bloque temporairement Mon IA. Consultez Ma sécurité avant de réessayer.';
   if(code==='AUTH_REQUIRED')return 'Reconnectez-vous à votre compte SINJIRA.';
   if(code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID')return 'La protection de Mon IA ne peut pas être vérifiée pour le moment. Aucun accès n’a été accordé.';
-  return String(error?.message||'Opération Mon IA refusée.');
+  return 'Opération Mon IA refusée. Rouvrez votre espace privé.';
 }
 
 function permissionGranted(source){
@@ -108,7 +142,7 @@ function renderState(){
 
 async function loadState(){
   const result=await invokePersonalAi({action:'get_state'});
-  state=result.state||{};
+  state=result.state;
   renderState();
   document.querySelectorAll('[data-personal-ai-workspace]').forEach(node=>{node.hidden=false});
   status('Réglages privés ouverts. Aucun moteur IA n’est actif dans cette version.','success');
@@ -117,7 +151,7 @@ async function loadState(){
 async function openWorkspace(){
   if(busy)return;
   setBusy(true);
-  try{await loadState()}catch(error){status(friendlyError(error),'error')}
+  try{await loadState()}catch(error){clearWorkspace();status(friendlyError(error),'error')}
   finally{setBusy(false)}
 }
 
@@ -136,7 +170,7 @@ async function saveSettings(event){
     state={...(state||{}),settings:result.settings};
     renderState();
     status('Vos réglages Mon IA sont enregistrés. Aucun modèle n’a été lancé.','success');
-  }catch(error){status(friendlyError(error),'error')}
+  }catch(error){clearWorkspace();status(friendlyError(error),'error')}
   finally{setBusy(false)}
 }
 
@@ -151,7 +185,7 @@ async function setSourcePermission(event){
     await invokePersonalAi({action:'set_source_permission',source_type:source,granted:desired});
     await loadState();
     status(desired?'Consentement enregistré. La récupération de cette source reste désactivée dans V25.':'Consentement retiré. Aucune donnée source n’est conservée par Mon IA.','success');
-  }catch(error){status(friendlyError(error),'error')}
+  }catch(error){clearWorkspace();status(friendlyError(error),'error')}
   finally{setBusy(false)}
 }
 
@@ -161,17 +195,17 @@ async function deleteData(){
   setBusy(true);
   try{
     await invokePersonalAi({action:'delete_personal_ai_data'});
-    state=null;
-    document.querySelectorAll('[data-personal-ai-workspace]').forEach(node=>{node.hidden=true});
+    clearWorkspace();
     status('Vos données de fondation Mon IA ont été supprimées.','success');
-  }catch(error){status(friendlyError(error),'error')}
+  }catch(error){clearWorkspace();status(friendlyError(error),'error')}
   finally{setBusy(false)}
 }
 
 async function init(){
   const supabase=getSupabase();
-  const {data:{user},error}=await supabase.auth.getUser();
-  if(error||!user){status('Connectez-vous à votre compte SINJIRA pour accéder à Mon IA.','error');return}
+  const {data,error}=await supabase.auth.getUser();
+  const user=data?.user;
+  if(error!==null||typeof user?.id!=='string'||!user.id.trim()||user.id!==user.id.trim()){status('Connectez-vous à votre compte SINJIRA pour accéder à Mon IA.','error');return}
   q('[data-personal-ai-open]')?.addEventListener('click',openWorkspace);
   q('[data-personal-ai-settings-form]')?.addEventListener('submit',saveSettings);
   document.querySelectorAll('[data-personal-ai-source]').forEach(node=>node.addEventListener('change',setSourcePermission));

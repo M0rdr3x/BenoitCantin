@@ -73,6 +73,17 @@ need(JS,"functions.invoke('personal-ai'",'Web: doit utiliser l Edge privée')
 for marker in (".from('personal_ai",'.from("personal_ai'):
     forbid(JS,marker,'Web: accès direct aux tables Mon IA interdit')
 
+# Le navigateur doit lui aussi refuser tout succès ambigu et effacer l'état privé.
+for marker in ("error!==null", "data.ok!==true", "risk.risk_score>=75",
+               "validSuccess(data,body)", "data.deleted===true", "data.granted===body.granted",
+               "data.runtime_access_enabled===false", "clearWorkspace()", "form.reset()",
+               "state=result.state;", "globalThis.crypto.getRandomValues(bytes)"):
+    need(JS,marker,f'Web: frontière privée manquante {marker}')
+if JS.count("catch(error){clearWorkspace();status(friendlyError(error),'error')}") != 4:
+    errors.append('Web: les quatre opérations doivent effacer la vue privée après refus')
+for marker in ("if(!data?.ok)", "state=result.state||{}", "globalThis.crypto?.getRandomValues?.(bytes)"):
+    forbid(JS,marker,f'Web: succès ou entropie ambiguë {marker}')
+
 if errors:
     print(f'ECHEC contrat Mon IA V25: {len(errors)} problème(s).')
     for error in errors: print('- '+error)
