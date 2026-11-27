@@ -131,13 +131,13 @@ select ok(
 );
 
 -- Sonde MAINTAIN positive, puis répétition transactionnelle du correctif.
-do $
+do $maintain$
 begin
   if current_setting('server_version_num')::int >= 170000 then
     execute 'grant maintain on private.security_advisor_acl_probe to authenticated';
   end if;
 end
-$;
+$maintain$;
 select ok(
   case when current_setting('server_version_num')::int >= 170000
     then has_table_privilege('authenticated','private.security_advisor_acl_probe','MAINTAIN')
@@ -153,7 +153,7 @@ cross join lateral aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a
 where n.nspname in ('public','private') and c.relkind in ('r','p')
   and a.privilege_type <> 'MAINTAIN';
 
-do $
+do $maintain$
 declare item record;
 begin
   if current_setting('server_version_num')::int >= 170000 then
@@ -166,7 +166,7 @@ begin
     end loop;
   end if;
 end
-$;
+$maintain$;
 
 select is(
   (select count(*)::int from pg_class c join pg_namespace n on n.oid=c.relnamespace
