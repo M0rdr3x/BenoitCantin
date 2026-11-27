@@ -68,7 +68,14 @@ def main():
             errors.append(f'Document V24.5.24 incomplet: {marker}')
 
     test_markers = [
-        'select plan(8)',
+        'select plan(12)',
+        "current_setting('server_version_num')::int >= 170000",
+        "'maintain'",
+        'grant maintain on private.security_advisor_acl_probe to authenticated',
+        'revoke maintain on table %i.%i from public, anon, authenticated',
+        'create temp table maintain_acl_before on commit drop',
+        'select * from maintain_acl_before except select * from after_acl',
+        'select * from after_acl except select * from maintain_acl_before',
         "c.relkind in ('r','p')",
         'and not c.relrowsecurity',
         "'select,insert,update,delete,truncate,references,trigger'",

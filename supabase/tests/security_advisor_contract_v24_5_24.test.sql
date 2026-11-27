@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(8);
+select plan(12);
 
 select is(
   (
@@ -104,6 +104,18 @@ select is(
   null::text, 'aucun privilège par colonne navigateur sur les tables sans policy'
 );
 
+-- PostgreSQL 17 ajoute MAINTAIN, qui n'est pas une permission CRUD.
+select is(
+  (select count(*)::int
+   from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   cross join (values ('anon'),('authenticated')) r(role_name)
+   where n.nspname in ('public','private') and c.relkind in ('r','p')
+     and not exists(select 1 from pg_policy pol where pol.polrelid=c.oid)
+     and case when current_setting('server_version_num')::int >= 170000
+       then has_table_privilege(r.role_name,c.oid,'MAINTAIN') else false end),
+  0, 'PG17+: aucune permission MAINTAIN navigateur sur les tables scellées'
+);
+
 -- Sonde transactionnelle: vérifie que les droits par colonne et TRUNCATE
 -- sont effectivement détectables; aucune donnée ni table persistante.
 create table private.security_advisor_acl_probe (id integer);
@@ -117,6 +129,67 @@ select ok(
   and has_table_privilege('anon','private.security_advisor_acl_probe','TRUNCATE'),
   'les attributions accidentelles par colonne et TRUNCATE sont détectables'
 );
+
+-- Sonde MAINTAIN positive, puis répétition transactionnelle du correctif.
+do $maintain$
+begin
+  if current_setting('server_version_num')::int >= 170000 then
+    execute 'grant maintain on private.security_advisor_acl_probe to authenticated';
+  end if;
+end
+$maintain$;
+select ok(
+  case when current_setting('server_version_num')::int >= 170000
+    then has_table_privilege('authenticated','private.security_advisor_acl_probe','MAINTAIN')
+    else true end,
+  'PG17+: une attribution MAINTAIN accidentelle est détectable'
+);
+
+-- Capturer tous les autres droits effectifs avant le retrait ciblé.
+create temp table maintain_acl_before on commit drop as
+select c.oid, a.grantor, a.grantee, a.privilege_type, a.is_grantable
+from pg_class c join pg_namespace n on n.oid=c.relnamespace
+cross join lateral aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a
+where n.nspname in ('public','private') and c.relkind in ('r','p')
+  and a.privilege_type <> 'MAINTAIN';
+
+do $maintain$
+declare item record;
+begin
+  if current_setting('server_version_num')::int >= 170000 then
+    for item in select n.nspname,c.relname from pg_class c
+      join pg_namespace n on n.oid=c.relnamespace
+      where n.nspname in ('public','private') and c.relkind in ('r','p')
+    loop
+      execute format('revoke maintain on table %I.%I from public, anon, authenticated',
+                     item.nspname,item.relname);
+    end loop;
+  end if;
+end
+$maintain$;
+
+select is(
+  (select count(*)::int from pg_class c join pg_namespace n on n.oid=c.relnamespace
+   cross join (values ('anon'),('authenticated')) r(role_name)
+   where n.nspname in ('public','private') and c.relkind in ('r','p')
+   and case when current_setting('server_version_num')::int >= 170000
+     then has_table_privilege(r.role_name,c.oid,'MAINTAIN') else false end),
+  0, 'PG17+: retrait transactionnel de MAINTAIN de tous les rôles navigateur'
+);
+
+with after_acl as (
+  select c.oid,a.grantor,a.grantee,a.privilege_type,a.is_grantable
+  from pg_class c join pg_namespace n on n.oid=c.relnamespace
+  cross join lateral aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a
+  where n.nspname in ('public','private') and c.relkind in ('r','p')
+    and a.privilege_type <> 'MAINTAIN'
+), differences as (
+  (select * from maintain_acl_before except select * from after_acl)
+  union all
+  (select * from after_acl except select * from maintain_acl_before)
+)
+select is((select count(*)::int from differences),0,
+          'le retrait MAINTAIN ne modifie aucun autre droit table ni délégation');
 
 select * from finish();
 rollback;
