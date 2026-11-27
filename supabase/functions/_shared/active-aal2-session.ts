@@ -40,11 +40,33 @@ export async function requireActiveAal2Session(token: string, userId: string) {
   } catch {
     throw new Error('SECURITY_DECISION_INVALID');
   }
-  if (result.error !== null || !Array.isArray(result.data)) {
+  if (!result || typeof result !== 'object' || Array.isArray(result) ||
+      result.error !== null || !Array.isArray(result.data)) {
     throw new Error('SECURITY_DECISION_INVALID');
+  }
+  // Vérifier la totalité du contrat avant de reconnaître une session.
+  // Une réponse ambiguë ne doit jamais autoriser une opération privilégiée.
+  const seen = new Set<string>();
+  for (const row of result.data) {
+    if (!row || typeof row !== 'object' || Array.isArray(row) ||
+        typeof row.id !== 'string' || row.id.length !== 36 || !UUID_RE.test(row.id) ||
+        typeof row.is_current !== 'boolean' || seen.has(row.id) ||
+        row.is_current !== (row.id === sessionId)) {
+      throw new Error('SECURITY_DECISION_INVALID');
+    }
+    seen.add(row.id);
   }
   // La RPC filtre par auth.uid() et par expiration sur auth.sessions.
   // Le JWT peut survivre à une déconnexion: exiger une ligne active unique.
   const current = result.data.filter(row => row?.is_current === true);
   if (current.length !== 1 || current[0].id !== sessionId) throw new Error('AUTH_REQUIRED');
+  // Ne pas se fier uniquement à l'AAL inscrit dans un ancien JWT.
+  if (current[0].aal !== 'aal2') throw new Error('AUTH_REQUIRED');
+  const expiry = current[0].not_after;
+  if (expiry !== null) {
+    if (typeof expiry !== 'string' || !Number.isFinite(Date.parse(expiry))) {
+      throw new Error('SECURITY_DECISION_INVALID');
+    }
+    if (Date.parse(expiry) <= Date.now()) throw new Error('AUTH_REQUIRED');
+  }
 }
