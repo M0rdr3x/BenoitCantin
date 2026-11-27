@@ -1,0 +1,6 @@
+.preorder-admin-page [data-pa-announcement-fields]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0;border:0;padding:0;margin:0}
+.preorder-admin-page [data-pa-announcement-fields] legend{font-weight:700;margin-bottom:12px}
+.preorder-admin-page [data-pa-announcement-fields] .field{min-width:0}
+.preorder-admin-page [data-pa-announcement-fields] :is(input,textarea,select){box-sizing:border-box;max-width:100%;font-size:max(1rem,16px)}
+.preorder-admin-page [data-pa-draft-status]{overflow-wrap:anywhere;min-height:1.5em}
+@media(max-width:640px){.preorder-admin-page [data-pa-announcement-fields]{grid-template-columns:minmax(0,1fr)}}

@@ -9,6 +9,32 @@ const filterStatus = document.querySelector('[data-pa-filter-status]');
 const filterFormat = document.querySelector('[data-pa-filter-format]');
 const state = { overview: null, rows: [] };
 let authorized = false, actionBusy = false, needsRefresh = false, refreshing = false, rowsVersion = 0;
+let savedDraft = null;
+const draftFields = ['title','body','action_path','sales_open_at','public_price_text','edition_note'];
+function draftSnapshot() {
+  return JSON.stringify(draftFields.map(name => String(form?.elements?.[name]?.value ?? '')));
+}
+function draftChanged() { return savedDraft !== null && savedDraft !== draftSnapshot(); }
+function syncDraft() {
+  const dirty = draftChanged();
+  const node = document.querySelector('[data-pa-draft-status]');
+  const fields = document.querySelector('[data-pa-announcement-fields]');
+  if (fields) fields.disabled = !authorized || actionBusy || refreshing || needsRefresh || state.overview?.announcement?.status === 'sent';
+  if (node) node.textContent = !authorized ? 'En attente de vérification.'
+    : needsRefresh ? 'Actualisez les données avant de reprendre.'
+    : dirty ? 'Modifications non enregistrées. Enregistrez le brouillon avant de préparer ou d’envoyer l’avis.'
+    : 'Aucune modification non enregistrée.';
+  syncActions();
+}
+function warnBeforeLeaving(event) {
+  if (!draftChanged()) return;
+  event.preventDefault();
+  event.returnValue = '';
+}
+function syncLeaveWarning() {
+  if (draftChanged()) window.addEventListener('beforeunload', warnBeforeLeaving);
+  else window.removeEventListener('beforeunload', warnBeforeLeaving);
+}
 function syncActions() {
   const current = state.overview?.announcement?.status;
   const blocked = !authorized || actionBusy || needsRefresh || refreshing;
@@ -17,8 +43,8 @@ function syncActions() {
   const send = document.querySelector('[data-pa-send-internal]');
   const refresh = document.querySelector('[data-pa-refresh]');
   if (save) save.disabled = blocked || current === 'sent';
-  if (ready) ready.disabled = blocked || current !== 'draft';
-  if (send) send.disabled = blocked || current !== 'ready';
+  if (ready) ready.disabled = blocked || draftChanged() || current !== 'draft';
+  if (send) send.disabled = blocked || draftChanged() || current !== 'ready';
   if (refresh) refresh.disabled = !authorized || actionBusy || refreshing;
 }
 function canAct() { return authorized && !actionBusy && !needsRefresh && !refreshing; }
@@ -30,7 +56,7 @@ async function runAction(action, args, confirmation, message, validate = () => t
   const inputs = Array.from(form?.querySelectorAll('input,textarea,select') || []);
   const previous = inputs.map(el => el.disabled);
   inputs.forEach(el => { el.disabled = true; });
-  syncActions();
+  syncDraft();
   showStatus('Traitement en cours…', 'info');
   let confirmed = false;
   try {
@@ -47,7 +73,8 @@ async function runAction(action, args, confirmation, message, validate = () => t
     actionBusy = false;
     form?.setAttribute('aria-busy', 'false');
     if (!confirmed || needsRefresh) inputs.forEach((el, i) => { el.disabled = previous[i]; });
-    syncActions();
+    syncDraft();
+    syncLeaveWarning();
   }
 }
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium', timeStyle: 'short' });
@@ -185,7 +212,15 @@ function renderOverview() {
   if (sentMeta) sentMeta.textContent = a?.sent_at ? `${dt(a.sent_at)} · ${a.recipient_count ?? 0} destinataire(s)` : '—';
   syncActions();
 
-  if (!form || !a) return;
+  if (!form) return;
+  if (!a) {
+    form.reset();
+    draftFields.forEach(name => { if (form.elements[name]) form.elements[name].disabled = false; });
+    savedDraft = draftSnapshot();
+    syncDraft();
+    syncLeaveWarning();
+    return;
+  }
   form.elements.title.value = a.title || '';
   form.elements.body.value = a.body || '';
   form.elements.action_path.value = a.action_path || '/compte/mes-achats.html#precommandes';
@@ -199,8 +234,9 @@ function renderOverview() {
     if (el.matches('[data-pa-save-draft]')) return;
     el.disabled = locked;
   });
-  const save = document.querySelector('[data-pa-save-draft]');
-  syncActions();
+  savedDraft = draftSnapshot();
+  syncDraft();
+  syncLeaveWarning();
 }
 async function loadOverview() {
   state.overview = await rpc('admin_preorder_overview', { p_product_slug: PRODUCT_SLUG });
@@ -266,21 +302,22 @@ async function saveDraft(event) {
 }
 async function markReady() {
   const a = state.overview?.announcement;
-  if (!canAct() || !a || a.status !== 'draft') return;
+  if (!canAct() || draftChanged() || !a || a.status !== 'draft') return;
   if (!confirm('Marquer cet avis comme prêt ? Cela ne l’envoie pas encore et n’active aucun paiement.')) return;
   await runAction('admin_preorder_mark_announcement_ready', { p_product_slug: PRODUCT_SLUG }, 'ANNOUNCEMENT_NOT_READY', () => 'Avis marqué prêt. Il n’a pas encore été envoyé.', Boolean);
 }
 async function sendInternal() {
   const a = state.overview?.announcement;
-  if (!canAct() || !a || a.status !== 'ready') return;
+  if (!canAct() || draftChanged() || !a || a.status !== 'ready') return;
   const count = state.overview?.summary?.notify_opt_in ?? 0;
   if (!confirm(`Envoyer maintenant cet avis dans SINJIRA™ aux ${count} réservation(s) actives ayant demandé à être averties ? Aucun courriel, SMS ou paiement ne sera déclenché.`)) return;
   await runAction('admin_preorder_send_internal_announcement', { p_product_slug: PRODUCT_SLUG }, '', sent => `Avis interne envoyé à ${sent ?? 0} compte(s). Aucun service externe n’a été utilisé.`);
 }
 async function manualRefresh() {
   if (!authorized || actionBusy || refreshing) return;
+  if (draftChanged() && !confirm('Actualiser les données et abandonner les modifications non enregistrées de cet avis ?')) return;
   refreshing = true;
-  syncActions();
+  syncDraft();
   try {
     await refreshAll('Données actualisées.');
     needsRefresh = false;
@@ -289,12 +326,16 @@ async function manualRefresh() {
     showStatus(friendlyBackendMessage(error?.message, 'Actualisation impossible. Réessayez.'), 'error');
   } finally {
     refreshing = false;
-    syncActions();
+    syncDraft();
+    syncLeaveWarning();
   }
 }
 function bind() {
   installReferenceLookup();
   form?.addEventListener('submit', saveDraft);
+  const onEdit = () => { syncDraft(); syncLeaveWarning(); };
+  form?.addEventListener('input', onEdit);
+  form?.addEventListener('change', onEdit);
   document.querySelector('[data-pa-mark-ready]')?.addEventListener('click', markReady);
   document.querySelector('[data-pa-send-internal]')?.addEventListener('click', sendInternal);
   document.querySelector('[data-pa-refresh]')?.addEventListener('click', manualRefresh);
@@ -310,10 +351,10 @@ async function init() {
     bind();
     await refreshAll();
     needsRefresh = false;
-    syncActions();
+    syncDraft();
     showStatus('Administration des précommandes chargée. Aucun paiement ni transport externe n’est actif.', 'success');
   } catch (error) {
-    syncActions();
+    syncDraft();
     listNode?.setAttribute('aria-busy', 'false');
     if (listNode) listNode.textContent = 'Données indisponibles.';
     if (!['AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED'].includes(error?.message)) {
