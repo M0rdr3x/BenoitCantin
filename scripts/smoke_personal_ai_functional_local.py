@@ -215,6 +215,14 @@ def main() -> int:
         require(rejected.status == 400 and isinstance(rejected.body, dict)
                 and rejected.body.get("code") == "DEVICE_KEY_INVALID",
                 "une clé opaque non canonique doit être refusée")
+    for action, extra in (
+        ("update_settings", {}),
+        ("set_source_permission", {"source_type": "employment"}),
+    ):
+        rejected = personal_ai(aal2, action, **extra)
+        require(rejected.status == 400 and isinstance(rejected.body, dict)
+                and rejected.body.get("code") == "INVALID_JSON",
+                f"{action}: booléen absent doit être refusé")
     unchanged = personal_ai_ok(aal2, "get_state")["state"]
     assert_runtime_disabled(unchanged, "après requêtes invalides")
     require(unchanged["settings"] == updated_settings, "réglages modifiés malgré un refus")
