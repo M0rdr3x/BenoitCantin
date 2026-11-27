@@ -35,22 +35,45 @@ if(devices)observer.observe(devices,{childList:true,subtree:true});
 augmentLostDeviceActions();
 addPasskeyReadiness();
 
+async function reportLostDevice(client,id){
+  try{
+    const result=await client.rpc('security_report_lost_device',{p_device_id:id});
+    if(result?.error?.message==='AAL2_REQUIRED')return 'mfa-required';
+    if(result?.error!==null)return 'unconfirmed';
+  }catch{return 'unconfirmed'}
+  // Un refus ou une réponse ambiguë de GoTrue ne prouve pas la révocation.
+  try{
+    const result=await client.auth.signOut({scope:'others'});
+    return result?.error===null?'confirmed':'device-only';
+  }catch{return 'device-only'}
+}
+
+let lostDevicePending=false;
 document.addEventListener('click',async event=>{
   const button=event.target.closest?.('[data-device-lost]');
   if(!button)return;
   const id=String(button.dataset.deviceLost||'');
-  if(!id)return;
-  if(!globalThis.confirm('Déclarer cet appareil perdu ? SINJIRA retirera sa confiance, désactivera ses notifications de sécurité et fermera les autres sessions du compte.'))return;
+  if(!id||lostDevicePending||button.disabled)return;
+  if(!globalThis.confirm('Déclarer cet appareil perdu ? SINJIRA retirera sa confiance, désactivera ses notifications de sécurité et demandera la fermeture des autres sessions du compte.'))return;
+  lostDevicePending=true;
   button.disabled=true;
   try{
-    const {error}=await s.rpc('security_report_lost_device',{p_device_id:id});
-    if(error)throw error;
-    await s.auth.signOut({scope:'others'});
-    report('Appareil déclaré perdu. Sa confiance et ses notifications ont été révoquées; les autres sessions ont été fermées.','success');
-    setTimeout(()=>location.reload(),900);
-  }catch(error){
-    console.warn('[SINJIRA lost device]',error);
-    report(error?.message==='AAL2_REQUIRED'?'Vérification MFA requise avant de déclarer cet appareil perdu.':'Impossible de terminer la protection de cet appareil pour le moment.','error');
-    button.disabled=false;
+    const result=await reportLostDevice(s,id);
+    if(result==='confirmed'){
+      report('Déclaration de perte et révocation des autres sessions acceptées. Les jetons d’accès existants peuvent rester valides jusqu’à expiration.','success');
+      setTimeout(()=>location.reload(),900);
+      return;
+    }
+    if(result==='device-only'){
+      report('Déclaration de perte acceptée, mais la révocation des autres sessions n’est pas confirmée. Utilisez les mesures d’urgence dans Ma sécurité.','error');
+    }else if(result==='mfa-required'){
+      report('Vérification MFA requise avant de déclarer cet appareil perdu.','error');
+    }else{
+      report('Impossible de confirmer la protection de cet appareil pour le moment. Réessayez dès que possible.','error');
+    }
+  }catch{
+    report('Impossible de confirmer la protection de cet appareil pour le moment.','error');
   }
+  lostDevicePending=false;
+  button.disabled=false;
 });
