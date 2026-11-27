@@ -39,7 +39,8 @@ async function reportLostDevice(client,id){
   try{
     const result=await client.rpc('security_report_lost_device',{p_device_id:id});
     if(result?.error?.message==='AAL2_REQUIRED')return 'mfa-required';
-    if(result?.error!==null)return 'unconfirmed';
+    if(result?.error!==null||result.data?.ok!==true||
+       result.data?.device_id!==id||result.data?.session_revocation_required!==true)return 'unconfirmed';
   }catch{return 'unconfirmed'}
   // Un refus ou une réponse ambiguë de GoTrue ne prouve pas la révocation.
   try{
