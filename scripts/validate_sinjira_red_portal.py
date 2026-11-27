@@ -39,7 +39,7 @@ def check():
                 "rgba(134,80,178", "rgba(120,61,82", "#c4bbd8"):
         if old in css:
             err.append("Ancien halo mauve encore présent : " + old)
-    if 'home-sinjira-only-v1.css?v=1.1.4' not in html:
+    if 'home-sinjira-only-v1.css?v=1.1.5' not in html:
         err.append("Cache CSS pas invalidé")
     if 'src="/assets/icons/sinjira-officiel-20261120.png"' not in html or "sinjira.svg" in html:
         err.append("Image officielle absente ou ancienne cible encore présente")

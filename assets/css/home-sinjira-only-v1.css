@@ -132,7 +132,7 @@
  * largeur intrinsèque des liens agrandir l'accueil sur écran compact. */
 @media(max-width:1020px){
   .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell{min-width:0;max-width:100%}
-  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav{box-sizing:border-box;min-width:0;max-width:100%;flex-wrap:wrap;overflow-x:hidden}
-  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav a{min-width:0;max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere}
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav{box-sizing:border-box;min-width:0;max-width:100%;flex-wrap:nowrap;overflow-x:hidden}
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav a{min-width:0;max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;flex-shrink:0}
   html[data-sinjira-nav-ready] .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav:not(.open){display:none}
 }
