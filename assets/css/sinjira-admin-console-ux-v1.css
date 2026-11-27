@@ -1,0 +1,24 @@
+/* Console privée : adaptation locale sans changement des droits ni des traitements. */
+.admin-sinjira-page :is(.admin-console-layout,.admin-panel,.account-card,.admin-management-row,.admin-management-row>div,.admin-user-card,.admin-form-grid .field,.admin-row-actions){min-width:0;overflow-wrap:anywhere}
+.admin-sinjira-page .admin-console-tabs{max-width:100%;box-sizing:border-box;scroll-padding-inline:10px}
+.admin-sinjira-page .admin-console-tabs button{min-height:44px;flex:0 0 auto}
+.admin-sinjira-page .admin-console-tabs button[aria-current="page"]{box-shadow:inset 0 -3px #a1f4ec}
+.admin-sinjira-page .admin-console-layout :is(button,a,input,select,textarea):focus-visible{outline:3px solid #a1f4ec;outline-offset:2px}
+.admin-sinjira-page .admin-console-layout :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea){box-sizing:border-box;min-width:0;max-width:100%;font-size:max(1rem,16px)}
+.admin-sinjira-page .admin-console-layout :is(.btn,select,input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])){min-height:44px}
+.admin-sinjira-page .admin-panel[hidden],.admin-sinjira-page .field[hidden]{display:none!important}
+.admin-sinjira-page .admin-panel{scroll-margin-top:100px}
+@media(max-width:760px){
+  .admin-sinjira-page .admin-console-tabs{position:static}
+  .admin-sinjira-page .admin-form-grid{grid-template-columns:minmax(0,1fr)}
+  .admin-sinjira-page .admin-row-actions,.admin-sinjira-page .admin-access-form{width:100%}
+  .admin-sinjira-page .admin-row-actions>*{max-width:100%}
+}
+@media(max-width:480px){
+  .admin-sinjira-page .admin-console-layout .account-card{padding:14px}
+  .admin-sinjira-page .admin-stat-grid{grid-template-columns:minmax(0,1fr)}
+  .admin-sinjira-page .admin-row-actions>.btn{width:100%;white-space:normal}
+}
+@media(forced-colors:active){
+  .admin-sinjira-page .admin-console-tabs button[aria-current="page"]{outline:2px solid Highlight;outline-offset:-2px}
+}
