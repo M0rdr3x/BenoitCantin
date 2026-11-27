@@ -259,3 +259,17 @@ body[data-v18-page="reads-v24-4-61"] :where(.sinjira-library-feature,.reader-boo
   body[data-v18-page="reads-v24-4-61"] :where(.sinjira-library-feature,.reader-book-card) .hero-actions .btn{width:100%}
 }
 @media(max-width:280px){body[data-v18-page="reads-v24-4-61"] .sinjira-library-tabs{grid-template-columns:minmax(0,1fr)}}
+
+/* Liseuse : ne présenter les commandes que lorsque l'édition est ouverte. */
+.sinjira-liseuse .reader-sidebar[hidden]{display:none!important}
+.sinjira-liseuse .reader-layout[data-reader-ready="false"]{grid-template-columns:minmax(0,1fr)}
+.sinjira-liseuse .reader-stage{min-width:0;overflow-wrap:anywhere}
+.sinjira-liseuse .reader-stage:focus-visible{outline:3px solid #9cefe0;outline-offset:-3px}
+.sinjira-liseuse .reader-sidebar :is(button,select,summary),
+.sinjira-liseuse .reader-tools button{min-height:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.sinjira-liseuse .reader-sidebar summary{box-sizing:border-box;padding-block:10px}
+@media(max-width:600px){
+  .sinjira-liseuse .reader-sidebar :is(input,select,textarea){font-size:16px;max-width:100%;box-sizing:border-box}
+  .sinjira-liseuse .reader-top-inner{flex-wrap:wrap;gap:8px}
+  .sinjira-liseuse .reader-return{display:inline-flex;align-items:center;min-height:44px}
+}
