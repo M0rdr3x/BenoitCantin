@@ -210,7 +210,7 @@ def main() -> int:
             require(rejected.status == 400 and isinstance(rejected.body, dict)
                     and rejected.body.get("code") == "INVALID_JSON",
                     f"{action}: booléen ambigu doit être refusé")
-    for bad_key in (DEVICE_KEY + "\\n", " " + DEVICE_KEY, DEVICE_KEY + "x" * 128):
+    for bad_key in (DEVICE_KEY + "\n", DEVICE_KEY + "\r", DEVICE_KEY + "\t", " " + DEVICE_KEY, DEVICE_KEY + "x" * 128):
         rejected = personal_ai(aal2, "get_state", device_key=bad_key)
         require(rejected.status == 400 and isinstance(rejected.body, dict)
                 and rejected.body.get("code") == "DEVICE_KEY_INVALID",
