@@ -99,6 +99,8 @@ def main()->int:
         'data-notifications-read-all type="button" disabled',
         'data-notifications-list aria-busy="true"',
         'data-notifications-status tabindex="-1"',
+        'Non lus (total)',
+        'Affichés (100 max.)',
         'Aucun courriel, SMS ou service payant n’est nécessaire.'
     ],'page notifications')
     require_client_version(page,'page notifications')
@@ -116,6 +118,9 @@ def main()->int:
         '.is(\'read_at\',null)',
         'safeActionPath',
         'unread&&!compact',
+        "select('id',{count:'exact',head:true})",
+        'const unread=countResult.count;',
+        'Number.isSafeInteger(countResult.count)',
         "box.setAttribute('aria-busy','false')",
         'if(all.disabled)return',
         'all.disabled=updated',
