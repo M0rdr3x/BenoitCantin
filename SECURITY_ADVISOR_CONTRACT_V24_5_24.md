@@ -60,3 +60,18 @@ Les précommandes du Livre I restent des réservations sans engagement financier
 ## GitHub
 
 La protection serveur de la branche `main` reste un prérequis d’infrastructure externe tant que l’action de branch protection/ruleset n’est pas exposée par les outils disponibles. Le workflow de gouvernance du dépôt reste un garde secondaire, mais ne doit pas être présenté comme équivalent à une branch protection GitHub active.
+
+## Durcissement PostgreSQL 17 — privilège MAINTAIN
+
+Le privilège `MAINTAIN` (PG17+) autorise des opérations de maintenance qui ne font pas partie du contrat CRUD navigateur. Les politiques RLS ne constituent pas un contrôle de ce privilège. Référence : https://www.postgresql.org/docs/17/ddl-priv.html.
+
+Le test pgTAP inclut désormais une répétition transactionnelle du retrait ciblé pour les tables ordinaires et partitionnées de `public` et `private`. Il vérifie l'absence de MAINTAIN sur les tables sans politique, une attribution synthétique, la disparition des droits effectifs navigateur après retrait, et l'identité des autres ACL. La transaction est annulée.
+
+**Plan de mise en conformité, non appliqué en production :**
+- Générer une migration avec le CLI Supabase sur un environnement isolé PG17, puis exécuter le test et les tests métier/RLS avant revue.
+- Retirer uniquement MAINTAIN de PUBLIC, anon et authenticated sur les tables applicatives concernées, sans toucher à service_role ni aux droits CRUD.
+- Examiner les ACL par défaut de chaque propriétaire de table dans public/private (y compris les rôles gérés par Supabase); retirer uniquement MAINTAIN des droits par défaut des rôles navigateur, avec le propriétaire autorisé. Ne pas modifier les rôles gérés sans vérifier le support de l'hébergeur.
+- Tester la création d'une table par chaque propriétaire concerné dans un environnement isolé et vérifier les privilèges effectifs.
+- Après sauvegarde et revue indépendante, appliquer la migration approuvée et refaire l'inventaire des droits effectifs et par défaut. Ne pas rétablir des permissions excessives pour contourner un échec.
+
+Ce test ne remplace pas une migration : aucun changement de droits n'est persistant tant que cette dernière n'est pas appliquée.
