@@ -76,7 +76,7 @@ function safeDeviceType(value: unknown) {
 }
 
 function validUuid(value: unknown) {
-  return typeof value === 'string' && UUID_RE.test(value);
+  return typeof value === 'string' && value.length === 36 && UUID_RE.test(value);
 }
 
 /**
@@ -94,7 +94,7 @@ function sessionIdFromVerifiedToken(token: string) {
     const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
     const payload = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
     const sessionId = typeof payload?.session_id === 'string' ? payload.session_id : '';
-    if (!UUID_RE.test(sessionId)) throw new Error('AUTH_REQUIRED');
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload) || !validUuid(sessionId)) throw new Error('AUTH_REQUIRED');
     return sessionId;
   } catch {
     throw new Error('AUTH_REQUIRED');
@@ -158,16 +158,18 @@ function publicSecurityDecision(security: any) {
 }
 
 function assertVaultRiskDecision(security: any) {
-  const score = Number(security?.risk_score);
-  const outcome = String(security?.outcome || '');
+  const score = security?.risk_score;
+  const outcome = security?.outcome;
   if (
+    !security || typeof security !== 'object' || Array.isArray(security) ||
     security?.risk_model_version !== 'v25.0' ||
     security?.mandatory_step_up !== true ||
     security?.requires_step_up !== true ||
-    !Number.isInteger(score) ||
+    typeof score !== 'number' || !Number.isInteger(score) ||
     score < 0 ||
     score > 100 ||
-    !['allow', 'approved', 'challenge', 'block'].includes(outcome)
+    typeof outcome !== 'string' || !['allow', 'approved', 'challenge', 'block'].includes(outcome) ||
+    !validUuid(security.device_id) || (outcome === 'challenge' && !validUuid(security.challenge_id))
   ) {
     throw new Error('SECURITY_DECISION_INVALID');
   }
@@ -213,13 +215,13 @@ Deno.serve(async (req) => {
     const action = safeText(body.action, 40);
 
     if (action === 'open_session') {
-      const deviceKey = safeText(body.device_key, 128);
-      if (deviceKey.length < 16) {
+      const deviceKey = body.device_key;
+      if (typeof deviceKey !== 'string' || deviceKey.length < 16 || deviceKey.length > 128 || /[^!-~]/.test(deviceKey)) {
         return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.', code: 'DEVICE_KEY_INVALID' }, 400);
       }
 
-      const ttlRaw = body.ttl_seconds == null ? 300 : Number(body.ttl_seconds);
-      if (!Number.isInteger(ttlRaw) || ttlRaw < 60 || ttlRaw > 600) {
+      const ttlRaw = body.ttl_seconds === undefined ? 300 : body.ttl_seconds;
+      if (typeof ttlRaw !== 'number' || !Number.isInteger(ttlRaw) || ttlRaw < 60 || ttlRaw > 600) {
         throw new Error('VAULT_TTL_INVALID');
       }
 
@@ -236,7 +238,7 @@ Deno.serve(async (req) => {
         p_region_code: geo.region,
         p_session_id: authSessionId
       });
-      if (securityError) throw new Error('SECURITY_DECISION_INVALID');
+      if (securityError !== null) throw new Error('SECURITY_DECISION_INVALID');
 
       const decision = assertVaultRiskDecision(security);
       const publicDecision = publicSecurityDecision(security);
@@ -272,7 +274,7 @@ Deno.serve(async (req) => {
         p_risk_model_version: 'v25.0',
         p_ttl_seconds: ttlRaw
       });
-      if (sessionError || !validUuid(sessionId)) throw new Error('VAULT_OPERATION_REFUSED');
+      if (sessionError !== null || !validUuid(sessionId)) throw new Error('VAULT_OPERATION_REFUSED');
 
       return privateJson({
         ok: true,
@@ -290,7 +292,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const sessionId = safeText(body.vault_session_id, 80);
+    const sessionId = body.vault_session_id;
     if (!validUuid(sessionId)) throw new Error('VAULT_SESSION_REQUIRED');
 
     if (action === 'list_entries') {
@@ -298,8 +300,9 @@ Deno.serve(async (req) => {
         p_user_id: user.id,
         p_session_id: sessionId
       });
-      if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
-      return privateJson({ ok: true, entries: Array.isArray(data) ? data : [] });
+      if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');
+      if (!Array.isArray(data)) throw new Error('VAULT_OPERATION_REFUSED');
+      return privateJson({ ok: true, entries: data });
     }
 
     if (action === 'create_entry') {
@@ -311,12 +314,13 @@ Deno.serve(async (req) => {
         p_entry_type: type,
         p_content_payload: payload
       });
-      if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
+      if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');
+      if (!validUuid(entryId)) throw new Error('VAULT_OPERATION_REFUSED');
       return privateJson({ ok: true, entry_id: entryId });
     }
 
     if (action === 'update_entry') {
-      const id = safeText(body.entry_id, 80);
+      const id = body.entry_id;
       if (!validUuid(id)) throw new Error('VAULT_ENTRY_ID_INVALID');
       const type = entryType(body.entry_type);
       const payload = contentPayload(body.content_payload);
@@ -327,12 +331,13 @@ Deno.serve(async (req) => {
         p_entry_type: type,
         p_content_payload: payload
       });
-      if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
+      if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');
+      if (typeof updated !== 'boolean') throw new Error('VAULT_OPERATION_REFUSED');
       return privateJson({ ok: true, updated: updated === true });
     }
 
     if (action === 'delete_entry') {
-      const id = safeText(body.entry_id, 80);
+      const id = body.entry_id;
       if (!validUuid(id)) throw new Error('VAULT_ENTRY_ID_INVALID');
       if (body.human_confirmed_delete !== true) throw new Error('VAULT_DELETE_CONFIRMATION_REQUIRED');
       const { data: deleted, error } = await service.rpc('service_conscience_delete_entry', {
@@ -340,7 +345,8 @@ Deno.serve(async (req) => {
         p_session_id: sessionId,
         p_entry_id: id
       });
-      if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
+      if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');
+      if (typeof deleted !== 'boolean') throw new Error('VAULT_OPERATION_REFUSED');
       return privateJson({ ok: true, deleted: deleted === true });
     }
 
@@ -349,7 +355,8 @@ Deno.serve(async (req) => {
         p_user_id: user.id,
         p_session_id: sessionId
       });
-      if (error) throw new Error(error.message || 'VAULT_OPERATION_REFUSED');
+      if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');
+      if (typeof revoked !== 'boolean') throw new Error('VAULT_OPERATION_REFUSED');
       return privateJson({ ok: true, revoked: revoked === true });
     }
 

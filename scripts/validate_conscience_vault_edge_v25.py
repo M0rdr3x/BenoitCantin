@@ -107,6 +107,36 @@ def main() -> int:
         "console.warn('[conscience-vault] opération refusée', code)",
     ], 'contrat Edge du Registre personnel')
 
+    risk_block = function_block(edge, 'function assertVaultRiskDecision(', 'function errorCode(')
+    require(risk_block, [
+        "typeof score !== 'number'",
+        'Number.isInteger(score)',
+        'Array.isArray(security)',
+        "typeof outcome !== 'string'",
+        '!validUuid(security.device_id)',
+        "!validUuid(security.challenge_id)",
+    ], 'décision de risque non coercitive')
+    forbid(risk_block, ['Number(security?.risk_score)', 'String(security?.outcome'], 'aucune coercition du risque')
+    require(edge, [
+        'value.length === 36 && UUID_RE.test(value)',
+        '!validUuid(sessionId)',
+        "typeof deviceKey !== 'string'",
+        'deviceKey.length > 128',
+        '/[^!-~]/.test(deviceKey)',
+        "typeof ttlRaw !== 'number'",
+        'securityError !== null',
+        'sessionError !== null',
+        'const sessionId = body.vault_session_id;',
+        'const id = body.entry_id;',
+        'if (!Array.isArray(data))',
+        'if (!validUuid(entryId))',
+        "typeof updated !== 'boolean'",
+        "typeof deleted !== 'boolean'",
+        "typeof revoked !== 'boolean'",
+    ], 'contrats stricts des RPC et identifiants du coffre')
+    if edge.count("if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');") != 5:
+        raise AssertionError('Les cinq RPC de lecture, création, modification, suppression et révocation doivent confirmer explicitement le succès.')
+
     forbid(edge, [
         "service.rpc('service_conscience_evaluate_access'",
         "service.rpc('security_evaluate_context'",
