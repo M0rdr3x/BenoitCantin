@@ -59,16 +59,20 @@ function safeText(value: unknown, max: number) {
 
 // Une clé opaque ne doit jamais être tronquée ni normalisée vers une autre clé.
 function validDeviceKey(value: unknown) {
-  return typeof value === 'string' && /^[!-~]{16,128}$/.test(value) ? value : null;
+  return typeof value === 'string' && value.length >= 16 && value.length <= 128 && !/[^!-~]/.test(value) ? value : null;
+}
+
+function validSessionUuid(value: unknown): value is string {
+  return typeof value === 'string' && value.length === 36 && UUID_RE.test(value);
 }
 
 function validSecurityDecision(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const decision = value as Record<string, unknown>;
   if (typeof decision.outcome !== 'string' || !['allow', 'approved', 'challenge', 'block'].includes(decision.outcome)) return false;
-  if (typeof decision.device_id !== 'string' || !UUID_RE.test(decision.device_id)) return false;
+  if (!validSessionUuid(decision.device_id)) return false;
   if (decision.outcome === 'challenge' &&
-      (typeof decision.challenge_id !== 'string' || !UUID_RE.test(decision.challenge_id))) return false;
+      !validSessionUuid(decision.challenge_id)) return false;
   return true;
 }
 
@@ -92,8 +96,9 @@ function sessionIdFromVerifiedRequest(req: Request) {
     const padded = raw.padEnd(Math.ceil(raw.length / 4) * 4, '=');
     const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
     const payload = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-    const sessionId = typeof payload?.session_id === 'string' ? payload.session_id : '';
-    if (!UUID_RE.test(sessionId)) throw new Error('AUTH_REQUIRED');
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('AUTH_REQUIRED');
+    const sessionId = payload.session_id;
+    if (!validSessionUuid(sessionId)) throw new Error('AUTH_REQUIRED');
     return sessionId;
   } catch {
     throw new Error('AUTH_REQUIRED');
@@ -253,7 +258,10 @@ Deno.serve(async (req) => {
     const sessionId = sessionIdFromVerifiedRequest(req);
     const parsed = await readLimitedJson(req);
     if (parsed.response) return parsed.response;
-    const body = parsed.body || {};
+    const body = parsed.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400);
+    }
     const deviceKey = validDeviceKey(body?.device_key);
     if (!deviceKey) return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
 
@@ -270,8 +278,10 @@ Deno.serve(async (req) => {
       p_action: safeText(body?.action, 80) || 'session',
       p_session_id: sessionId
     });
-    if (error) throw error;
-    if (!validSecurityDecision(data)) {
+    if (error?.code === '42501' && error.message === 'USER_SESSION_INVALID') {
+      return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    }
+    if (error !== null || !validSecurityDecision(data)) {
       return privateJson({ ok: false, error: 'Décision de sécurité indisponible.' }, 503);
     }
 

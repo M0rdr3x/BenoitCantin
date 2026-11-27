@@ -19,7 +19,7 @@ function harness() {
     const store = stores.get(name);
     return {
       async put(req, response) { writes.push({ cache: name, url: key(req) }); store.set(key(req), response); },
-      async match(req) { return store.get(key(req)); },
+      async match(req) { return store.get(key(req))?.clone(); },
     };
   };
   const caches = {
@@ -27,7 +27,7 @@ function harness() {
     keys: async () => [...stores.keys()],
     delete: async name => stores.delete(name),
     async match(req) {
-      for (const store of stores.values()) if (store.has(key(req))) return store.get(key(req));
+      for (const store of stores.values()) if (store.has(key(req))) return store.get(key(req)).clone();
     },
   };
   const self = {
