@@ -68,7 +68,13 @@ def main():
             errors.append(f'Document V24.5.24 incomplet: {marker}')
 
     test_markers = [
-        'select plan(4)',
+        'select plan(8)',
+        "c.relkind in ('r','p')",
+        'and not c.relrowsecurity',
+        "'select,insert,update,delete,truncate,references,trigger'",
+        'has_any_column_privilege(r.role_name,c.oid',
+        'grant select(id) on private.security_advisor_acl_probe to authenticated',
+        'grant truncate on private.security_advisor_acl_probe to anon',
         "n.nspname in ('public','private')",
         "not exists(select 1 from pg_policy pol where pol.polrelid=c.oid)",
         "has_table_privilege('anon'",
