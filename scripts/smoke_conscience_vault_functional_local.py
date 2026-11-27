@@ -122,6 +122,16 @@ def main() -> int:
     require(jwt_claims(aal2).get("aal") == "aal2", "JWT AAL2 absent")
     bootstrap_device(aal2)
 
+    # Second compte distinct, TOTP réel et AAL2, sans service_role ni donnée réelle.
+    other_aal1, other_uid, _, _ = signup(
+        email="sinjira-vault-isolation-smoke@example.com", pseudo="Smoke Isolation V25"
+    )
+    other_factor, other_secret = enroll_totp(other_aal1)
+    other_aal2 = verify_totp(other_aal1, other_factor, other_secret)
+    require(other_uid != _uid and jwt_claims(other_aal2).get("sub") == other_uid,
+            "identités de test distinctes obligatoires")
+    require(jwt_claims(other_aal2).get("aal") == "aal2", "second JWT AAL2 absent")
+
     bad_ttl = vault(aal2, "open_session", device_key=DEVICE_KEY, ttl_seconds=59)
     expect_code(bad_ttl, 400, "VAULT_TTL_INVALID", "TTL trop court")
 
@@ -163,6 +173,23 @@ def main() -> int:
     entries = ok(aal2, "list_entries", vault_session_id=session2).get("entries")
     require(isinstance(entries, list) and len(entries) == 1 and entries[0].get("id") == entry_id,
             "l’entrée doit rester intacte après une suppression non confirmée")
+
+    # Une capacité valide volée par un autre compte AAL2 ne doit rien autoriser.
+    for action, extra in (
+        ("list_entries", {}),
+        ("create_entry", {"entry_type": ENTRY_TYPE, "content_payload": CONTENT_1}),
+        ("update_entry", {"entry_id": entry_id, "entry_type": ENTRY_TYPE, "content_payload": CONTENT_1}),
+        ("delete_entry", {"entry_id": entry_id, "human_confirmed_delete": True}),
+    ):
+        expect_code(vault(other_aal2, action, vault_session_id=session2, **extra),
+                    403, "VAULT_SESSION_INVALID", f"isolation intercomptes {action}")
+    require(ok(other_aal2, "revoke_session", vault_session_id=session2).get("revoked") is False,
+            "un autre compte ne doit pas révoquer la capacité")
+    owner_entries = ok(aal2, "list_entries", vault_session_id=session2).get("entries")
+    require(isinstance(owner_entries, list) and len(owner_entries) == 1
+            and owner_entries[0].get("id") == entry_id
+            and owner_entries[0].get("content_payload") == CONTENT_2,
+            "la capacité et le contenu du propriétaire doivent rester intacts")
 
     require(ok(aal2, "delete_entry", vault_session_id=session2, entry_id=entry_id,
                human_confirmed_delete=True).get("deleted") is True,
