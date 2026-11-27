@@ -36,7 +36,7 @@ function deviceKey(){
 }
 async function requireRecoveryAal2WhenAvailable(){
   const {data,error}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
-  if(error)throw error;
+  if(error!==null)throw new Error('MFA_STATE_UNAVAILABLE');
   assertKnownAssuranceLevels(data);
   if(data?.nextLevel==='aal2'&&data?.currentLevel!=='aal2'){
     setBusy(true);
@@ -67,7 +67,7 @@ async function recoveryIdentity(expectedId){
   try{
     const result=await s.auth.getUser();
     const id=result?.data?.user?.id;
-    if(result?.error!==null||typeof id!=='string'||!id.trim())return null;
+    if(result?.error!==null||typeof id!=='string'||!id.trim()||id!==id.trim())return null;
     if(expectedId!==undefined&&id!==expectedId)return null;
     return id;
   }catch{return null}
