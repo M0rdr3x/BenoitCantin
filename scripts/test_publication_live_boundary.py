@@ -205,6 +205,8 @@ class PublicationMonitorSecurityTests(unittest.TestCase):
             ("Content-Security-Policy", expected["Content-Security-Policy"].replace("frame-ancestors 'none'", "frame-ancestors *")),
             ("Content-Security-Policy", expected["Content-Security-Policy"] + "; script-src 'self' 'unsafe-inline'"),
             ("Content-Security-Policy", expected["Content-Security-Policy"].replace("script-src 'self'", "script-src 'self' https:")),
+            ("Content-Security-Policy", expected["Content-Security-Policy"].replace("script-src 'self'", "script-src 'self' https://example.invalid")),
+            ("Content-Security-Policy", expected["Content-Security-Policy"] + "; script-src-elem *"),
         ):
             with self.subTest(key=key, value=value):
                 self.assertTrue(boundary.validate_private_headers(200, make_headers({**expected, key: value})))
