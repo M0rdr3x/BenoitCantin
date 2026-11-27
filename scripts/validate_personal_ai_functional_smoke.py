@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import ast
 import re
 import sys
 
@@ -67,6 +68,22 @@ def main() -> int:
             'identité client interdite non testée')
     require('"chat"' in smoke and 'UNKNOWN_ACTION' in smoke, 'absence de runtime chat non testée')
     require('prompt="Aucune donnée réelle"' in smoke, 'tout contenu de test doit être explicitement synthétique')
+
+    # Vérifier les valeurs Python réellement envoyées, pas seulement leur orthographe.
+    tree = ast.parse(smoke)
+    loops = [node for node in ast.walk(tree) if isinstance(node, ast.For)
+             and isinstance(node.target, ast.Name) and node.target.id == 'bad_key']
+    require(len(loops) == 1 and isinstance(loops[0].iter, ast.Tuple),
+            'boucle des clés appareil invalides absente')
+    suffixes = {node.right.value for node in loops[0].iter.elts
+                if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add)
+                and isinstance(node.left, ast.Name) and node.left.id == 'DEVICE_KEY'
+                and isinstance(node.right, ast.Constant) and isinstance(node.right.value, str)}
+    require({ '\n', '\r', '\t' } <= suffixes,
+            'les vrais caractères LF/CR/TAB sont obligatoires, pas leurs échappements littéraux')
+    for marker in ('booléen ambigu doit être refusé', 'booléen absent doit être refusé',
+                   'réglages modifiés malgré un refus', 'consentements modifiés malgré un refus'):
+        require(marker in smoke, f'preuve de refus sans mutation absente: {marker}')
 
     # Le script ne doit jamais contourner l'Edge ni les ACL privées.
     forbidden = (
