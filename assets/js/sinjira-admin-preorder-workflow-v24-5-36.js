@@ -4,6 +4,9 @@ const s = getSupabase();
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium', timeStyle: 'short' });
 let logisticsRows = [];
+let logisticsPage = 0, logisticsVersion = 0, logisticsReady = false;
+let queueVersion = 0;
+const LOGISTICS_PAGE_SIZE = 25;
 
 function dt(value) {
   if (!value) return 'Jamais modifié';
@@ -46,7 +49,7 @@ function installLogisticsPanel() {
   if (document.querySelector('[data-pa-logistics-panel]')) return;
   const workflow = document.querySelector('[data-pa-workflow-panel]');
   if (!workflow) return;
-  workflow.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-logistics-panel><div class="container"><article class="account-card preorder-admin-card"><div class="preorder-admin-list-head"><div><span class="eyebrow">V24.5.39 · préparation logistique locale</span><h2>Préparer les exemplaires sans données privées</h2><p>Cette vue utilise uniquement la référence PR-…, le produit, le format, la quantité, le mode de réception et, si applicable, le nom public du point de retrait. Aucun nom de compte, courriel, adresse, UUID ou donnée de paiement n’est retourné, exporté ou imprimé.</p></div><div class="preorder-announcement-actions"><button class="btn btn-secondary" data-pa-logistics-refresh type="button">Actualiser</button><button class="btn btn-secondary" data-pa-logistics-export type="button" disabled>Exporter CSV local</button><button class="btn btn-secondary" data-pa-logistics-print type="button" disabled>Imprimer feuille locale</button></div></div><div class="preorder-admin-filters"><label>Réservations<select data-pa-logistics-filter><option value="reserved">Actives seulement</option><option value="all">Toutes, incluant annulées</option></select></label></div><div class="preorder-admin-stat-grid"><article class="preorder-admin-stat"><span>Unités papier à prévoir</span><strong data-pa-logistics-paper>0</strong><small>papier ou papier + numérique</small></article><article class="preorder-admin-stat"><span>Livraison</span><strong data-pa-logistics-shipping>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Ramassage</span><strong data-pa-logistics-pickup>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Mode à décider</span><strong data-pa-logistics-undecided>0</strong><small>réservations</small></article></div><div class="account-status" data-pa-logistics-status hidden></div><div class="preorder-admin-list" data-pa-logistics-list><p>Chargement…</p></div><p><small>Le CSV et la feuille imprimable sont créés localement dans votre navigateur. Aucun fichier n’est envoyé vers SINJIRA, un transporteur ou un service externe.</small></p></article></div></section>`);
+  workflow.insertAdjacentHTML('afterend', `<section class="section section-tight" data-pa-logistics-panel><div class="container"><article class="account-card preorder-admin-card"><div class="preorder-admin-list-head"><div><span class="eyebrow">V24.5.39 · préparation logistique locale</span><h2>Préparer les exemplaires sans données privées</h2><p>Cette vue utilise uniquement la référence PR-…, le produit, le format, la quantité, le mode de réception et, si applicable, le nom public du point de retrait. Aucun nom de compte, courriel, adresse, UUID ou donnée de paiement n’est retourné, exporté ou imprimé.</p></div><div class="preorder-announcement-actions"><button class="btn btn-secondary" data-pa-logistics-refresh type="button" disabled>Actualiser</button><button class="btn btn-secondary" data-pa-logistics-export type="button" disabled>Exporter CSV local</button><button class="btn btn-secondary" data-pa-logistics-print type="button" disabled>Imprimer feuille locale</button></div></div><div class="preorder-admin-filters"><label>Réservations<select data-pa-logistics-filter><option value="reserved">Actives seulement</option><option value="all">Toutes, incluant annulées</option></select></label></div><div class="preorder-admin-stat-grid"><article class="preorder-admin-stat"><span>Unités papier à prévoir</span><strong data-pa-logistics-paper>0</strong><small>papier ou papier + numérique</small></article><article class="preorder-admin-stat"><span>Livraison</span><strong data-pa-logistics-shipping>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Ramassage</span><strong data-pa-logistics-pickup>0</strong><small>réservations</small></article><article class="preorder-admin-stat"><span>Mode à décider</span><strong data-pa-logistics-undecided>0</strong><small>réservations</small></article></div><div class="account-status" data-pa-logistics-status role="status" aria-atomic="true" hidden></div><div class="preorder-admin-list" data-pa-logistics-list aria-busy="true"><p>Chargement…</p></div><nav class="preorder-logistics-pagination" aria-label="Pages de préparation logistique"><button class="btn btn-secondary" type="button" data-pa-logistics-prev disabled>Précédent</button><p data-pa-logistics-page role="status" aria-atomic="true">Chargement…</p><button class="btn btn-secondary" type="button" data-pa-logistics-next disabled>Suivant</button></nav><p><small>Les compteurs, le CSV et la feuille locale concernent toutes les réservations chargées correspondant au filtre, pas seulement cette page. Limite de chargement : 500 réservations.</small></p><p><small>Le CSV et la feuille imprimable sont créés localement dans votre navigateur. Aucun fichier n’est envoyé vers SINJIRA, un transporteur ou un service externe.</small></p></article></div></section>`);
 }
 function setStatus(message, kind = '') {
   const node = document.querySelector('[data-pa-workflow-status]');
@@ -87,25 +90,38 @@ function logisticsSummary(rows) {
     undecided: rows.filter((row) => !['shipping','pickup'].includes(row.fulfillment_preference)).length
   };
 }
+function logisticsPageSlice(rows) {
+  const pages = Math.max(1, Math.ceil(rows.length / LOGISTICS_PAGE_SIZE));
+  logisticsPage = Math.max(0, Math.min(logisticsPage, pages - 1));
+  const start = logisticsPage * LOGISTICS_PAGE_SIZE;
+  return { pages, start, items: rows.slice(start, start + LOGISTICS_PAGE_SIZE) };
+}
 function renderLogistics() {
-  const rows = filteredLogisticsRows();
+  const rows = logisticsReady ? filteredLogisticsRows() : [];
+  const { pages, start, items } = logisticsPageSlice(rows);
   const list = document.querySelector('[data-pa-logistics-list]');
   const summary = logisticsSummary(rows);
   const set = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = String(value); };
-  set('[data-pa-logistics-paper]', summary.paperUnits);
-  set('[data-pa-logistics-shipping]', summary.shipping);
-  set('[data-pa-logistics-pickup]', summary.pickup);
-  set('[data-pa-logistics-undecided]', summary.undecided);
+  set('[data-pa-logistics-paper]', logisticsReady ? summary.paperUnits : '—');
+  set('[data-pa-logistics-shipping]', logisticsReady ? summary.shipping : '—');
+  set('[data-pa-logistics-pickup]', logisticsReady ? summary.pickup : '—');
+  set('[data-pa-logistics-undecided]', logisticsReady ? summary.undecided : '—');
+  const prev = document.querySelector('[data-pa-logistics-prev]');
+  const next = document.querySelector('[data-pa-logistics-next]');
+  if (prev) prev.disabled = !logisticsReady || logisticsPage === 0;
+  if (next) next.disabled = !logisticsReady || logisticsPage >= pages - 1;
+  set('[data-pa-logistics-page]', !logisticsReady ? 'Données non disponibles' : rows.length ? `${start + 1}–${start + items.length} sur ${rows.length} · Page ${logisticsPage + 1}/${pages}` : '0 réservation');
   const exportButton = document.querySelector('[data-pa-logistics-export]');
   const printButton = document.querySelector('[data-pa-logistics-print]');
   if (exportButton) exportButton.disabled = rows.length === 0;
   if (printButton) printButton.disabled = rows.length === 0;
   if (!list) return;
+  if (!logisticsReady) return;
   if (!rows.length) {
     list.innerHTML = '<div class="preorder-admin-empty">Aucune réservation à préparer pour ce filtre.</div>';
     return;
   }
-  list.innerHTML = rows.map((row) => {
+  list.innerHTML = items.map((row) => {
     const pickup = row.fulfillment_preference === 'pickup'
       ? [row.pickup_point_label, row.pickup_city].filter(Boolean).join(' · ') || 'Point à confirmer'
       : '—';
@@ -113,28 +129,50 @@ function renderLogistics() {
   }).join('');
 }
 async function loadQueue(message = '') {
+  const version = ++queueVersion;
   const filter = document.querySelector('[data-pa-workflow-filter]');
   try {
     const rows = await rpc('admin_preorder_workflow_queue', {
       p_workflow_state: filter?.value || null,
       p_limit: 200
     });
+    if (version !== queueVersion) return;
     renderRows(Array.isArray(rows) ? rows : []);
     if (message) setStatus(message, 'success');
   } catch (error) {
+    if (version !== queueVersion) return;
     setStatus(friendlyBackendMessage(error?.message, 'Impossible de charger le suivi administratif.'), 'error');
   }
 }
 async function loadLogistics(message = '') {
+  const version = ++logisticsVersion;
+  const list = document.querySelector('[data-pa-logistics-list]');
+  const refresh = document.querySelector('[data-pa-logistics-refresh]');
+  logisticsReady = false;
+  if (refresh) refresh.disabled = true;
+  list?.setAttribute('aria-busy', 'true');
+  if (list) list.textContent = 'Chargement de la préparation logistique…';
+  renderLogistics();
   try {
     const rows = await rpc('admin_preorder_logistics_queue', { p_product_slug: PRODUCT_SLUG, p_limit: 500 });
-    logisticsRows = Array.isArray(rows) ? rows : [];
+    if (version !== logisticsVersion) return;
+    if (!Array.isArray(rows)) throw new Error('LOGISTICS_UNAVAILABLE');
+    logisticsRows = rows;
+    logisticsReady = true;
+    logisticsPage = 0;
     renderLogistics();
-    if (message) setLogisticsStatus(message, 'success');
+    setLogisticsStatus(message || 'Préparation logistique chargée.', 'success');
   } catch (error) {
+    if (version !== logisticsVersion) return;
     logisticsRows = [];
     renderLogistics();
+    if (list) list.textContent = 'Préparation logistique indisponible. Actualisez pour réessayer.';
     setLogisticsStatus(friendlyBackendMessage(error?.message, 'Impossible de charger la préparation logistique.'), 'error');
+  } finally {
+    if (version === logisticsVersion) {
+      if (refresh) refresh.disabled = false;
+      list?.setAttribute('aria-busy', 'false');
+    }
   }
 }
 async function saveState(button) {
@@ -171,6 +209,7 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 function exportLogisticsCsv() {
+  if (!logisticsReady) return;
   const rows = filteredLogisticsRows();
   if (!rows.length) return;
   const header = ['reference','produit','quantite','format','mode_reception','point_retrait','ville_retrait','etat_reservation','etat_suivi','version_conditions','conditions_confirmees_le'];
@@ -203,6 +242,7 @@ function exportLogisticsCsv() {
   setLogisticsStatus(`Export local créé pour ${rows.length} réservation(s). Aucun fichier n’a été envoyé vers un service externe.`, 'success');
 }
 function printLogisticsSheet() {
+  if (!logisticsReady) return;
   const rows = filteredLogisticsRows();
   if (!rows.length) return;
   const summary = logisticsSummary(rows);
@@ -237,16 +277,18 @@ function bind() {
     if (button) saveState(button);
   });
   document.querySelector('[data-pa-logistics-refresh]')?.addEventListener('click', () => loadLogistics('Préparation logistique actualisée.'));
-  document.querySelector('[data-pa-logistics-filter]')?.addEventListener('change', renderLogistics);
+  document.querySelector('[data-pa-logistics-filter]')?.addEventListener('change', () => { logisticsPage = 0; renderLogistics(); });
+  document.querySelector('[data-pa-logistics-prev]')?.addEventListener('click', () => { if (logisticsReady) { logisticsPage--; renderLogistics(); } });
+  document.querySelector('[data-pa-logistics-next]')?.addEventListener('click', () => { if (logisticsReady) { logisticsPage++; renderLogistics(); } });
   document.querySelector('[data-pa-logistics-export]')?.addEventListener('click', exportLogisticsCsv);
   document.querySelector('[data-pa-logistics-print]')?.addEventListener('click', printLogisticsSheet);
 }
 async function init() {
   installPanel();
   installLogisticsPanel();
-  bind();
   try {
     await requireAdminAal2();
+    bind();
     await Promise.all([loadQueue(), loadLogistics()]);
   } catch (error) {
     if (error?.message === 'AUTH_REQUIRED') location.replace('/compte/connexion.html?next=/admin/sinjira/precommandes.html');
