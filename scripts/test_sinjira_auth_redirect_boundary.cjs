@@ -277,6 +277,40 @@ function recoveryCleanupContractTests(){
   checks++;
 }
 
+async function securityCenterSettingsTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-security-center-v24-4-98.js'),'utf8');
+  const start=source.indexOf('const SECURITY_SETTING_KEYS=');
+  const end=source.indexOf('async function loadState(',start);
+  const saveStart=source.indexOf('async function saveSettings(');
+  const saveEnd=source.indexOf('async function createTravel(',saveStart);
+  const errStart=source.indexOf('function friendlySecurityError(');
+  const errEnd=source.indexOf('async function revokeCompromisedSessions(',errStart);
+  assert.ok(start>=0&&end>start&&saveStart>=0&&saveEnd>saveStart&&errStart>=0&&errEnd>errStart);
+  const userId='test-user';
+  const valid={user_id:userId,remember_usual_region:false,sensitive_step_up:true,notify_new_device:true,notify_high_risk:true,notify_security_changes:true};
+  const inputs=Object.keys(valid).filter(k=>k!=='user_id').map(name=>({name,checked:valid[name]}));
+  inputs.push({name:'unrecognized',checked:true});
+  let reply=valid, lastArgs, statuses=[];
+  const ctx={qsa:()=>inputs,rpc:async(_name,args)=>{lastArgs=args;return reply},status:(...args)=>statuses.push(args)};
+  vm.runInNewContext(source.slice(start,end)+source.slice(saveStart,saveEnd)+source.slice(errStart,errEnd)+'\nglobalThis.test={validatedSecuritySettings,fillSettings,saveSettings,friendlySecurityError};',ctx,{timeout:1000});
+  eq(ctx.test.validatedSecuritySettings(valid,userId),valid,'Paramètres appartenant au compte');
+  for(const invalid of [null,[],{}, {...valid,user_id:'other-user'}, {...valid,sensitive_step_up:'false'}, {...valid,notify_high_risk:0}, {...valid,notify_security_changes:null}, {...valid,notify_new_device:undefined}]){
+    assert.throws(()=>ctx.test.validatedSecuritySettings(invalid,userId),/SECURITY_STATE_UNAVAILABLE/);checks++;
+  }
+  ctx.test.fillSettings(valid);
+  eq(inputs[0].checked,false,'Valeur booléenne conservée');
+  await ctx.test.saveSettings(userId);
+  eq(Object.keys(lastArgs).length,5,'Seules les cinq préférences autorisées sont envoyées');
+  eq(statuses.length,1,'Confirmation après lecture du résultat');
+  for(const invalid of [{...valid,sensitive_step_up:false},{...valid,user_id:'other-user'},null]){
+    reply=invalid;
+    await assert.rejects(ctx.test.saveSettings(userId),/SECURITY_STATE_UNAVAILABLE/);checks++;
+  }
+  eq(statuses.length,1,'Aucune confirmation trompeuse');
+  const secret='synthetic internal diagnostic';
+  assert.ok(!ctx.test.friendlySecurityError(new Error(secret)).includes(secret));checks++;
+}
+
 function securityCenterRenderingTests(){
   const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-security-center-v24-4-98.js'),'utf8');
   const shared=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-supabase.js'),'utf8');
@@ -447,6 +481,7 @@ async function main(){
   await compromiseRevocationTests();
   await lostDeviceRevocationTests();
   recoveryCleanupContractTests();
+  await securityCenterSettingsTests();
   securityCenterRenderingTests();
   deviceEntropyTests();
   await loginDecisionTests();
