@@ -47,14 +47,23 @@ async function loadFullPage(user){
   const box=document.querySelector('[data-notifications-list]');
   if(!box)return;
   box.setAttribute('aria-busy','true');
-  const {data=[],error}=await s.from('user_notifications')
-    .select('id,notification_type,title,body,action_path,read_at,created_at')
-    .eq('user_id',user.id)
-    .order('created_at',{ascending:false})
-    .limit(100);
-  if(error){box.setAttribute('aria-busy','false');throw error;}
-
-  const unread=data.filter(item=>!item.read_at).length;
+  const [recent,countResult]=await Promise.all([
+    s.from('user_notifications')
+      .select('id,notification_type,title,body,action_path,read_at,created_at')
+      .eq('user_id',user.id)
+      .order('created_at',{ascending:false})
+      .limit(100),
+    s.from('user_notifications')
+      .select('id',{count:'exact',head:true})
+      .eq('user_id',user.id)
+      .is('read_at',null)
+  ]);
+  if(recent.error||countResult.error||!Number.isSafeInteger(countResult.count)||countResult.count<0){
+    box.setAttribute('aria-busy','false');
+    throw recent.error||countResult.error||new Error('NOTIFICATION_COUNT_UNAVAILABLE');
+  }
+  const data=recent.data||[];
+  const unread=countResult.count;
   const unreadNode=document.querySelector('[data-notifications-unread-count]');
   const totalNode=document.querySelector('[data-notifications-total-count]');
   if(unreadNode)unreadNode.textContent=String(unread);

@@ -127,7 +127,9 @@ jobs:
       - name: Vérifier le mode gratuit verrouillé V24.4.62
         run: python scripts/validate_free_only_mode.py
       - name: Vérifier les notifications utilisateur V24.4.63
-        run: python scripts/validate_user_notifications_v24_4_63.py
+        run: |
+          python scripts/validate_user_notifications_v24_4_63.py
+          node scripts/test_notification_feedback.cjs
       - name: Vérifier les Playtests V24.4.64
         run: python scripts/validate_playtests_v24_4_64.py
       - name: Vérifier les invitations Playtests V24.4.65
