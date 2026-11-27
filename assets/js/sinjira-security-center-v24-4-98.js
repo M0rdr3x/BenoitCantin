@@ -85,13 +85,14 @@ function renderOverview({devices=[],connections=[],travel=[],challenges=[],setti
 // Les identifiants de ces lignes SQL sont des UUID. Ne jamais générer une
 // commande de sécurité à partir d'une valeur inconnue ou malformée.
 function validSecurityRecordId(value){
-  return typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  return typeof value==='string'&&value.length===36&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 function renderDevices(devices){
   const node=qs('[data-security-devices]');if(!node)return;
-  devices=devices.filter(d=>validSecurityRecordId(d?.id));
-  if(!devices.length){node.innerHTML=empty('Aucun appareil enregistré.');return}
+  const validDevices=devices.filter(d=>validSecurityRecordId(d?.id));
+  if(!validDevices.length){node.innerHTML=empty(devices.length?'Identifiants des appareils non vérifiables.':'Aucun appareil enregistré.');return}
+  devices=validDevices;
   node.innerHTML=devices.map(d=>{
     const current=d.is_current===true;
     const badges=[current&&pill('Cet appareil','good'),d.is_primary&&pill('Principal','good'),d.is_trusted&&pill('Fiable','good'),d.revoked_at&&pill('Révoqué','danger')].filter(Boolean).join(' ');
@@ -124,15 +125,17 @@ function renderSecurityEvents(rows){
 
 function renderTravel(rows){
   const node=qs('[data-security-travel-list]');if(!node)return;
-  rows=rows.filter(r=>validSecurityRecordId(r?.id));
-  if(!rows.length){node.innerHTML=empty('Aucun voyage enregistré.');return}
+  const validRows=rows.filter(r=>validSecurityRecordId(r?.id));
+  if(!validRows.length){node.innerHTML=empty(rows.length?'Identifiants des voyages non vérifiables.':'Aucun voyage enregistré.');return}
+  rows=validRows;
   node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${escapeHtml(r.id)}">Annuler ce voyage</button></div>`:''}</article>`).join('');
 }
 
 function renderChallenges(rows,devices){
   const node=qs('[data-security-challenges]');if(!node)return;
-  const pending=rows.filter(r=>validSecurityRecordId(r?.id)&&validSecurityRecordId(r.request_device_id)&&r.status==='pending'&&new Date(r.expires_at)>new Date());
-  if(!pending.length){node.innerHTML=empty('Aucune connexion ne demande votre confirmation.');return}
+  const candidates=rows.filter(r=>r?.status==='pending'&&new Date(r.expires_at)>new Date());
+  const pending=candidates.filter(r=>validSecurityRecordId(r.id)&&validSecurityRecordId(r.request_device_id));
+  if(!pending.length){node.innerHTML=empty(candidates.length?'Identifiants des confirmations non vérifiables.':'Aucune connexion ne demande votre confirmation.');return}
   const currentDevice=devices.find(d=>validSecurityRecordId(d?.id)&&d.is_current===true&&!d.revoked_at)||null;
   node.innerHTML=pending.map(r=>{
     const sameRequestDevice=Boolean(currentDevice&&currentDevice.id===r.request_device_id);
