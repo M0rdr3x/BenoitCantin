@@ -200,6 +200,35 @@ def main() -> int:
     require(isinstance(unknown_action.body, dict) and unknown_action.body.get("code") == "UNKNOWN_ACTION",
             f"action chat: UNKNOWN_ACTION attendu, reçu {unknown_action.raw}")
 
+    # Les valeurs ambiguës ne doivent ni modifier les réglages ni retirer un consentement.
+    for invalid in (None, "false", 0, [], {}):
+        for action, extra in (
+            ("update_settings", {"enabled": invalid}),
+            ("set_source_permission", {"source_type": "life_story", "granted": invalid}),
+        ):
+            rejected = personal_ai(aal2, action, **extra)
+            require(rejected.status == 400 and isinstance(rejected.body, dict)
+                    and rejected.body.get("code") == "INVALID_JSON",
+                    f"{action}: booléen ambigu doit être refusé")
+    for bad_key in (DEVICE_KEY + "\n", DEVICE_KEY + "\r", DEVICE_KEY + "\t", " " + DEVICE_KEY, DEVICE_KEY + "x" * 128):
+        rejected = personal_ai(aal2, "get_state", device_key=bad_key)
+        require(rejected.status == 400 and isinstance(rejected.body, dict)
+                and rejected.body.get("code") == "DEVICE_KEY_INVALID",
+                "une clé opaque non canonique doit être refusée")
+    for action, extra in (
+        ("update_settings", {}),
+        ("set_source_permission", {"source_type": "employment"}),
+    ):
+        rejected = personal_ai(aal2, action, **extra)
+        require(rejected.status == 400 and isinstance(rejected.body, dict)
+                and rejected.body.get("code") == "INVALID_JSON",
+                f"{action}: booléen absent doit être refusé")
+    unchanged = personal_ai_ok(aal2, "get_state")["state"]
+    assert_runtime_disabled(unchanged, "après requêtes invalides")
+    require(unchanged["settings"] == updated_settings, "réglages modifiés malgré un refus")
+    require(permission_map(unchanged) == {"employment": True, "life_story": True},
+            "consentements modifiés malgré un refus")
+
     deleted = personal_ai_ok(aal2, "delete_personal_ai_data")
     require(deleted.get("deleted") is True, "suppression Mon IA non confirmée")
 

@@ -31,6 +31,20 @@ for marker in ("await req.json()","service.rpc('security_evaluate_context'","con
 for action in ("'chat'","'memory'","'retrieve_source'","'complete'","'generate'"):
     forbid(EDGE,action,f'Edge: runtime IA prématuré détecté {action}')
 
+# Contrats de réponse et consentement stricts, sans coercition implicite.
+for marker in ("typeof score !== 'number'", "typeof outcome !== 'string'",
+               "securityError !== null", "error !== null || !validState(data)",
+               "typeof body.enabled !== 'boolean'", "typeof body.granted !== 'boolean'",
+               "data.enabled !== body.enabled", "error !== null || data !== true",
+               "deviceKey.length > 128", "/[^!-~]/.test(deviceKey)",
+               "value.runtime_status === 'not_configured'", "runtime[key] === false",
+               "seen.has(row.source_type)"):
+    need(EDGE,marker,f'Edge: frontière stricte absente {marker}')
+if EDGE.count("error !== null || data !== true") != 2:
+    errors.append('Edge: consentement et suppression doivent tous deux confirmer true')
+for marker in ("Number(value?.risk_score);", "String(value?.outcome || '');", "if (securityError)"):
+    forbid(EDGE,marker,f'Edge: décision de risque coercitive {marker}')
+
 for marker in ('personal_ai_settings','personal_ai_source_permissions','personal_ai_audit','ai_private','service_personal_ai_evaluate_access','PERSONAL_AI_AAL2_REQUIRED','PERSONAL_AI_RISK_REFUSED'):
     need(MIG,marker,f'SQL: contrat manquant {marker}')
 need(MIG,"source_type in ('life_story','employment')",'SQL: sources bornées manquantes')

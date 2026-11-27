@@ -79,11 +79,35 @@ function publicDecision(value: any) {
   };
 }
 function assertDecision(value: any) {
-  const score = Number(value?.risk_score); const outcome = String(value?.outcome || '');
-  if (value?.risk_model_version !== 'v25.0' || value?.mandatory_step_up !== true ||
-      value?.requires_step_up !== true || !Number.isInteger(score) || score < 0 || score > 100 ||
-      !['allow','approved','challenge','block'].includes(outcome)) throw new Error('SECURITY_DECISION_INVALID');
+  const score = value?.risk_score; const outcome = value?.outcome;
+  if (!value || typeof value !== 'object' || Array.isArray(value) ||
+      value?.risk_model_version !== 'v25.0' || value?.mandatory_step_up !== true ||
+      value?.requires_step_up !== true || typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > 100 ||
+      typeof outcome !== 'string' || !['allow','approved','challenge','block'].includes(outcome)) throw new Error('SECURITY_DECISION_INVALID');
   return { score, outcome };
+}
+function validSettings(value: any) {
+  return !!value && typeof value === 'object' && !Array.isArray(value) &&
+    typeof value.enabled === 'boolean' &&
+    (value.display_name === null || typeof value.display_name === 'string') &&
+    typeof value.language_code === 'string' && value.language_code.length >= 2 &&
+    value.runtime_status === 'not_configured';
+}
+function validState(value: any) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) ||
+      !validSettings(value.settings) || !Array.isArray(value.source_permissions)) return false;
+  const runtime = value.runtime;
+  if (!runtime || typeof runtime !== 'object' || Array.isArray(runtime) ||
+      !['conversation_enabled','memory_enabled','source_retrieval_enabled','provider_configured']
+        .every(key => runtime[key] === false)) return false;
+  const seen = new Set<string>();
+  for (const row of value.source_permissions) {
+    if (!row || typeof row !== 'object' || Array.isArray(row) ||
+        !['life_story','employment'].includes(row.source_type) ||
+        typeof row.granted !== 'boolean' || seen.has(row.source_type)) return false;
+    seen.add(row.source_type);
+  }
+  return true;
 }
 function errorCode(error: unknown) {
   const code = error instanceof Error ? error.message : '';
@@ -100,8 +124,8 @@ Deno.serve(async (req) => {
     const { user, service } = await requiredPersonalAiUser(req);
     const body = await readBoundedJson(req);
     rejectClientIdentity(body);
-    const deviceKey = safeText(body.device_key, 128);
-    if (deviceKey.length < 16) return privateJson({ ok:false, code:'DEVICE_KEY_INVALID', error:'Identifiant d’appareil invalide.' }, 400);
+    const deviceKey = body.device_key;
+    if (typeof deviceKey !== 'string' || deviceKey.length < 16 || deviceKey.length > 128 || /[^!-~]/.test(deviceKey)) return privateJson({ ok:false, code:'DEVICE_KEY_INVALID', error:'Identifiant d’appareil invalide.' }, 400);
 
     const geo = trustedGeo(req);
     const { data: security, error: securityError } = await service.rpc('service_personal_ai_evaluate_access', {
@@ -110,7 +134,7 @@ Deno.serve(async (req) => {
       p_device_type:safeDeviceType(body.device_type), p_platform:safeText(body.platform,120),
       p_country_code:geo.country, p_region_code:geo.region
     });
-    if (securityError) throw new Error('SECURITY_DECISION_INVALID');
+    if (securityError !== null) throw new Error('SECURITY_DECISION_INVALID');
     const decision = assertDecision(security);
     const securityPublic = publicDecision(security);
     if (decision.outcome === 'challenge') return privateJson({ ok:false, code:'SECURITY_CHALLENGE_REQUIRED', error:'Une confirmation de sécurité est requise.', security:securityPublic }, 403);
@@ -123,30 +147,33 @@ Deno.serve(async (req) => {
 
     if (action === 'get_state') {
       const { data, error } = await service.rpc('service_personal_ai_get_state',{ p_user_id:user.id, ...risk });
-      if (error) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
+      if (error !== null || !validState(data)) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
       return privateJson({ ok:true, state:data, security:securityPublic });
     }
     if (action === 'update_settings') {
+      if (typeof body.enabled !== 'boolean') throw new Error('INVALID_JSON');
       const { data, error } = await service.rpc('service_personal_ai_update_settings',{
         p_user_id:user.id, p_enabled:body.enabled===true,
         p_display_name:safeText(body.ai_display_name,80)||null,
         p_language_code:safeText(body.language_code,16)||'fr-CA', ...risk
       });
-      if (error) throw new Error(error.message?.includes('LANGUAGE')?'PERSONAL_AI_LANGUAGE_INVALID':'PERSONAL_AI_OPERATION_REFUSED');
+      if (error !== null) throw new Error(error?.message === 'PERSONAL_AI_LANGUAGE_INVALID'?'PERSONAL_AI_LANGUAGE_INVALID':'PERSONAL_AI_OPERATION_REFUSED');
+      if (!validSettings(data) || data.enabled !== body.enabled) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
       return privateJson({ ok:true, settings:data, security:securityPublic });
     }
     if (action === 'set_source_permission') {
       const source=safeText(body.source_type,40);
       if (!['life_story','employment'].includes(source)) throw new Error('PERSONAL_AI_SOURCE_FORBIDDEN');
-      const { error } = await service.rpc('service_personal_ai_set_source_permission',{
+      if (typeof body.granted !== 'boolean') throw new Error('INVALID_JSON');
+      const { data, error } = await service.rpc('service_personal_ai_set_source_permission',{
         p_user_id:user.id, p_source_type:source, p_granted:body.granted===true, ...risk
       });
-      if (error) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
+      if (error !== null || data !== true) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
       return privateJson({ ok:true, source_type:source, granted:body.granted===true, runtime_access_enabled:false, security:securityPublic });
     }
     if (action === 'delete_personal_ai_data') {
       const { data, error } = await service.rpc('service_personal_ai_delete_data',{ p_user_id:user.id, ...risk });
-      if (error || data !== true) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
+      if (error !== null || data !== true) throw new Error('PERSONAL_AI_OPERATION_REFUSED');
       return privateJson({ ok:true, deleted:true, security:securityPublic });
     }
     // Aucun endpoint chat/memory/retrieve_source/complete/generate dans cette fondation V25.
