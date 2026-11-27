@@ -344,3 +344,7 @@ Procédure :
 4. récupérer les instructions exactes si nécessaire;
 5. corriger le ledger ou l’historique de reconstruction dans une PR dédiée;
 6. repasser toutes les validations avant toute écriture.
+
+### Remédiation MAINTAIN PostgreSQL 17 (27 novembre 2026)
+
+La migration `20261127230813_sinjira_pg17_maintain_least_privilege.sql` a été générée par le CLI et répétée sur une pile locale (24 assertions pgTAP réussies). Son empreinte de blob a été ajoutée au manifeste des migrations futures; le ledger historique reste inchangé. Le lot générique contient désormais 18 migrations futures par rapport à ce ledger, dont 17 autres migrations : ne pas lancer une synchronisation globale dans le seul but de retirer MAINTAIN. La présence au manifeste atteste la vérification technique du fichier, pas une approbation humaine ni son application distante. Avant toute remédiation en production, vérifier l'historique distant, l'ordre des migrations, les sauvegardes et les droits de propriétaire, puis obtenir une revue et une autorisation de déploiement ciblé. Vérifier les ACL effectives et par défaut après application; ne pas modifier les ACL du rôle géré supabase_admin sans intervention autorisée de l'hébergeur.
