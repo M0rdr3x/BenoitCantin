@@ -7,7 +7,7 @@ DOC = ROOT / 'PREORDER_ADMIN_CACHE_CONVERGENCE_V24_5_43.md'
 LEDGER = ROOT / 'supabase/production-migration-ledger.txt'
 
 MODULES = [
-    'sinjira-admin-preorders-v24-5-4.js?v=24.5.43.1',
+    'sinjira-admin-preorders-v24-5-4.js?v=24.5.43.2',
     'sinjira-admin-preorder-workflow-v24-5-36.js?v=24.5.43',
     'sinjira-admin-preorder-commercial-v24-5-5.js?v=24.5.43',
     'sinjira-admin-preorder-fulfillment-v24-5-6.js?v=24.5.43',

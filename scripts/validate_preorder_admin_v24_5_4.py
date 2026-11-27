@@ -82,6 +82,7 @@ def main():
         'Enregistrer le brouillon', 'Marquer prêt', 'Envoyer l’avis interne',
         'Transport externe', 'désactivé', 'Paiement', 'Conversion automatique en commande',
         'Aucun courriel, adresse postale ou identifiant technique n’est affiché ici.',
+        'data-pa-announcement-form method="post"', 'data-pa-announcement-fields disabled', 'data-pa-draft-status role="status"',
         'data-pa-save-draft type="submit" disabled', 'data-pa-mark-ready type="button" disabled',
         'data-pa-send-internal type="button" disabled', 'data-pa-list aria-busy="true"'
     ], 'Interface admin')
@@ -99,7 +100,8 @@ def main():
         'Aucun courriel, SMS ou paiement ne sera déclenché.',
         'Aucun service externe n’a été utilisé.',
         "p_limit: 250",
-        'function syncActions()', 'function canAct()', 'needsRefresh = true',
+        'function draftSnapshot()', 'function draftChanged()', 'function syncLeaveWarning()',
+        'draftChanged() || current', 'function syncActions()', 'function canAct()', 'needsRefresh = true',
         'if (version !== rowsVersion) return;', 'await requireAdminAal2();',
         'form?.setAttribute(\'aria-busy\', \'true\')',
     ], 'Runtime admin')
