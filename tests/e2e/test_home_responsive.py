@@ -449,6 +449,16 @@ def test_home_partial_stylesheet_failure(browser):
                 page.set_viewport_size({"width": width, "height": 760})
                 bounds = nav.evaluate("""nav => ({
                     overflow: document.documentElement.scrollWidth > innerWidth + 2,
+                    scrollWidth: document.documentElement.scrollWidth,
+                    offenders: [...document.querySelectorAll('body *')].filter(el => {
+                        const r=el.getBoundingClientRect();
+                        return r.width > 0 && (r.right > innerWidth+2 || r.left < -2)
+                               && getComputedStyle(el).position !== 'fixed';
+                    }).slice(0,12).map(el => ({
+                        tag:el.tagName, className:typeof el.className==='string'?el.className:'',
+                        left:Math.round(el.getBoundingClientRect().left),
+                        right:Math.round(el.getBoundingClientRect().right)
+                    })),
                     links: [...nav.querySelectorAll('a')].map(a => {
                         const r=a.getBoundingClientRect();
                         return r.left >= -2 && r.right <= innerWidth + 2 && r.height >= 47.5;

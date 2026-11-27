@@ -163,3 +163,23 @@
     background:#0a1020;border-bottom:1px solid rgba(190,205,255,.24);box-shadow:0 22px 40px rgba(0,0,0,.35)
   }
 }
+
+/* Les très petits écrans et le zoom ne doivent pas dépendre des
+ * utilitaires de la feuille UX partagée pour réduire les pistes de grille. */
+@media(max-width:340px){
+  .home-page.home-sinjira-only :where(.section-head,.manifesto-grid,.cta-panel,.footer-grid){
+    grid-template-columns:minmax(0,1fr)
+  }
+  .home-page.home-sinjira-only :where(.section-head > div,.manifesto-panel,.feature-panel,.cta-panel > div,.footer-grid > div,.identity-name,.footer-brand){
+    min-width:0;max-width:100%;overflow-wrap:anywhere
+  }
+  .home-page.home-sinjira-only :where(.manifesto-panel,.feature-panel,.cta-panel){padding:16px}
+  .home-page.home-sinjira-only .manifesto-top{flex-wrap:wrap;gap:8px}
+  .home-page.home-sinjira-only .principle{grid-template-columns:42px minmax(0,1fr);gap:8px}
+  .home-page.home-sinjira-only .home-project{grid-template-columns:minmax(0,1fr)}
+  .home-page.home-sinjira-only .home-project img{margin:0}
+  .home-page.home-sinjira-only :where(.eyebrow,.btn,.identity-quote,.footer-bottom span){min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+  .home-page.home-sinjira-only .brand{gap:8px}
+  .home-page.home-sinjira-only .brand img{width:40px;height:40px;flex:0 0 40px}
+  .home-page.home-sinjira-only .brand-text span{font-size:.72rem;overflow-wrap:anywhere}
+}
