@@ -125,7 +125,9 @@ jobs:
       - name: Vérifier la structure Supabase
         run: python scripts/validate_supabase.py
       - name: Vérifier la bibliothèque canonique V24.4.61
-        run: python scripts/validate_library_v24_4_61.py
+        run: |
+          python scripts/validate_library_v24_4_61.py
+          node scripts/test_romans_collection_ux.cjs
       - name: Vérifier le mode gratuit verrouillé V24.4.62
         run: python scripts/validate_free_only_mode.py
       - name: Vérifier les notifications utilisateur V24.4.63
