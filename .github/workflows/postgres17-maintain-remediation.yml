@@ -1,0 +1,55 @@
+name: Sécurité — répétition migration MAINTAIN PG17
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/sql/postgres17_maintain_*.sql'
+      - '.github/workflows/postgres17-maintain-remediation.yml'
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-remediation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+      - name: Générer le fichier candidat avec le CLI officiel
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration new --help
+          supabase migration new sinjira_pg17_maintain_least_privilege
+          shopt -s nullglob
+          files=(supabase/migrations/*_sinjira_pg17_maintain_least_privilege.sql)
+          test "${#files[@]}" -eq 1
+          test -f "${files[0]}"
+          cp scripts/sql/postgres17_maintain_remediation.sql "${files[0]}"
+          printf 'Migration candidate: %s\n' "${files[0]}"
+          sha256sum "${files[0]}"
+      - name: Rejouer les migrations sur la pile locale isolée
+        run: supabase start
+      - name: Contrôler la migration et ses postconditions
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --local
+          cp scripts/sql/postgres17_maintain_postcheck.test.sql supabase/tests/postgres17_maintain_postcheck.test.sql
+          supabase test db supabase/tests/postgres17_maintain_postcheck.test.sql --local
+          supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local
+          supabase test db supabase/tests/privileged_rpc_effective_acl.test.sql --local
+      - name: Arrêter la pile locale
+        if: always()
+        run: supabase stop --no-backup || true
