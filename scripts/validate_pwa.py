@@ -219,6 +219,17 @@ def validate_service_worker(errors: list[str]) -> None:
     ]:
         if required not in refs:
             errors.append(f'sw.js CORE omet la ressource mobile: {required}')
+    # Les ressources publiques de l'accueil et de sa navigation sont
+    # disponibles même lors d'une première visite hors connexion après installation.
+    for required in (
+        '/assets/css/site-personality-v25.css', '/assets/js/site-personality-v25.js',
+        '/assets/css/sinjira-universe-nav-v2.css', '/assets/js/sinjira-universe-nav-v2.js',
+        '/assets/js/home-session-lazy-v24-5-1.js', '/assets/icons/favicon.svg',
+    ):
+        if required not in refs:
+            errors.append(f'sw.js CORE omet une ressource publique de navigation: {required}')
+    if '/assets/js/v19-session.js' in refs:
+        errors.append('sw.js CORE ne doit pas précharger le module de session.')
     for raw in refs:
         target = local_target(raw, ROOT)
         if target is None or not target.exists():
