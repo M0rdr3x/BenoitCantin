@@ -1,10 +1,25 @@
-import './sinjira-preorder-cost-summary-v24-5-25.js';
-import './sinjira-preorder-tax-estimate-v24-5-27.js';
+import './sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46';
+import './sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46';
 import { escapeHtml, getCurrentUser, getSupabase, isSinjiraBackendConfigured } from './sinjira-supabase.js';
 
 const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
 const roots = [...document.querySelectorAll('[data-preorder-fulfillment]')];
 const s = getSupabase();
+const states = new WeakMap();
+function state(root) {
+  if (!states.has(root)) states.set(root, { estimateVersion: 0, loading: false, saving: false, preferenceVersion: 0, dirty: false });
+  return states.get(root);
+}
+function preferenceControls(n, disabled) {
+  [n.method, n.pickupSelect, n.savePreference].forEach(control => { if (control) control.disabled = disabled; });
+}
+function invalidateEstimate(root) {
+  const n = nodes(root);
+  state(root).estimateVersion++;
+  if (n.estimateButton) n.estimateButton.disabled = false;
+  n.estimateResult?.setAttribute('aria-busy', 'false');
+  status(n.estimateResult, 'Options modifiées. Calculez une nouvelle estimation.', 'info');
+}
 
 function money(cents, currency = 'CAD') {
   if (!Number.isFinite(Number(cents))) return '—';
@@ -97,19 +112,25 @@ function renderPickups(n, options) {
 
 async function estimate(root) {
   const n = nodes(root);
+  const st = state(root);
+  const version = ++st.estimateVersion;
+  const current = () => version === st.estimateVersion;
   const zone = String(n.zone?.value || '');
   const quantity = Number(n.quantity?.value || 1);
-  if (!zone) {
+  if (!zone || !Number.isInteger(quantity) || quantity < 1 || quantity > 5) {
     status(n.estimateResult, 'Choisissez une zone de livraison.', 'error');
     return;
   }
   if (n.estimateButton) n.estimateButton.disabled = true;
+  n.estimateResult?.setAttribute('aria-busy', 'true');
+  status(n.estimateResult, 'Calcul de l’estimation…', 'info');
   try {
     const data = await rpc('product_preorder_shipping_estimate', {
       p_product_slug: PRODUCT_SLUG,
       p_zone_code: zone,
       p_quantity: quantity
     });
+    if (!current()) return;
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) {
       status(n.estimateResult, 'Aucune estimation n’est publiée pour cette zone actuellement.', 'info');
@@ -121,37 +142,72 @@ async function estimate(root) {
     n.estimateResult.dataset.kind = 'success';
     n.estimateResult.innerHTML = `<strong>Estimation : ${escapeHtml(min)} à ${escapeHtml(max)}</strong><span>pour ${quantity} exemplaire(s), zone « ${escapeHtml(row.zone_label)} ». Les frais de livraison seront à la charge du client. Cette fourchette est indicative : le coût final devra être affiché et confirmé avant tout futur achat.</span>${row.estimate_note ? `<small>${escapeHtml(row.estimate_note)}</small>` : ''}`;
   } catch (error) {
-    status(n.estimateResult, error?.message || 'Impossible de calculer l’estimation.', 'error');
+    if (current()) status(n.estimateResult, 'Impossible de calculer l’estimation. Réessayez.', 'error');
   } finally {
-    if (n.estimateButton) n.estimateButton.disabled = false;
+    if (current()) {
+      if (n.estimateButton) n.estimateButton.disabled = false;
+      n.estimateResult?.setAttribute('aria-busy', 'false');
+    }
   }
 }
 
-async function loadPreference(root, user, options) {
+async function loadPreference(root, user, options, { preserveDraft = false } = {}) {
   const n = nodes(root);
-  if (!user) {
-    show(n.preferenceAuth, true);
+  const st = state(root);
+  const version = ++st.preferenceVersion;
+  const currentRequest = () => version === st.preferenceVersion;
+  st.loading = true;
+  const identity = user?.id || null;
+  if (st.identity !== identity) {
+    st.identity = identity;
+    st.dirty = false;
+    if (n.method) n.method.value = 'undecided';
+    if (n.pickupSelect) n.pickupSelect.value = '';
     show(n.preferencePanel, false);
-    show(n.preferenceNoPreorder, false);
-    return;
   }
-  show(n.preferenceAuth, false);
-  let current = null;
+  preferenceControls(n, true);
+  n.preferencePanel?.setAttribute('aria-busy', 'true');
   try {
-    current = await rpc('product_preorder_fulfillment_status', { p_product_slug: PRODUCT_SLUG });
+    if (!user) {
+      st.dirty = false;
+      show(n.preferenceAuth, true);
+      show(n.preferencePanel, false);
+      show(n.preferenceNoPreorder, false);
+      return false;
+    }
+    show(n.preferenceAuth, false);
+    show(n.preferenceNoPreorder, false);
+    const current = await rpc('product_preorder_fulfillment_status', { p_product_slug: PRODUCT_SLUG });
+    if (!currentRequest()) return false;
+    if (!current) {
+      st.dirty = false;
+      show(n.preferencePanel, false);
+      show(n.preferenceNoPreorder, true);
+      return false;
+    }
+    if (!preserveDraft || !st.dirty || n.preferencePanel.hidden) {
+      if (n.method) n.method.value = current.fulfillment_preference || 'undecided';
+      if (n.pickupSelect) n.pickupSelect.value = current.pickup_code || '';
+      st.dirty = false;
+    }
+    show(n.preferencePanel, true);
+    togglePickupChoice(n, options);
+    if (!st.saving) preferenceControls(n, false);
+    if (st.dirty) status(n.preferenceStatus, 'Votre choix non enregistré est conservé.', 'info');
+    return true;
   } catch {
-    current = null;
+    if (currentRequest()) {
+      // Un échec de lecture n'est pas une preuve d'absence de réservation.
+      show(n.preferenceNoPreorder, false);
+      status(n.preferenceStatus, 'Impossible de vérifier votre réservation. Rechargez la page avant de modifier votre préférence.', 'error');
+    }
+    return false;
+  } finally {
+    if (currentRequest()) {
+      st.loading = false;
+      n.preferencePanel?.setAttribute('aria-busy', 'false');
+    }
   }
-  if (!current) {
-    show(n.preferencePanel, false);
-    show(n.preferenceNoPreorder, true);
-    return;
-  }
-  show(n.preferenceNoPreorder, false);
-  show(n.preferencePanel, true);
-  if (n.method) n.method.value = current.fulfillment_preference || 'undecided';
-  if (n.pickupSelect && current.pickup_code) n.pickupSelect.value = current.pickup_code;
-  togglePickupChoice(n, options);
 }
 
 function togglePickupChoice(n, options) {
@@ -162,9 +218,15 @@ function togglePickupChoice(n, options) {
 
 async function savePreference(root, options) {
   const n = nodes(root);
+  const st = state(root);
+  if (st.saving || st.loading || n.savePreference?.disabled || n.preferencePanel?.hidden) return;
   const method = String(n.method?.value || 'undecided');
   const pickupCode = method === 'pickup' ? String(n.pickupSelect?.value || '') : '';
-  if (n.savePreference) n.savePreference.disabled = true;
+  st.saving = true;
+  preferenceControls(n, true);
+  n.preferencePanel?.setAttribute('aria-busy', 'true');
+  status(n.preferenceStatus, 'Enregistrement en cours…', 'info');
+  let confirmed = false;
   try {
     const ok = await rpc('product_preorder_set_fulfillment_preference', {
       p_product_slug: PRODUCT_SLUG,
@@ -177,12 +239,22 @@ async function savePreference(root, options) {
       : method === 'pickup'
         ? 'Préférence enregistrée : ramassage sur place. Aucun frais de livraison ne sera associé au ramassage; le lieu et la plage de retrait devront être confirmés lorsqu’ils seront publiés.'
         : 'Préférence enregistrée : vous déciderez plus tard entre livraison et ramassage.';
+    confirmed = true;
+    st.dirty = false;
     status(n.preferenceStatus, message, 'success');
-    await loadPreference(root, await getCurrentUser(), options);
-  } catch (error) {
-    status(n.preferenceStatus, error?.message || 'Impossible d’enregistrer la préférence.', 'error');
+  } catch {
+    status(n.preferenceStatus, 'Enregistrement non confirmé. Votre choix est conservé. Rechargez la page pour vérifier avant de réessayer.', 'error');
   } finally {
-    if (n.savePreference) n.savePreference.disabled = false;
+    st.saving = false;
+    n.preferencePanel?.setAttribute('aria-busy', 'false');
+  }
+  if (confirmed) {
+    try {
+      const available = await loadPreference(root, await getCurrentUser(), options);
+      if (!available) status(n.preferenceStatus, 'Préférence enregistrée. Rechargez la page pour actualiser votre réservation.', 'success');
+    } catch {
+      status(n.preferenceStatus, 'Préférence enregistrée. Rechargez la page pour actualiser votre réservation.', 'success');
+    }
   }
 }
 
@@ -198,11 +270,26 @@ async function initRoot(root, user) {
   renderZones(n, options || {});
   renderPickups(n, options || {});
   n.estimateButton?.addEventListener('click', () => estimate(root));
-  n.method?.addEventListener('change', () => togglePickupChoice(n, options || {}));
+  [n.zone, n.quantity].forEach(control => control?.addEventListener('change', () => invalidateEstimate(root)));
+  n.method?.addEventListener('change', () => {
+    state(root).dirty = true;
+    togglePickupChoice(n, options || {});
+    status(n.preferenceStatus, 'Choix modifié. Enregistrez votre préférence.', 'info');
+  });
+  n.pickupSelect?.addEventListener('change', () => {
+    state(root).dirty = true;
+    status(n.preferenceStatus, 'Choix modifié. Enregistrez votre préférence.', 'info');
+  });
   n.savePreference?.addEventListener('click', () => savePreference(root, options || {}));
   await loadPreference(root, user, options || {});
   window.addEventListener('sinjira:preorder-updated', async () => {
-    await loadPreference(root, await getCurrentUser(), options || {});
+    if (state(root).saving) return;
+    try {
+      await loadPreference(root, await getCurrentUser(), options || {}, { preserveDraft: true });
+    } catch {
+      preferenceControls(n, true);
+      status(n.preferenceStatus, 'Impossible de vérifier votre session. Rechargez la page.', 'error');
+    }
   });
 }
 

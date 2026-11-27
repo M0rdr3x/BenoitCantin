@@ -114,7 +114,7 @@ def main():
         if marker not in public: errors.append(f'Interface publique fiscale incomplète: {marker}')
 
     if "import './sinjira-admin-preorder-tax-v24-5-27.js';" not in read(ADMIN_LOADER): errors.append('Le module admin V24.5.27 n’est pas chargé.')
-    if "import './sinjira-preorder-tax-estimate-v24-5-27.js';" not in read(PUBLIC_LOADER): errors.append('Le module public V24.5.27 n’est pas chargé.')
+    if "import './sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46';" not in read(PUBLIC_LOADER): errors.append('Le module public V24.5.27 n’est pas chargé.')
     if "'preorder_tax_estimate_profiles'" not in read(SCHEMA): errors.append('La table fiscale manque au manifeste production.')
 
     forbidden=['stripe','paypal','avalara','taxjar','vertex','twilio','api.resend.com','api.openai.com','canada post','canadapost','fedex','purolator','shippo','easypost']

@@ -14,3 +14,17 @@
 .sinjira-cost-summary-guard strong{color:#fff}
 @media(max-width:900px){.sinjira-cost-summary-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.sinjira-cost-summary-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.sinjira-cost-summary{padding:1rem}.sinjira-cost-summary-controls{grid-template-columns:1fr}}
+
+/* Résumé et taxes : reflow, commandes tactiles, état masqué explicite. */
+.sinjira-cost-summary,.sinjira-cost-summary :is(.sinjira-cost-summary-controls,.sinjira-cost-summary-grid,label,.sinjira-cost-summary-grid>div){box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere}
+.sinjira-cost-summary [hidden]{display:none!important}
+.sinjira-cost-summary-controls select{box-sizing:border-box;min-width:0;max-width:100%;min-height:48px;font-size:max(16px,1rem)}
+.sinjira-cost-summary-controls select:focus-visible{outline:3px solid #a1f4ec;outline-offset:2px}
+@media(max-width:560px){.sinjira-cost-summary{padding:clamp(10px,3vw,16px)}.sinjira-cost-summary-grid>div{padding:clamp(10px,3vw,16px)}}
+
+/* WebKit : ne pas imposer les largeurs intrinsèques des options et textes agrandis. */
+.sinjira-cost-summary :is(.sinjira-cost-summary-head,.sinjira-cost-summary-guard,.sinjira-cost-summary-grid>div>*,.sinjira-cost-summary-controls label>*){box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.sinjira-cost-summary-grid>div,.sinjira-cost-summary-controls label{grid-template-columns:minmax(0,1fr)}
+.sinjira-cost-summary-controls select{display:block;width:100%;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:900px){.sinjira-cost-summary-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:560px){.sinjira-cost-summary-controls{grid-template-columns:minmax(0,1fr)}.sinjira-cost-summary-guard{padding:10px}.sinjira-cost-summary-grid span{letter-spacing:normal}}
