@@ -18,3 +18,11 @@
 .preorder-admin-list{display:grid;gap:10px}.preorder-admin-row{display:grid;grid-template-columns:minmax(180px,1.3fr) repeat(4,minmax(100px,.7fr));gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.025)}.preorder-admin-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.preorder-admin-row span{color:var(--muted);font-size:.86rem}.preorder-admin-row .active{color:#b9f3d4}.preorder-admin-row .cancelled{color:#ffb7ad}.preorder-admin-empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:16px}
 @media(max-width:980px){.preorder-admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.preorder-admin-layout{grid-template-columns:1fr}.preorder-admin-row{grid-template-columns:1fr 1fr}.preorder-admin-row strong{grid-column:1/-1}}
 @media(max-width:640px){.preorder-admin-hero{padding-top:34px}.preorder-admin-safety{display:grid}.preorder-admin-safety strong{white-space:normal}.preorder-admin-stat-grid,.preorder-format-grid,.preorder-admin-contract,.preorder-announcement-form{grid-template-columns:1fr}.preorder-announcement-form .wide{grid-column:auto}.preorder-admin-card-head,.preorder-admin-list-head{display:grid}.preorder-admin-row{grid-template-columns:1fr}.preorder-admin-row strong{grid-column:auto}.preorder-admin-filters{display:grid}.preorder-admin-filters select{width:100%;min-width:0}.preorder-announcement-actions{display:grid}.preorder-announcement-actions .btn{width:100%}}
+
+/* Pagination locale : commandes accessibles sans rétrécir les références. */
+.preorder-logistics-pagination{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-block:16px}
+.preorder-logistics-pagination .btn{min-height:44px;white-space:normal}
+.preorder-logistics-pagination p{margin:0;overflow-wrap:anywhere}
+.preorder-admin-row strong{white-space:normal;overflow-wrap:anywhere}
+.preorder-admin-row>span{min-width:0;overflow-wrap:anywhere}
+@media(max-width:480px){.preorder-logistics-pagination{display:grid;grid-template-columns:minmax(0,1fr)}.preorder-logistics-pagination .btn{width:100%}}
