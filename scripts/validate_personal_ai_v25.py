@@ -84,6 +84,17 @@ if JS.count("catch(error){clearWorkspace();status(friendlyError(error),'error')}
 for marker in ("if(!data?.ok)", "state=result.state||{}", "globalThis.crypto?.getRandomValues?.(bytes)"):
     forbid(JS,marker,f'Web: succès ou entropie ambiguë {marker}')
 
+SESSION=(ROOT/'supabase/functions/personal-ai/session.ts').read_text('utf-8')
+for marker in ("claims.sub !== userId", "claims.aal !== 'aal2'", "claims.session_id.length !== 36",
+               "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS", "client.rpc('security_list_sessions')",
+               "result.error !== null", "Array.isArray(result.data)", "current.length !== 1",
+               "current[0].id !== sessionId", "persistSession: false"):
+    need(SESSION,marker,f'Session: garde absente {marker}')
+forbid(SESSION,"Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')",'Session: clé privilégiée interdite')
+need(EDGE,"await requireActivePersonalAiSession(token, user.id);",'Edge: session active obligatoire')
+if EDGE.find("await requireActivePersonalAiSession(token, user.id);") > EDGE.find("await service.rpc('service_personal_ai_evaluate_access'"):
+    errors.append('Edge: session active doit précéder le moteur de risque')
+
 if errors:
     print(f'ECHEC contrat Mon IA V25: {len(errors)} problème(s).')
     for error in errors: print('- '+error)

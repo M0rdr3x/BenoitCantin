@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredPersonalAiUser } from '../_shared/auth.ts';
+import { requireActivePersonalAiSession } from './session.ts';
 
 const MAX_REQUEST_BYTES = 16 * 1024;
 // Le scope est fixé dans service_personal_ai_evaluate_access; l'Edge ne peut pas le réduire.
@@ -121,12 +122,13 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return privateJson({ ok:false, code:'METHOD_NOT_ALLOWED', error:'Méthode non autorisée.' }, 405);
   try {
-    const { user, service } = await requiredPersonalAiUser(req);
+    const { user, service, token } = await requiredPersonalAiUser(req);
     const body = await readBoundedJson(req);
     rejectClientIdentity(body);
     const deviceKey = body.device_key;
     if (typeof deviceKey !== 'string' || deviceKey.length < 16 || deviceKey.length > 128 || /[^!-~]/.test(deviceKey)) return privateJson({ ok:false, code:'DEVICE_KEY_INVALID', error:'Identifiant d’appareil invalide.' }, 400);
 
+    await requireActivePersonalAiSession(token, user.id);
     const geo = trustedGeo(req);
     const { data: security, error: securityError } = await service.rpc('service_personal_ai_evaluate_access', {
       p_user_id:user.id, p_device_key:deviceKey,
