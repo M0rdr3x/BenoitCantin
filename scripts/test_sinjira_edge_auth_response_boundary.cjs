@@ -22,9 +22,9 @@ const code=extract('authenticatedContext','assuranceLevel')+
     .replace('context: Awaited<ReturnType<typeof authenticatedContext>>','context')+
   '\nglobalThis.gates={authenticatedContext,assuranceLevel,assertAdminMfa,assertSensitiveMfa,assertVaultMfa,assertPersonalAiMfa};';
 const validAal={currentLevel:'aal2',nextLevel:'aal2'};
-function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,aalReject=false,authReject=false,adminReject=false,settingsReject=false,clientReject=false,settings={data:null,error:null}}={}){
+function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,aalReject=false,authReject=false,adminReject=false,settingsReject=false,clientReject=false,omitAuthError=false,omitAdminError=false,omitAalError=false,settings={data:null,error:null}}={}){
   let assuranceCalls=0,settingsCalls=0;
-  const service={rpc:async()=>{if(adminReject)throw new Error('synthetic private RPC detail');return {data:admin,error:adminError}},
+  const service={rpc:async()=>{if(adminReject)throw new Error('synthetic private RPC detail');return {data:admin,...(omitAdminError?{}:{error:adminError})}},
     from(table){settingsCalls++;assert.equal(table,'security_user_settings');return {
       select(columns){assert.equal(columns,'user_id,sensitive_step_up');return {
         eq(column,value){assert.equal(column,'user_id');assert.equal(value,'test-user');return {
@@ -32,8 +32,8 @@ function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,a
         };}
       };}
     };},
-    auth:{getUser:async()=>{if(authReject)throw new Error('synthetic private Auth detail');return {data:user===null?null:{user},error:authError}},
-      mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;if(aalReject)throw new Error('synthetic provider detail');return {data:aal,error:aalError}}}}};
+    auth:{getUser:async()=>{if(authReject)throw new Error('synthetic private Auth detail');return {data:user===null?null:{user},...(omitAuthError?{}:{error:authError})}},
+      mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;if(aalReject)throw new Error('synthetic provider detail');return {data:aal,...(omitAalError?{}:{error:aalError})}}}}};
   const sandbox={serviceClient:()=>{if(clientReject)throw new Error('synthetic private configuration detail');return service},bearerToken:()=> 'synthetic-token',console:{error(){}}};
   vm.runInNewContext(code,sandbox,{timeout:1000});
   return {gates:sandbox.gates,context:{user:{id:'test-user'},service,token:'synthetic-token'},calls:()=>assuranceCalls,settingsCalls:()=>settingsCalls};
@@ -129,6 +129,31 @@ async function main(){
   await assert.rejects(rejectedSettings.gates.assertSensitiveMfa(rejectedSettings.context),{message:'SECURITY_STATE_UNAVAILABLE'});
   assert.equal(rejectedSettings.calls(),0);
   assert.equal(rejectedSettings.settingsCalls(),1);
-  console.log('PASS: Auth, Admin, AAL, préférence MFA, frontières privées et exceptions fournisseur.');
+  // Seul error:null constitue le résultat explicite de succès du SDK.
+  for(const invalid of [false,0,'']){
+    const auth=harness({authError:invalid});
+    await assert.rejects(auth.gates.authenticatedContext({}),{message:'AUTH_REQUIRED'});
+    const admin=harness({adminError:invalid});
+    await assert.rejects(admin.gates.assertAdminMfa(admin.context),{message:'ADMIN_REQUIRED'});
+    assert.equal(admin.calls(),0);
+    const mfa=harness({aalError:invalid});
+    await assert.rejects(mfa.gates.assuranceLevel(mfa.context),{message:'MFA_STATE_UNAVAILABLE'});
+    const pref=harness({settings:{data:{...own,sensitive_step_up:false},error:invalid}});
+    await assert.rejects(pref.gates.assertSensitiveMfa(pref.context),{message:'SECURITY_STATE_UNAVAILABLE'});
+    assert.equal(pref.calls(),0);
+  }
+  for(const [opts,gate,expected] of [
+    [{omitAuthError:true},'authenticatedContext','AUTH_REQUIRED'],
+    [{omitAdminError:true},'assertAdminMfa','ADMIN_REQUIRED'],
+    [{omitAalError:true},'assuranceLevel','MFA_STATE_UNAVAILABLE'],
+    [{settings:{data:{...own,sensitive_step_up:false}}},'assertSensitiveMfa','SECURITY_STATE_UNAVAILABLE'],
+    [{user:{id:' '}},'authenticatedContext','AUTH_REQUIRED'],
+    [{user:{id:' test-user '}},'authenticatedContext','AUTH_REQUIRED'],
+    [{aal:Object.assign([],{currentLevel:'aal2',nextLevel:'aal2'})},'assuranceLevel','MFA_STATE_UNAVAILABLE']
+  ]){
+    const h=harness(opts);
+    await assert.rejects(h.gates[gate](h.context),{message:expected});
+  }
+  console.log('PASS: Auth, Admin, AAL, préférence MFA, frontières privées et contrats SDK stricts.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
