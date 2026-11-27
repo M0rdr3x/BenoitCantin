@@ -79,6 +79,23 @@ def main() -> int:
     require(unconfirmed_index < intact_index < confirmed_index,
             'ordre obligatoire: refus sans confirmation → entrée intacte → suppression confirmée')
 
+    # Deux comptes AAL2 réellement distincts, sans contournement des permissions.
+    for marker in (
+        'other_aal1, other_uid, _, _ = signup(',
+        'other_uid != _uid',
+        'jwt_claims(other_aal2).get("sub") == other_uid',
+        'jwt_claims(other_aal2).get("aal") == "aal2"',
+        'vault(other_aal2, action, vault_session_id=session2, **extra)',
+        '403, "VAULT_SESSION_INVALID", f"isolation intercomptes {action}"',
+        'ok(other_aal2, "revoke_session", vault_session_id=session2).get("revoked") is False',
+        'la capacité et le contenu du propriétaire doivent rester intacts',
+    ):
+        require(marker in smoke, f'preuve isolation intercomptes manquante: {marker}')
+    isolation_start = smoke.index('# Une capacité valide volée par un autre compte AAL2')
+    isolation_end = smoke.index('la capacité et le contenu du propriétaire doivent rester intacts', isolation_start)
+    for action in ('list_entries', 'create_entry', 'update_entry', 'delete_entry', 'revoke_session'):
+        require(f'"{action}"' in smoke[isolation_start:isolation_end], f'isolation manquante: {action}')
+
     # Le contenu de test doit être explicitement synthétique et non intime.
     require('CONTENT_1 = "Donnée synthétique de test local — aucune information personnelle réelle."' in smoke,
             'marqueur synthétique initial inattendu')
