@@ -102,8 +102,7 @@ def totp_code(secret: str, *, timestamp: int | None = None) -> str:
     return f"{binary % 1_000_000:06d}"
 
 
-def signup() -> tuple[str, str, str, str]:
-    email = "sinjira-sensitive-aal2-smoke@example.com"
+def signup(email: str = "sinjira-sensitive-aal2-smoke@example.com", pseudo: str = "Smoke AAL2 V25") -> tuple[str, str, str, str]:
     password = "SINJIRA-Local-AAL2-2026!"
     response = request(
         "POST",
@@ -112,7 +111,7 @@ def signup() -> tuple[str, str, str, str]:
             "email": email,
             "password": password,
             "data": {
-                "pseudo": "Smoke AAL2 V25",
+                "pseudo": pseudo,
                 "birth_date": "1990-01-15",
                 "date_of_birth": "1990-01-15",
                 "gender": "Homme",
