@@ -19,7 +19,7 @@ function harness() {
     const store = stores.get(name);
     return {
       async put(req, response) { writes.push({ cache: name, url: key(req) }); store.set(key(req), response); },
-      async match(req) { return store.get(key(req)); },
+      async match(req) { return store.get(key(req))?.clone(); },
     };
   };
   const caches = {
@@ -27,7 +27,7 @@ function harness() {
     keys: async () => [...stores.keys()],
     delete: async name => stores.delete(name),
     async match(req) {
-      for (const store of stores.values()) if (store.has(key(req))) return store.get(key(req));
+      for (const store of stores.values()) if (store.has(key(req))) return store.get(key(req)).clone();
     },
   };
   const self = {
@@ -322,4 +322,51 @@ test('précache : échec tardif annule également les lots précédents', async 
   assert.ok(h.requests.length>4);
   assert.equal(h.writes.length,0);
   assert.deepEqual([...h.stores.keys()],['another-app-cache']);
+});
+
+
+test('accueil hors ligne : signature, icône, navigation et chargeur public disponibles', async () => {
+  const h=harness(); await h.lifecycle('install');
+  h.writes.length=0; h.setOnline(false);
+  for (const [path,destination] of [
+    ['/assets/css/site-personality-v25.css','style'],
+    ['/assets/js/site-personality-v25.js','script'],
+    ['/assets/css/sinjira-universe-nav-v2.css','style'],
+    ['/assets/js/sinjira-universe-nav-v2.js','script'],
+    ['/assets/js/home-session-lazy-v24-5-1.js','script'],
+    ['/assets/icons/favicon.svg','image'],
+  ]) {
+    const asset=await h.request(path+'?v=offline-fixture',{destination});
+    assert.equal(await asset.text(),'precache:'+path);
+  }
+  assert.equal(await (await h.request('/')).text(),'precache:/');
+  assert.equal(await (await h.request('/compte/')).text(),'precache:/offline.html');
+  assert.equal(await (await h.request('/admin/sinjira/')).text(),'precache:/offline.html');
+  assert.equal((await h.request('/assets/js/v19-session.js?v=offline-fixture',{destination:'script'})).type,'error');
+  assert.equal(h.writes.length,0);
+});
+
+
+test('enregistrement PWA : accueil après chargement, délai borné et routes privées inchangées', () => {
+  const installer=readFileSync(new URL('../assets/js/sinjira-pwa-install.js',import.meta.url),'utf8');
+  const start=installer.indexOf('  function registerWorker(){');
+  const end=installer.indexOf('  function loadMobileAccountShell(){',start);
+  assert.ok(start>=0&&end>start);
+  function fixture(path,readyState,idle=true,supported=true){
+    const events=new Map(),pending=[],registrations=[];
+    const w={addEventListener:(name,cb,opts)=>{assert.equal(opts.once,true);events.set(name,cb);},
+      setTimeout:(cb,ms)=>{assert.equal(ms,1000);pending.push(cb);}};
+    if(idle)w.requestIdleCallback=(cb,opts)=>{assert.equal(opts.timeout,2000);pending.push(cb);};
+    const navigator=supported?{serviceWorker:{register:(url,opts)=>{registrations.push([url,opts.scope]);return Promise.resolve();}}}:{};
+    runInNewContext(installer.slice(start,end)+'\nregisterWorker();',{w,d:{readyState},navigator,location:{pathname:path}});
+    return {events,pending,registrations};
+  }
+  const home=fixture('/','interactive');
+  assert.equal(home.pending.length,0);assert.equal(home.registrations.length,0);
+  home.events.get('load')();assert.equal(home.pending.length,1);
+  home.pending[0]();home.pending[0]();assert.deepEqual(home.registrations,[['/sw.js','/']]);
+  const fallback=fixture('/index.html','complete',false);
+  assert.equal(fallback.registrations.length,0);fallback.pending[0]();assert.equal(fallback.registrations.length,1);
+  assert.equal(fixture('/compte/','loading').registrations.length,1);
+  assert.equal(fixture('/','complete',true,false).pending.length,0);
 });

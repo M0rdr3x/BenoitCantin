@@ -219,6 +219,17 @@ def validate_service_worker(errors: list[str]) -> None:
     ]:
         if required not in refs:
             errors.append(f'sw.js CORE omet la ressource mobile: {required}')
+    # Les ressources publiques de l'accueil et de sa navigation sont
+    # disponibles même lors d'une première visite hors connexion après installation.
+    for required in (
+        '/assets/css/site-personality-v25.css', '/assets/js/site-personality-v25.js',
+        '/assets/css/sinjira-universe-nav-v2.css', '/assets/js/sinjira-universe-nav-v2.js',
+        '/assets/js/home-session-lazy-v24-5-1.js', '/assets/icons/favicon.svg',
+    ):
+        if required not in refs:
+            errors.append(f'sw.js CORE omet une ressource publique de navigation: {required}')
+    if '/assets/js/v19-session.js' in refs:
+        errors.append('sw.js CORE ne doit pas précharger le module de session.')
     for raw in refs:
         target = local_target(raw, ROOT)
         if target is None or not target.exists():
@@ -264,6 +275,8 @@ def validate_install_runtime(errors: list[str]) -> None:
         ('returnFocus.focus()', 'Retour du focus après fermeture PWA absent.'),
         ("main.setAttribute('tabindex','-1')", 'Destination de repli du focus PWA absente.'),
         ("navigator.serviceWorker.register('/sw.js'", 'Enregistrement global du Service Worker absent.'),
+        ("w.requestIdleCallback(start,{timeout:2000})", 'Enregistrement au repos borné absent.'),
+        ("w.addEventListener('load',schedule,{once:true})", 'Enregistrement accueil avant chargement complet.'),
         ('apple-touch-icon', 'Icône d’écran d’accueil iOS absente.'),
         ('Sur iPhone/iPad', 'Aide d’installation iPhone/iPad absente.'),
         ('display-mode: standalone', 'Détection du mode installé absente.'),
@@ -278,7 +291,7 @@ def validate_install_runtime(errors: list[str]) -> None:
     exact_card_selector = "d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]')"
     if text.count(exact_card_selector) < 3 or "d.querySelector('[data-sinjira-pwa-install]')" in text:
         errors.append("Le runtime PWA peut confondre sa balise script avec la carte interactive.")
-    if '/assets/js/sinjira-pwa-install.js?v=24.4.102' not in site_text:
+    if '/assets/js/sinjira-pwa-install.js?v=24.4.103' not in site_text:
         errors.append('site.js ne charge pas le runtime PWA historique compatible.')
     if 'serviceWorker.register' in session_text:
         errors.append('v19-session.js enregistre encore un deuxième Service Worker.')
