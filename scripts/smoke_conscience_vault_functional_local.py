@@ -135,6 +135,15 @@ def main() -> int:
     bad_ttl = vault(aal2, "open_session", device_key=DEVICE_KEY, ttl_seconds=59)
     expect_code(bad_ttl, 400, "VAULT_TTL_INVALID", "TTL trop court")
 
+    # Les types JSON ne doivent jamais être convertis en TTL ou identifiant.
+    for invalid_ttl in ("60", True, False, None, 60.5, 601, [], {}):
+        expect_code(vault(aal2, "open_session", device_key=DEVICE_KEY, ttl_seconds=invalid_ttl),
+                    400, "VAULT_TTL_INVALID", "TTL malformé")
+    for invalid_key in (None, True, 1234567890123456, "short", "x" * 129,
+                        DEVICE_KEY + "\n", DEVICE_KEY + "\t", DEVICE_KEY + " ", DEVICE_KEY + "é"):
+        expect_code(vault(aal2, "open_session", device_key=invalid_key, ttl_seconds=60),
+                    400, "DEVICE_KEY_INVALID", "clé appareil malformée")
+
     injected = vault(aal2, "open_session", device_key=DEVICE_KEY, ttl_seconds=60,
                      user_id="00000000-0000-0000-0000-000000000000")
     expect_code(injected, 400, "CLIENT_IDENTITY_FORBIDDEN", "identité client injectée")
@@ -150,6 +159,23 @@ def main() -> int:
     entries = ok(aal2, "list_entries", vault_session_id=session1).get("entries")
     require(isinstance(entries, list) and len(entries) == 1 and isinstance(entries[0], dict), "entrée synthétique attendue")
     require(entries[0].get("content_payload") == CONTENT_1, "contenu synthétique initial inattendu")
+
+    # Vérifier les refus sans mutation et sans prolonger la capacité.
+    for invalid_id in (None, True, 1, [], {}, entry_id + "\n", entry_id + " "):
+        expect_code(vault(aal2, "update_entry", vault_session_id=session1, entry_id=invalid_id,
+                          entry_type=ENTRY_TYPE, content_payload=CONTENT_2),
+                    400, "VAULT_ENTRY_ID_INVALID", "UUID entrée malformé")
+    for invalid_content in (None, True, 123, [], {}, ""):
+        expect_code(vault(aal2, "update_entry", vault_session_id=session1, entry_id=entry_id,
+                          entry_type=ENTRY_TYPE, content_payload=invalid_content),
+                    400, "VAULT_ENTRY_CONTENT_INVALID", "contenu malformé")
+    # Recréer la capacité courte avant la prochaine phase si les tests prennent du temps.
+    session1 = open_session(aal2)
+    unchanged = ok(aal2, "list_entries", vault_session_id=session1).get("entries")
+    require(isinstance(unchanged, list) and len(unchanged) == 1
+            and unchanged[0].get("id") == entry_id
+            and unchanged[0].get("content_payload") == CONTENT_1,
+            "aucune mutation après les refus de données malformées")
 
     updated = ok(aal2, "update_entry", vault_session_id=session1, entry_id=entry_id,
                  entry_type=ENTRY_TYPE, content_payload=CONTENT_2)
@@ -170,6 +196,10 @@ def main() -> int:
 
     expect_code(vault(aal2, "delete_entry", vault_session_id=session2, entry_id=entry_id),
                 409, "VAULT_DELETE_CONFIRMATION_REQUIRED", "suppression sans confirmation humaine")
+    for invalid_confirmation in (False, None, 1, "true", "false", [], {}):
+        expect_code(vault(aal2, "delete_entry", vault_session_id=session2, entry_id=entry_id,
+                          human_confirmed_delete=invalid_confirmation),
+                    409, "VAULT_DELETE_CONFIRMATION_REQUIRED", "confirmation non booléenne ou négative")
     entries = ok(aal2, "list_entries", vault_session_id=session2).get("entries")
     require(isinstance(entries, list) and len(entries) == 1 and entries[0].get("id") == entry_id,
             "l’entrée doit rester intacte après une suppression non confirmée")
