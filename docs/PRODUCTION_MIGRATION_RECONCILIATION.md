@@ -9,3 +9,5 @@ Contrôle en lecture seule, distinct de toute autorisation de déploiement.
 5. Toute application exige encore le processus de revue et d'autorisation de production. Ne pas utiliser migration repair, include-all ou reset pour contourner le blocage. Ce contrôle ne modifie ni les manifestes, ni la base, ni le workflow de déploiement.
 
 Le mode `--self-test` utilise uniquement des inventaires synthétiques. Il est exécuté par la CI de validation du ledger.
+
+Le workflow générique exécute désormais `--remote-dir` sur une copie temporaire issue de `supabase migration fetch --linked`, avant le dry-run et de nouveau après l'approbation. Toute divergence bloque la suite. Les fichiers SQL sont supprimés de la copie temporaire et ne sont plus publiés en artefact; seul le rapport JSON de métadonnées est autorisé. Le résultat ne constitue pas une approbation de déploiement ni une preuve d'équivalence SQL.

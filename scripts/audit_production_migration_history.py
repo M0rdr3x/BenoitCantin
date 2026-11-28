@@ -8,6 +8,7 @@ import argparse
 import json
 import re
 import sys
+import tempfile
 from pathlib import Path
 from collections import Counter
 
@@ -46,6 +47,23 @@ def manifest(path, batch=False):
         if batch and not re.fullmatch(r"[0-9a-f]{40}", parts[2]):
             raise ValueError("empreinte manifeste invalide")
         rows.append(dict(version=parts[0], name=parts[1]))
+    return validate(rows)
+
+
+def fetched_inventory(directory):
+    """Read CLI-exported names only; never open or publish remote SQL."""
+    if directory.is_symlink() or not directory.is_dir():
+        raise ValueError("répertoire distant invalide")
+    rows = []
+    for entry in directory.iterdir():
+        if entry.is_symlink() or not entry.is_file():
+            raise ValueError("entrée distante non régulière")
+        match = re.fullmatch(r"([0-9]{14})_([a-zA-Z0-9_]+)\.sql", entry.name)
+        if not match:
+            raise ValueError("nom de migration distante invalide")
+        rows.append(dict(version=match[1], name=match[2]))
+        if len(rows) > 10000:
+            raise ValueError("inventaire trop volumineux")
     return validate(rows)
 
 
@@ -110,25 +128,53 @@ def self_test():
     assert reconcile(base,future,{**base,v:name})["future_exact"] == [v]
     assert reconcile(base,future,{**base,"20260301000000":name})["future_other_version"]
     assert reconcile(base,future,base)["future_absent"] == [v]
-    print("OK: réconciliation lecture seule, 19 assertions/scénarios de sécurité")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        (root / f"{v}_{name}.sql").write_bytes(b"synthetic SQL never read")
+        assert fetched_inventory(root) == future
+        for invalid_name in [f"{v}_duplicate.sql", "unexpected.txt", "20260202000000_bad name.sql"]:
+            probe = root / invalid_name
+            probe.write_bytes(b"")
+            try:
+                fetched_inventory(root)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("fichier distant ambigu accepté")
+            finally:
+                probe.unlink()
+        probe = root / "20260203000000_symlink.sql"
+        probe.symlink_to(root / f"{v}_{name}.sql")
+        try:
+            fetched_inventory(root)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("lien distant accepté")
+    print("OK: réconciliation lecture seule, 24 assertions/scénarios de sécurité")
 
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--remote-json", type=Path)
+    inputs = p.add_mutually_exclusive_group()
+    inputs.add_argument("--remote-json", type=Path)
+    inputs.add_argument("--remote-dir", type=Path)
     p.add_argument("--self-test", action="store_true")
     args = p.parse_args()
     if args.self_test:
         self_test()
         return 0
-    if not args.remote_json:
-        p.error("--remote-json requis")
+    if not args.remote_json and not args.remote_dir:
+        p.error("--remote-json ou --remote-dir requis")
     try:
-        with args.remote_json.open("rb") as stream:
-            raw = stream.read(2_000_001)
-        if len(raw) > 2_000_000:
-            raise ValueError("inventaire trop volumineux")
-        remote = validate(json.loads(raw))
+        if args.remote_dir:
+            remote = fetched_inventory(args.remote_dir)
+        else:
+            with args.remote_json.open("rb") as stream:
+                raw = stream.read(2_000_001)
+            if len(raw) > 2_000_000:
+                raise ValueError("inventaire trop volumineux")
+            remote = validate(json.loads(raw))
         base = manifest(ROOT / "supabase/production-migration-ledger.txt")
         future = manifest(ROOT / "supabase/production-reviewed-migration-batch.txt", True)
         report = reconcile(base, future, remote)
