@@ -7,7 +7,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 function decodeClaims(token: string) {
   const parts = token.split('.');
   if (parts.length !== 3 || token.length > 16384 ||
-      parts.some(part => !/^[A-Za-z0-9_-]+$/.test(part))) throw new Error();
+      parts.some(part => !part || /[^A-Za-z0-9_-]/.test(part))) throw new Error();
   const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
   const bytes = Uint8Array.from(atob(raw.padEnd(Math.ceil(raw.length / 4) * 4, '=')), c => c.charCodeAt(0));
   const claims = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
