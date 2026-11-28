@@ -314,6 +314,13 @@ jobs:
           (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") > "$RUNNER_TEMP/sinjira-dry-run.txt" 2>&1
           echo '### Dry-run base de données depuis le workspace protégé — réussi (détails non publiés)' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Nettoyer les diagnostics privilégiés temporaires
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f -- "$RUNNER_TEMP"/sinjira-*.txt "$RUNNER_TEMP"/sinjira-migration-history*.json
+
       - name: ÉTAT PRÉVOL DISTANT
         if: ${{ always() }}
         env:
@@ -514,6 +521,13 @@ jobs:
           (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") > "$RUNNER_TEMP/sinjira-migrations-after.txt" 2>&1
           (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") > "$RUNNER_TEMP/sinjira-dry-run-after.txt" 2>&1
           echo '### Vérification finale Supabase depuis le workspace protégé — réussi (détails non publiés)' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Nettoyer les diagnostics privilégiés temporaires
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f -- "$RUNNER_TEMP"/sinjira-*.txt "$RUNNER_TEMP"/sinjira-migration-history*.json
 
       - name: ÉTAT PRODUCTION
         if: ${{ always() }}
