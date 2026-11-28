@@ -87,6 +87,10 @@ def test_home(page):
                    f"filtre coûteux du logo mobile à {width}px")
             verify(page.locator(".site-header").evaluate("(el) => {const s=getComputedStyle(el);return (s.backdropFilter || s.webkitBackdropFilter || 'none') === 'none';}"),
                    f"flou coûteux de l’en-tête mobile à {width}px")
+            for panel in (".manifesto-panel", ".feature-panel"):
+                verify(page.locator(panel).evaluate("(el) => {const s=getComputedStyle(el);return (s.backdropFilter || s.webkitBackdropFilter || 'none') === 'none';}"),
+                       f"flou coûteux du panneau {panel} à {width}px")
+
         if width <= 600:
             targets = page.locator(".site-footer .footer-col a")
             verify(targets.count() >= 5, "liens de pied de page manquants")
@@ -334,6 +338,31 @@ def test_install_offer(browser):
     finally:
         android.close()
 
+def test_early_install_prompt(browser):
+    """Le report du runtime ne perd pas une proposition native précoce."""
+    context = browser.new_context(service_workers="block", viewport={"width":390,"height":760})
+    try:
+        context.add_init_script("""() => {
+          document.addEventListener('DOMContentLoaded', () => {
+            window.__earlyInstallInvoked=false;
+            const event=new Event('beforeinstallprompt',{cancelable:true});
+            event.prompt=()=>{window.__earlyInstallInvoked=true;return Promise.resolve();};
+            event.userChoice=Promise.resolve({outcome:'accepted'});
+            window.dispatchEvent(event);
+          }, {once:true});
+        }""".replace("() => {", "(() => {", 1) + ")()")
+        page=context.new_page()
+        page.goto(BASE,wait_until="domcontentloaded",timeout=30_000)
+        card=page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
+        card.wait_for(state="visible",timeout=12_000)
+        card.locator("[data-pwa-install-reveal]").click()
+        card.locator("[data-pwa-install-action]").click()
+        page.wait_for_function("() => window.__earlyInstallInvoked === true",timeout=5_000)
+        card.wait_for(state="detached",timeout=5_000)
+    finally:
+        context.close()
+
+
 def test_responsive_images(browser):
     """Chaque densité conserve une image locale décodable, sans dépendance externe."""
     for width, density in ((390, 1), (1440, 3)):
@@ -428,6 +457,98 @@ def test_public_navigation_fallback(browser):
             context.close()
 
 
+def test_home_partial_stylesheet_failure(browser):
+    """Une feuille UX indisponible ne doit ni tronquer ni bloquer les liens."""
+    for js_enabled in (False, True):
+        context = browser.new_context(
+            java_script_enabled=js_enabled, service_workers="block", locale="fr-CA",
+            reduced_motion="reduce", viewport={"width": 390, "height": 760},
+        )
+        try:
+            context.route("**/assets/css/site-ux-sinjira-v1.css*", lambda route: route.abort())
+            page = context.new_page()
+            page.goto(BASE, wait_until="load", timeout=30_000)
+            nav = page.locator("[data-main-nav]")
+            toggle = page.locator("[data-menu-toggle]")
+            if js_enabled:
+                verify(toggle.is_visible() and nav.is_hidden(), "menu compact sans feuille partagée invalide")
+                toggle.click()
+            verify(nav.is_visible(), "navigation indisponible sans feuille partagée")
+            for width in (240, 320, 390, 768, 1020):
+                page.set_viewport_size({"width": width, "height": 760})
+                bounds = nav.evaluate("""nav => ({
+                    overflow: document.documentElement.scrollWidth > innerWidth + 2,
+                    scrollWidth: document.documentElement.scrollWidth,
+                    offenders: [...document.querySelectorAll('body *')].filter(el => {
+                        const r=el.getBoundingClientRect();
+                        return r.width > 0 && (r.right > innerWidth+2 || r.left < -2)
+                               && getComputedStyle(el).position !== 'fixed';
+                    }).slice(0,12).map(el => ({
+                        tag:el.tagName, className:typeof el.className==='string'?el.className:'',
+                        left:Math.round(el.getBoundingClientRect().left),
+                        right:Math.round(el.getBoundingClientRect().right)
+                    })),
+                    links: [...nav.querySelectorAll('a')].map(a => {
+                        const r=a.getBoundingClientRect();
+                        return r.left >= -2 && r.right <= innerWidth + 2 && r.height >= 47.5;
+                    })
+                })""")
+                verify(not bounds["overflow"] and len(bounds["links"]) == len(NAV_PATHS)
+                       and all(bounds["links"]), f"navigation tronquée à {width}px : {bounds}")
+            if js_enabled:
+                page.keyboard.press("Escape")
+                verify(nav.is_hidden(), "menu de secours non refermé au clavier")
+        finally:
+            context.close()
+
+def test_home_session_intent(browser):
+    """Aucune personnalisation pendant la lecture; module fictif, sans compte réel."""
+    context = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 760},
+        service_workers="block", reduced_motion="reduce",
+    )
+    try:
+        requests = []
+
+        def mock_session(route):
+            requests.append(route.request.url)
+            route.fulfill(
+                status=200, content_type="application/javascript",
+                body="window.__testHomeSessionImports=(window.__testHomeSessionImports||0)+1; export {};",
+            )
+
+        context.route("**/assets/js/v19-session.js?*", mock_session)
+        page = context.new_page()
+        page.goto(BASE, wait_until="load", timeout=30_000)
+        page.wait_for_function(
+            "() => document.documentElement.hasAttribute('data-sinjira-nav-initialized')",
+            timeout=12_000,
+        )
+        account = page.locator("[data-sinjira-session-nav]")
+        verify(account.get_attribute("href") == "/compte/", "lien Compte natif absent")
+        verify(not requests, "session importée au chargement")
+        page.locator("h1").click()
+        page.keyboard.press("Escape")
+        toggle = page.locator("[data-menu-toggle]")
+        toggle.click()
+        verify(page.locator("[data-main-nav]").is_visible(), "menu mobile indisponible")
+        verify(not requests, "lecture ou ouverture du menu déclenche la session")
+        context.set_offline(True)
+        page.wait_for_function("() => document.documentElement.classList.contains('offline')")
+        context.set_offline(False)
+        page.wait_for_function("() => !document.documentElement.classList.contains('offline')")
+        verify(not requests, "mode hors ligne dépend de la session")
+        account.focus()
+        page.wait_for_function("() => window.__testHomeSessionImports === 1", timeout=10_000)
+        account.dispatch_event("pointerdown")
+        page.locator("[data-menu-toggle]").focus()
+        account.focus()
+        verify(len(requests) == 1, "import de session répété")
+        verify(account.get_attribute("href") == "/compte/", "lien Compte modifié")
+    finally:
+        context.close()
+
+
 def run():
     verify(BROWSER in {"chromium", "firefox", "webkit"}, "navigateur inconnu")
     verify((urlparse(BASE).hostname or "") in {"localhost", "127.0.0.1"},
@@ -446,9 +567,12 @@ def run():
             finally:
                 context.close()
             test_install_offer(browser)
+            test_early_install_prompt(browser)
             test_responsive_images(browser)
             test_without_javascript(browser)
             test_public_navigation_fallback(browser)
+            test_home_partial_stylesheet_failure(browser)
+            test_home_session_intent(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")
