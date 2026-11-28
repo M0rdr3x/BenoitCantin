@@ -45,6 +45,7 @@ APPLY_STEPS = (
     "Garantir les secrets Edge Functions indispensables",
     "Déployer toutes les Edge Functions du workspace protégé",
     "Vérifier les Edge Functions déployées",
+    "Prouver l'inventaire exact des migrations appliquées",
     "Vérifier l'historique et le dry-run après déploiement",
 )
 
@@ -66,6 +67,7 @@ APPLY_REQUIREMENTS = {
     "Garantir les secrets Edge Functions indispensables": ("SUPABASE_ACCESS_TOKEN", "OPTIONAL_RESEND_API_KEY"),
     "Déployer toutes les Edge Functions du workspace protégé": ("SUPABASE_ACCESS_TOKEN",),
     "Vérifier les Edge Functions déployées": ("SUPABASE_ACCESS_TOKEN",),
+    "Prouver l'inventaire exact des migrations appliquées": ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD"),
     "Vérifier l'historique et le dry-run après déploiement": ("SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_PASSWORD"),
 }
 
@@ -318,6 +320,24 @@ def validate_text(text: str) -> list[str]:
                 errors.append(f"Étape apply sans garde workflow_dispatch + apply=true + auth: {name}")
         for name, required in APPLY_REQUIREMENTS.items():
             require_step_env(errors, apply, name, required)
+
+        proof = step_block(apply, "Prouver l'inventaire exact des migrations appliquées")
+        for marker in (
+            '        id: final_history',
+            '          set -euo pipefail',
+            """          trap 'rm -rf -- "$tmp"' EXIT""",
+            '          (cd "$tmp" && supabase migration fetch --linked) > "$tmp/fetch.log" 2>&1',
+            '          python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations" --after-apply > "$tmp/history.json"',
+        ):
+            if not has_exact_line(proof, marker):
+                errors.append("Preuve finale de l'inventaire distant absente ou incomplète.")
+        if not (0 <= apply.find("- name: Vérifier les Edge Functions déployées") <
+                apply.find("- name: Prouver l'inventaire exact des migrations appliquées") <
+                apply.find("- name: Vérifier l'historique et le dry-run après déploiement")):
+            errors.append("Ordre de preuve finale invalide.")
+        summary = step_block(apply, "ÉTAT PRODUCTION")
+        if not has_exact_line(summary, '          if [ "${{ job.status }}" = "success" ] && [ "${{ steps.final_history.outcome }}" = "success" ] && [ "${{ steps.final_verify.outcome }}" = "success" ]; then'):
+            errors.append("Résumé final sans preuve complète de réussite.")
 
         secret_step = step_block(apply, "Garantir les secrets Edge Functions indispensables")
         if "SUPABASE_DB_PASSWORD:" in secret_step:
