@@ -152,6 +152,7 @@ def validate_text(text: str) -> list[str]:
         "      - 'scripts/validate_supabase_production_preflight_security.py'",
         "      - 'scripts/test_supabase_production_preflight_security.py'",
         "      - 'scripts/test_production_edge_quarantine.py'",
+        "      - 'scripts/audit_production_migration_history.py'",
         "      - '.github/workflows/supabase-production-preflight.yml'",
         "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
     ):
@@ -215,6 +216,17 @@ def validate_text(text: str) -> list[str]:
                 errors.append(f"Étape distante accessible hors lancement manuel authentifié: {name}")
         for name, required in REMOTE_REQUIREMENTS.items():
             require_step_env(errors, remote, name, required)
+        export = step_block(remote, "Exporter l'historique exact des migrations de production")
+        upload = step_block(remote, "Publier l'historique distant comme artefact de prévol")
+        audit_command = 'python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations"'
+        if audit_command not in export or '(cd "$tmp" && supabase migration fetch --linked)' not in export:
+            errors.append("Réconciliation distante obligatoire avant déploiement.")
+        elif export.index(audit_command) < export.index('supabase migration fetch --linked'):
+            errors.append("Réconciliation distante doit suivre la lecture des migrations.")
+        if not has_exact_line(upload, "          path: ${{ runner.temp }}/sinjira-migration-history.json"):
+            errors.append("Artefact distant limité aux métadonnées JSON.")
+        if "/tmp/supabase-production-migrations" in remote:
+            errors.append("Export du SQL distant interdit dans les artefacts.")
         if "supabase secrets set" in remote:
             errors.append("Le prévol distant ne doit jamais modifier les secrets Supabase.")
         if "supabase functions deploy" in remote:
@@ -247,6 +259,14 @@ def validate_text(text: str) -> list[str]:
         ):
             if marker not in approval:
                 errors.append(f"Revalidation post-environment incomplète: {marker}")
+
+        audit_command = 'python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations"'
+        if audit_command not in approval or '(cd "$tmp" && supabase migration fetch --linked)' not in approval:
+            errors.append("Réconciliation après approbation obligatoire.")
+        elif not approval.index('supabase migration fetch --linked') < approval.index(audit_command) < approval.index('supabase db push --linked --dry-run'):
+            errors.append("Réconciliation après approbation doit précéder le dry-run.")
+        if apply.find("- name: Revalider la cible production après approbation") > apply.find("- name: Appliquer les migrations de production depuis le workspace protégé"):
+            errors.append("Réconciliation après approbation doit précéder toute application.")
 
         for name in APPLY_STEPS:
             block = step_block(apply, name)
