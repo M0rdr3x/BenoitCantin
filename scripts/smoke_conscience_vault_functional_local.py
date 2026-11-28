@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 from smoke_sensitive_aal2_local import (
-    API_URL, ANON_KEY, Response, enroll_totp, jwt_claims, request, require, signup, verify_totp,
+    API_URL, ANON_KEY, Response, enroll_totp, jwt_claims, request, require, sign_in, signup, verify_totp,
 )
 
 UUID_RE = re.compile(r"^[0-9a-f-]{36}$", re.I)
@@ -203,6 +203,32 @@ def main() -> int:
     entries = ok(aal2, "list_entries", vault_session_id=session2).get("entries")
     require(isinstance(entries, list) and len(entries) == 1 and entries[0].get("id") == entry_id,
             "l’entrée doit rester intacte après une suppression non confirmée")
+
+    # Une seconde session Auth AAL2 du même compte ne doit pas pouvoir
+    # réutiliser la capacité d'origine, même avec le même identifiant utilisateur.
+    second_aal1 = sign_in(_email, _password)
+    second_aal2 = verify_totp(second_aal1, factor_id, secret)
+    require(jwt_claims(second_aal2).get("sub") == _uid
+            and jwt_claims(second_aal2).get("aal") == "aal2"
+            and isinstance(jwt_claims(second_aal2).get("session_id"), str)
+            and jwt_claims(second_aal2).get("session_id") != jwt_claims(aal2).get("session_id"),
+            "deux sessions Auth AAL2 distinctes du même compte obligatoires")
+    # Renew only the originating capability before running both isolation checks.
+    session2 = open_session(aal2)
+    for action, extra in (
+        ("list_entries", {}),
+        ("create_entry", {"entry_type": ENTRY_TYPE, "content_payload": CONTENT_1}),
+        ("update_entry", {"entry_id": entry_id, "entry_type": ENTRY_TYPE, "content_payload": CONTENT_1}),
+        ("delete_entry", {"entry_id": entry_id, "human_confirmed_delete": True}),
+    ):
+        expect_code(vault(second_aal2, action, vault_session_id=session2, **extra),
+                    403, "VAULT_SESSION_INVALID", f"isolation intersessions {action}")
+    require(ok(second_aal2, "revoke_session", vault_session_id=session2).get("revoked") is False,
+            "une autre session du même compte ne doit pas révoquer la capacité")
+    intact = ok(aal2, "list_entries", vault_session_id=session2).get("entries")
+    require(isinstance(intact, list) and len(intact) == 1 and intact[0].get("id") == entry_id
+            and intact[0].get("content_payload") == CONTENT_2,
+            "contenu inchangé après les refus intersessions")
 
     # Une capacité valide volée par un autre compte AAL2 ne doit rien autoriser.
     for action, extra in (
