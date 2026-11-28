@@ -174,13 +174,26 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévol distant ne doit jamais déployer")
 
     def test_remote_intent_requires_main_ref(self):
-        bad = self.valid.replace('[ "${{ github.ref }}" != "refs/heads/main" ]', '[ -z "${{ github.ref }}" ]', 1)
+        bad = self.valid.replace('[ "$GITHUB_REF" != "refs/heads/main" ]', '[ -z "$GITHUB_REF" ]', 1)
         self.assertRejected(bad, "verrou d'intention")
 
     def test_remote_intent_requires_typed_confirmation(self):
-        marker = f'[ "${{{{ inputs.confirmation }}}}" != "{CONFIRMATION}" ]'
-        bad = self.valid.replace(marker, '[ -z "${{ inputs.confirmation }}" ]', 1)
+        marker = f'[ "$REQUESTED_CONFIRMATION" != "{CONFIRMATION}" ]'
+        bad = self.valid.replace(marker, '[ -z "$REQUESTED_CONFIRMATION" ]', 1)
         self.assertRejected(bad, "verrou d'intention")
+
+    def test_remote_intent_rejects_direct_shell_interpolation(self):
+        marker = '          case "$REQUESTED_APPLY" in'
+        bad = self.valid.replace(marker, '          echo "${{ inputs.confirmation }}"\n' + marker, 1)
+        self.assertRejected(bad, "Interpolation directe interdite")
+
+    def test_remote_intent_requires_preflight_confirmation(self):
+        bad = self.valid.replace('[ "$REQUESTED_CONFIRMATION" != "PREFLIGHT_ONLY" ]', '[ -z "$REQUESTED_CONFIRMATION" ]', 1)
+        self.assertRejected(bad, "verrou d'intention")
+
+    def test_remote_job_must_be_main_only(self):
+        bad = self.valid.replace(REMOTE_JOB_GUARD, "    if: ${{ github.event_name == 'workflow_dispatch' }}", 1)
+        self.assertRejected(bad, "prévol distant doit être réservé")
 
     def test_apply_job_requires_full_gate(self):
         bad = self.valid.replace(
