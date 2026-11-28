@@ -63,8 +63,9 @@ def main():
     ],'convergence préférences')
 
     require(js,[
-        "bind('privacy_settings'",
-        "bind('notification_preferences'",
+        "['privacy_settings','[data-privacy-settings-form]'",
+        "['notification_preferences','[data-notification-settings-form]'",
+        'SESSION_UNCONFIRMED', 'form.inert=true', "code==='42P01'",
         'if(busy)return', "form.setAttribute('aria-busy','true')", 'form.inert=!ready',
         'allowedFields[table].has(el.name)', "select('user_id').maybeSingle()", "result.data?.user_id!==user.id",
         '.insert({user_id:user.id,...payload})',
@@ -82,8 +83,8 @@ def main():
         raise AssertionError('export V24.4.70+: format canonique V70 ou V83 absent')
 
     require(page,[
-        'settings-v70',
-        'v24-preferences.js?v=24.4.71',
+        'settings-v70', '<noscript>', 'id="contenu" tabindex="-1"',
+        'v24-preferences.js?v=24.4.72',
         'method="post" inert aria-busy="true"',
         'type="submit" disabled>Enregistrer la confidentialité',
         'type="submit" disabled>Enregistrer les notifications',
