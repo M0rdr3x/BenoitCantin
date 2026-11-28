@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/sql/postgres17_maintain_*.sql'
+      - 'supabase/tests/postgres17_maintain_postcheck.test.sql'
+      - 'supabase/tests/security_advisor_contract_v24_5_24.test.sql'
+      - 'supabase/tests/privileged_rpc_effective_acl.test.sql'
       - '.github/workflows/postgres17-maintain-remediation.yml'
       - 'supabase/migrations/**'
       - 'supabase/config.toml'
@@ -26,19 +28,11 @@ jobs:
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
-      - name: Générer le fichier candidat avec le CLI officiel
+      - name: Vérifier l'intégrité de la migration validée
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration new --help
-          supabase migration new sinjira_pg17_maintain_least_privilege
-          shopt -s nullglob
-          files=(supabase/migrations/*_sinjira_pg17_maintain_least_privilege.sql)
-          test "${#files[@]}" -eq 1
-          test -f "${files[0]}"
-          cp scripts/sql/postgres17_maintain_remediation.sql "${files[0]}"
-          printf 'Migration candidate: %s\n' "${files[0]}"
-          sha256sum "${files[0]}"
+          printf '%s  %s\n' '9f77166a8e87388b2ec37595dbe25916f81ed7b58368608104f1bf26961f5821' 'supabase/migrations/20261127230813_sinjira_pg17_maintain_least_privilege.sql' | sha256sum --check --strict
       - name: Rejouer les migrations sur la pile locale isolée
         run: supabase start
       - name: Contrôler la migration et ses postconditions
@@ -46,7 +40,6 @@ jobs:
         run: |
           set -euo pipefail
           supabase migration list --local
-          cp scripts/sql/postgres17_maintain_postcheck.test.sql supabase/tests/postgres17_maintain_postcheck.test.sql
           supabase test db supabase/tests/postgres17_maintain_postcheck.test.sql --local
           supabase test db supabase/tests/security_advisor_contract_v24_5_24.test.sql --local
           supabase test db supabase/tests/privileged_rpc_effective_acl.test.sql --local
