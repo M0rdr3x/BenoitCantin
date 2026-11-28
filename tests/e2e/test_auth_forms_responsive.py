@@ -282,13 +282,13 @@ def assert_preferences_save_feedback(browser):
     try:
         page=context.new_page()
         context.route("**/*",lambda route: route.continue_() if route.request.url.startswith(BASE) else route.abort())
-        context.route("**/preferences-test.html",lambda route: route.fulfill(
+        context.route("**/preferences-test.html*",lambda route: route.fulfill(
             content_type="text/html",body="""<form data-privacy-settings-form inert aria-busy="true">
               <input type="checkbox" name="public_profile"><input type="checkbox" name="allow_ai_personal_data" disabled>
               <button type="submit" disabled>Enregistrer</button></form><p data-privacy-settings-status></p>
               <script type="module" src="/assets/js/v24-preferences.js"></script>"""))
         context.route("**/assets/js/sinjira-supabase.js",lambda route: route.fulfill(
-            content_type="text/javascript",body="""export async function requireUser(){return {id:'fixture-user'}}
+            content_type="text/javascript",body="""export async function requireUser(){if(location.search==='?session-error')throw Error('fixture session');return {id:'fixture-user'}}
               window.writes=[];window.pending=[];
               export function setStatus(node,msg,type){node.textContent=msg;node.dataset.type=type;}
               export function getSupabase(){return {from(table){return {
@@ -330,6 +330,11 @@ def assert_preferences_save_feedback(browser):
         page.wait_for_function("() => !document.querySelector('button').disabled")
         assert_ok("enregistrées dans votre compte" in status.inner_text(),"confirmation après zéro ligne absente")
         assert_ok(page.evaluate("window.writes.every(w=>w.key==='user_id'&&w.id==='fixture-user'&&!('allow_ai_personal_data' in w.payload))"),"périmètre d’écriture modifié")
+        page.goto(urljoin(BASE,"preferences-test.html?session-error"),wait_until="domcontentloaded")
+        page.wait_for_function("document.querySelector('form').getAttribute('aria-busy')==='false'")
+        assert_ok(form.get_attribute("inert") is not None and button.is_disabled(),"session non vérifiée mais formulaire disponible")
+        assert_ok("Impossible de vérifier" in status.inner_text(),"échec de session non expliqué")
+        assert_ok(page.evaluate("window.writes.length===0"),"écriture malgré échec de session")
     finally:
         context.close()
 

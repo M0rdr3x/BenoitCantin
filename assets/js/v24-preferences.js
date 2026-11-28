@@ -1,12 +1,11 @@
 import {getSupabase,requireUser,setStatus} from './sinjira-supabase.js';
 
-const user=await requireUser();
-const s=getSupabase();
+let user,s;
 
 function tableMissing(error){
   const code=String(error?.code||'');
   const text=String(error?.message||'');
-  return code==='PGRST205'||/relation .* does not exist|schema cache|privacy_settings|notification_preferences/i.test(text);
+  return code==='PGRST205'||code==='42P01'||/relation .* does not exist|could not find the table .* in the schema cache/i.test(text);
 }
 
 function setDisabled(form,disabled){
@@ -110,7 +109,26 @@ async function bind(table,formSel,statusSel){
   });
 }
 
-await Promise.all([
-  bind('privacy_settings','[data-privacy-settings-form]','[data-privacy-settings-status]'),
-  bind('notification_preferences','[data-notification-settings-form]','[data-notification-settings-status]')
-]);
+const sections=[
+  ['privacy_settings','[data-privacy-settings-form]','[data-privacy-settings-status]'],
+  ['notification_preferences','[data-notification-settings-form]','[data-notification-settings-status]']
+];
+try{
+  user=await requireUser();
+  if(typeof user?.id!=='string'||!user.id.trim())throw Error('SESSION_UNCONFIRMED');
+  s=getSupabase();
+  if(!s)throw Error('BACKEND_UNAVAILABLE');
+  await Promise.all(sections.map(section=>bind(...section)));
+}catch{
+  // Garder les formulaires inactifs si la vérification de session échoue.
+  // Ne pas exposer le détail technique ni autoriser une mutation de secours.
+  for(const [,formSel,statusSel] of sections){
+    const form=document.querySelector(formSel);
+    if(form){
+      form.inert=true;
+      setDisabled(form,true);
+      form.setAttribute('aria-busy','false');
+    }
+    setStatus(document.querySelector(statusSel),'Impossible de vérifier votre session ou vos préférences. Rechargez la page ou reconnectez-vous. Aucun réglage n’a été modifié par cette vérification.','error');
+  }
+}
