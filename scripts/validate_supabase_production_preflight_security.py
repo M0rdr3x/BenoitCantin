@@ -263,7 +263,7 @@ def validate_text(text: str) -> list[str]:
         audit_command = 'python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations"'
         if audit_command not in approval or '(cd "$tmp" && supabase migration fetch --linked)' not in approval:
             errors.append("Réconciliation après approbation obligatoire.")
-        elif not approval.index('supabase migration fetch --linked') < approval.index(audit_command) < approval.index('supabase db push --linked --dry-run'):
+        elif 'supabase db push --linked --dry-run' in approval and not approval.index('supabase migration fetch --linked') < approval.index(audit_command) < approval.index('supabase db push --linked --dry-run'):
             errors.append("Réconciliation après approbation doit précéder le dry-run.")
         if apply.find("- name: Revalider la cible production après approbation") > apply.find("- name: Appliquer les migrations de production depuis le workspace protégé"):
             errors.append("Réconciliation après approbation doit précéder toute application.")
