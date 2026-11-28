@@ -21,7 +21,7 @@ PINNED_ACTIONS = {
     "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",
 }
 
-REMOTE_JOB_GUARD = "    if: ${{ github.event_name == 'workflow_dispatch' }}"
+REMOTE_JOB_GUARD = "    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}"
 APPLY_JOB_GUARD = (
     "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && "
     "inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' }}"
@@ -200,14 +200,21 @@ def validate_text(text: str) -> list[str]:
             errors.append("Le prévol distant non mutant ne doit pas franchir la frontière d'application production.")
         intent = step_block(remote, "Vérifier l'intention manuelle")
         for marker in (
-            '[ "${{ inputs.apply }}" = "true" ]',
-            '[ "${{ github.ref }}" != "refs/heads/main" ]',
-            f'[ "${{{{ inputs.confirmation }}}}" != "{CONFIRMATION}" ]',
+            '          REQUESTED_APPLY: ${{ inputs.apply }}',
+            '          REQUESTED_CONFIRMATION: ${{ inputs.confirmation }}',
+            '[ "$GITHUB_REF" != "refs/heads/main" ]',
+            'case "$REQUESTED_APPLY" in',
+            f'[ "$REQUESTED_CONFIRMATION" != "{CONFIRMATION}" ]',
+            '[ "$REQUESTED_CONFIRMATION" != "PREFLIGHT_ONLY" ]',
             "exit 64",
             "exit 65",
+            "*) exit 66 ;;",
         ):
             if marker not in intent:
                 errors.append(f"Prévol distant sans verrou d'intention attendu: {marker}")
+        shell = intent.partition("        run: |\n")[2]
+        if not shell or "${{" in shell:
+            errors.append("Interpolation directe interdite dans le shell d'intention.")
         for name in REMOTE_STEPS:
             block = step_block(remote, name)
             if not block:
