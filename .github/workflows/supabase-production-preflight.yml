@@ -116,7 +116,7 @@ jobs:
   remote-preflight:
     name: Prévol distant Supabase production
     needs: local-preflight
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -133,19 +133,31 @@ jobs:
           python-version: '3.12.14'
 
       - name: Vérifier l'intention manuelle
+        env:
+          REQUESTED_APPLY: ${{ inputs.apply }}
+          REQUESTED_CONFIRMATION: ${{ inputs.confirmation }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ inputs.apply }}" = "true" ]; then
-            if [ "${{ github.ref }}" != "refs/heads/main" ]; then
-              echo "Refus: apply=true est autorisé uniquement depuis refs/heads/main."
-              exit 64
-            fi
-            if [ "${{ inputs.confirmation }}" != "APPLY-SUPABASE-PRODUCTION" ]; then
-              echo "Refus: confirmation textuelle de production invalide."
-              exit 65
-            fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Refus: prévol distant autorisé uniquement depuis refs/heads/main."
+            exit 64
           fi
+          case "$REQUESTED_APPLY" in
+            true)
+              if [ "$REQUESTED_CONFIRMATION" != "APPLY-SUPABASE-PRODUCTION" ]; then
+                echo "Refus: confirmation textuelle de production invalide."
+                exit 65
+              fi
+              ;;
+            false)
+              if [ "$REQUESTED_CONFIRMATION" != "PREFLIGHT_ONLY" ]; then
+                echo "Refus: confirmation de prévol invalide."
+                exit 65
+              fi
+              ;;
+            *) exit 66 ;;
+          esac
 
       - name: Reconstruire le workspace production protégé
         shell: bash
