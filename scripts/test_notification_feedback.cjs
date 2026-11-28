@@ -10,12 +10,15 @@ const body=source.slice(0,boot).replace(/^import [^\n]+\n/,'');
 const user={id:'fixture-user'};
 function fixture(){
   const status={focus(){doc.activeElement=this;}};
-  const all={disabled:true};
+  const all={disabled:true,dataset:{}};
   const unread={},total={},attrs={},box={
     setAttribute(k,v){attrs[k]=v;},
     querySelectorAll(){return [];},
   };
-  const doc={body:{},activeElement:null,querySelector(key){
+  const doc={body:{},activeElement:null,querySelectorAll(key){
+    assert.ok(['[data-notifications-list] [data-notification-id]','[data-notifications-list] [data-notification-read]'].includes(key),`Sélecteur inattendu : ${key}`);
+    return [];
+  },querySelector(key){
     return ({
       '[data-notifications-status]':status,
       '[data-notifications-list]':box,

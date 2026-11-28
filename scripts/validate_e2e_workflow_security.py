@@ -28,6 +28,7 @@ ROMANS_HUB_TEST_COMMAND = 'python tests/e2e/test_romans_hub_navigation_responsiv
 AUTH_UX_TEST_COMMAND = 'python tests/e2e/test_auth_forms_responsive.py'
 READER_CONTROLS_TEST_COMMAND = 'python tests/e2e/test_reader_controls_responsive.py'
 MOBILE_DOCK_TEST_COMMAND = 'python tests/e2e/test_mobile_bottom_navigation.py'
+NOTIFICATIONS_TEST_COMMAND = 'python tests/e2e/test_notifications_responsive.py'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -97,6 +98,8 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(READER_CONTROLS_TEST_COMMAND) == 1, 'les commandes de liseuse doivent être testées sur 3 navigateurs et 6 largeurs')
     require(errors, text.count(MOBILE_DOCK_TEST_COMMAND) == 1, 'le dock mobile et le bandeau PWA doivent rester testés dans les 3 navigateurs')
 
+    require(errors, text.count(NOTIFICATIONS_TEST_COMMAND) == 1, 'le centre de notifications doit être testé sur les trois navigateurs locaux')
+
     for marker in ('browser-smoke:', 'lighthouse-mobile:'):
         require(errors, marker in text, f'job E2E attendu absent: {marker}')
     return errors
@@ -132,6 +135,7 @@ def run_self_tests(text: str) -> None:
         'test formulaire Auth retiré': text.replace(f'            {AUTH_UX_TEST_COMMAND} &&\n', '', 1),
         'test commandes liseuse retiré': text.replace(f'            {READER_CONTROLS_TEST_COMMAND} &&\n', '', 1),
         'test dock mobile retiré': text.replace(f'            {MOBILE_DOCK_TEST_COMMAND} &&\n', '', 1),
+        'test notifications retiré': text.replace(f'            {NOTIFICATIONS_TEST_COMMAND} &&\n', '', 1),
         'validation contrat retirée': text.replace(f'run: {VALIDATE_COMMAND}\n', 'run: echo validation-retirée\n', 1),
         'continue-on-error ajouté': text.replace('timeout-minutes: 5', 'timeout-minutes: 5\n    continue-on-error: true', 1),
         'set -x ajouté': text.replace('          run_suite() {', '          set -x\n          run_suite() {', 1),
