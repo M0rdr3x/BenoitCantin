@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, auth, extensions;
-select plan(23);
+select plan(28);
 -- Only synthetic accounts in an isolated local stack.
 -- Supply the same mandatory profile metadata as the real local signup smoke.
 -- Do not disable or bypass the account creation trigger.
@@ -21,9 +21,16 @@ select ok(not has_function_privilege('service_role','private.conscience_vault_as
 select throws_ok($q$select public.service_conscience_open_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000003','aal2',20,'allow','conscience_vault','v25.0',300)$q$,'42501','AUTH_REQUIRED','other user session denied');
 select throws_ok($q$select public.service_conscience_open_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000004','aal2',20,'allow','conscience_vault','v25.0',300)$q$,'42501','AUTH_REQUIRED','AAL1 denied');
 select throws_ok($q$select public.service_conscience_open_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000005','aal2',20,'allow','conscience_vault','v25.0',300)$q$,'42501','AUTH_REQUIRED','expired auth denied');
+-- Test the actual service role, not just its simulated JWT claim.
 create temp table vault_probe(id uuid,entry_id uuid);
+grant select,insert,update on vault_probe to service_role;
+set local role service_role;
+select throws_ok($q$select public.service_conscience_open_session('a1000000-0000-4000-8000-000000000001','aal2',20,'allow','conscience_vault','v25.0',300)$q$,'42501',null,'legacy opening actually denied to service role');
+select throws_ok($q$select public.service_conscience_list_entries('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001')$q$,'42501',null,'legacy listing actually denied to service role');
 insert into vault_probe(id) select public.service_conscience_open_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001','aal2',20,'allow','conscience_vault','v25.0',300);
+reset role;
 select is((select auth_session_id from private.conscience_vault_sessions where id=(select id from vault_probe)),'b1000000-0000-4000-8000-000000000001'::uuid,'origin stored');
+set local role service_role;
 update vault_probe set entry_id=public.service_conscience_create_entry_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000001', 'local_test', 'synthetic');
 select is((select count(*) from public.service_conscience_list_entries_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000001')),1::bigint,'origin can list');
 select throws_ok($q$select public.service_conscience_list_entries_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000002')$q$,'42501','VAULT_SESSION_INVALID','same account other session cannot list_entries');
@@ -32,12 +39,25 @@ select throws_ok($q$select public.service_conscience_update_entry_bound('a100000
 select throws_ok($q$select public.service_conscience_delete_entry_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000002', (select entry_id from vault_probe))$q$,'42501','VAULT_SESSION_INVALID','same account other session cannot delete_entry');
 select is(public.service_conscience_revoke_session_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000002'),false,'same account other session cannot revoke');
 select is((select content_payload from public.service_conscience_list_entries_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000001')),'synthetic'::text,'content unchanged');
+reset role;
 delete from auth.sessions where id='b1000000-0000-4000-8000-000000000001';
+set local role service_role;
 select throws_ok($q$select public.service_conscience_list_entries_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000001')$q$,'42501','AUTH_REQUIRED','revoked auth cannot list');
 select throws_ok($q$select public.service_conscience_create_entry_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000001', 'local_test', 'unwanted')$q$,'42501','AUTH_REQUIRED','revoked auth cannot write');
 update vault_probe set id=public.service_conscience_open_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002','aal2',20,'allow','conscience_vault','v25.0',300);
+reset role;
 select is((select count(*) from private.conscience_vault_sessions where user_id='a1000000-0000-4000-8000-000000000001' and revoked_at is null),1::bigint,'rotation leaves only one active capability');
+set local role service_role;
 select is(public.service_conscience_revoke_session_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000002'),true,'origin can revoke');
 select throws_ok($q$select public.service_conscience_list_entries_bound('a1000000-0000-4000-8000-000000000001',(select id from vault_probe),'b1000000-0000-4000-8000-000000000002')$q$,'42501','VAULT_SESSION_INVALID','revoked capability cannot list');
+reset role;
+-- A forged JWT role is not enough without database EXECUTE privileges.
+set local role authenticated;
+select throws_ok($q$select public.service_conscience_open_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002','aal2',20,'allow','conscience_vault','v25.0',300)$q$,'42501',null,'authenticated cannot call bound opening');
+select throws_ok($q$select public.service_conscience_list_entries_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000002')$q$,'42501',null,'authenticated cannot call bound listing');
+reset role;
+set local role anon;
+select throws_ok($q$select public.service_conscience_revoke_session_bound('a1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000002')$q$,'42501',null,'anonymous cannot call bound revocation');
+reset role;
 select * from finish();
 rollback;
