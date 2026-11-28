@@ -129,9 +129,18 @@ def validate() -> list[str]:
             problems.append("Position de lecture perdue après changement de typographie V56 : " + marker)
     if reader.count("updateReaderTypography(()=>") != 5:
         problems.append("Tous les cinq réglages typographiques doivent préserver la position")
-    if "sinjira-liseuse-v26.js?v=34.11.22.1" not in reader_html:
+    if "sinjira-liseuse-v26.js?v=34.11.27.1" not in reader_html:
         problems.append("Liseuse V56 : URL de script non renouvelée")
     page_html = (ROOT / "compte/liseuse.html").read_text("utf-8")
+    for marker in ('id="reader-sidebar" aria-label="Réglages de la lecture" hidden',
+                   'id="reader-stage" tabindex="-1"', 'href="#reader-stage"',
+                   'data-reader-ready="false"'):
+        if marker not in page_html:
+            problems.append("État initial accessible de la liseuse absent : " + marker)
+    for marker in ("$('reader-sidebar').hidden=false", "$('reader-sidebar').hidden=true",
+                   "$('contenu').dataset.readerReady='true'", "$('contenu').dataset.readerReady='false'"):
+        if marker not in reader:
+            problems.append("Visibilité des réglages non synchronisée : " + marker)
     if 'aria-describedby="reader-turn-help"' not in page_html or 'id="reader-turn-help"' not in page_html:
         problems.append("Instructions de navigation du lecteur non associées")
     if "document.addEventListener('keydown'" in reader:

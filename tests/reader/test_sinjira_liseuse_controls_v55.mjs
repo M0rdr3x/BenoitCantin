@@ -72,5 +72,18 @@ test('V56 : les cinq commandes typographiques préservent la position et rafraî
     assert.ok(js.includes("'"+name+"').addEventListener('"+marker+"'"),name+' événement absent');
   }
   assert.equal((js.match(/updateReaderTypography\(\(\)=>/g)||[]).length,5);
-  assert.match(html,/sinjira-liseuse-v26\.js\?v=34\.11\.22\.1/);
+  assert.match(html,/sinjira-liseuse-v26\.js\?v=34\.11\.27\.1/);
+});
+
+test('état initial de la liseuse : réglages masqués et destination de lecture accessible',()=>{
+  const html=readFileSync(new URL('../../compte/liseuse.html',import.meta.url),'utf8');
+  const js=readFileSync(new URL('../../assets/js/sinjira-liseuse-v26.js',import.meta.url),'utf8');
+  assert.match(html,/<aside[^>]*id="reader-sidebar"[^>]*\bhidden>/);
+  assert.match(html,/href="#reader-stage"/);
+  assert.match(html,/id="reader-stage"\s+tabindex="-1"/);
+  assert.match(html,/data-reader-ready="false"/);
+  assert.match(js,/\$\('reader-sidebar'\)\.hidden=false/);
+  assert.match(js,/\$\('reader-sidebar'\)\.hidden=true/);
+  assert.match(js,/dataset\.readerReady='true'/);
+  assert.match(js,/dataset\.readerReady='false'/);
 });
