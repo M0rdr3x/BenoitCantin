@@ -3,7 +3,11 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, auth, extensions;
 select plan(23);
 -- Only synthetic accounts in an isolated local stack.
-insert into auth.users(id,email) values ('a1000000-0000-4000-8000-000000000001','vault-binding-local-one@example.invalid'),('a1000000-0000-4000-8000-000000000002','vault-binding-local-two@example.invalid');
+-- Supply the same mandatory profile metadata as the real local signup smoke.
+-- Do not disable or bypass the account creation trigger.
+insert into auth.users(id,email,raw_user_meta_data) values
+ ('a1000000-0000-4000-8000-000000000001','vault-binding-local-one@example.invalid','{"pseudo":"Vault Binding Local One","birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"Homme","sex":"male"}'::jsonb),
+ ('a1000000-0000-4000-8000-000000000002','vault-binding-local-two@example.invalid','{"pseudo":"Vault Binding Local Two","birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"Homme","sex":"male"}'::jsonb);
 insert into auth.sessions(id,user_id,aal,not_after) values
  ('b1000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001','aal2',null),('b1000000-0000-4000-8000-000000000002','a1000000-0000-4000-8000-000000000001','aal2',null),('b1000000-0000-4000-8000-000000000003','a1000000-0000-4000-8000-000000000002','aal2',null),('b1000000-0000-4000-8000-000000000004','a1000000-0000-4000-8000-000000000001','aal1',null),('b1000000-0000-4000-8000-000000000005','a1000000-0000-4000-8000-000000000001','aal2',now()-interval '1 hour');
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
