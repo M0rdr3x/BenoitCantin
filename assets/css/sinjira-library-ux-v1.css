@@ -1,0 +1,14 @@
+/* Ergonomie des quatre catégories, sans modifier la liseuse. */
+body[data-library-ux] :where(.sinjira-library-tabs,.sinjira-library-categories,.sinjira-library-feature,.sinjira-library-feature>div,.sinjira-library-quicklinks,.account-card){min-width:0;overflow-wrap:anywhere}
+body[data-library-ux] .sinjira-library-tabs a{box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-height:48px;max-width:100%;text-align:center;overflow-wrap:anywhere}
+body[data-library-ux] :where(.sinjira-library-feature,[data-library-account-games]) .hero-actions>.btn{min-height:48px!important;max-width:100%;white-space:normal;text-align:center;overflow-wrap:anywhere}
+body[data-library-ux] .library-tester-form[hidden]{display:none!important}
+body[data-library-ux] .library-tester-form{margin-top:16px;min-width:0}
+body[data-library-ux] .library-tester-form textarea{box-sizing:border-box;width:100%;min-width:0;min-height:112px;font-size:max(16px,1rem);resize:vertical}
+@media(max-width:600px){
+ body[data-library-ux] .sinjira-library-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body[data-library-ux] :is(.sinjira-library-feature,.sinjira-library-category,.sinjira-library-quicklinks a){padding:clamp(12px,4vw,20px)}
+ body[data-library-ux] :where(.sinjira-library-feature,[data-library-account-games]) .hero-actions>.btn{width:100%}
+ body[data-library-ux] :is(.sinjira-library-categories,.sinjira-library-quicklinks,[data-library-account-games]){grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:280px){body[data-library-ux] .sinjira-library-tabs{grid-template-columns:minmax(0,1fr)}}

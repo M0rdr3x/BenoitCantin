@@ -48,6 +48,11 @@ def main()->int:
     jeux_html=read('compte/bibliotheque-jeux.html')
     ressources_html=read('compte/bibliotheque-ressources.html')
     liseuse_html=read('compte/liseuse.html')
+    hub_js=read('assets/js/sinjira-library-hub-v26.js')
+    for html in (library_html,romans_html,jeux_html,ressources_html):
+        require(html,['data-library-ux="v1"','sinjira-library-ux-v1.css?v=','id="contenu" tabindex="-1"'],'ergonomie bibliothèque')
+    require(hub_js,['data-tester-form','data-tester-cancel','event.preventDefault()','if(sending||finished)return','accessKnown&&','user_id:user.id','requested_level:\'tester\'','message.value.slice(0,1500)'],'candidature explicite')
+    forbid(hub_js,['prompt('],'candidature explicite')
     require(romans_html,[
         'data-v18-page="reads-v24-4-61"',
         'data-reader-library',
