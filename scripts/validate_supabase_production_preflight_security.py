@@ -227,6 +227,13 @@ def validate_text(text: str) -> list[str]:
             errors.append("Artefact distant limité aux métadonnées JSON.")
         if "/tmp/supabase-production-migrations" in remote:
             errors.append("Export du SQL distant interdit dans les artefacts.")
+        if not (0 <= remote.find("- name: Exporter l'historique exact des migrations de production") <
+                remote.find("- name: Prévisualiser les migrations sans modifier la production")):
+            errors.append("Réconciliation distante doit précéder le dry-run.")
+        for block in (export,):
+            if not has_exact_line(block, "          set -euo pipefail") or not has_exact_line(block, """          trap 'rm -rf -- "$tmp"' EXIT"""):
+                errors.append("Réconciliation distante sans fermeture sûre ou nettoyage.")
+
         if "supabase secrets set" in remote:
             errors.append("Le prévol distant ne doit jamais modifier les secrets Supabase.")
         if "supabase functions deploy" in remote:
@@ -265,8 +272,11 @@ def validate_text(text: str) -> list[str]:
             errors.append("Réconciliation après approbation obligatoire.")
         elif 'supabase db push --linked --dry-run' in approval and not approval.index('supabase migration fetch --linked') < approval.index(audit_command) < approval.index('supabase db push --linked --dry-run'):
             errors.append("Réconciliation après approbation doit précéder le dry-run.")
-        if apply.find("- name: Revalider la cible production après approbation") > apply.find("- name: Appliquer les migrations de production depuis le workspace protégé"):
+        if not (0 <= apply.find("- name: Revalider la cible production après approbation") <
+                apply.find("- name: Appliquer les migrations de production depuis le workspace protégé")):
             errors.append("Réconciliation après approbation doit précéder toute application.")
+        if not has_exact_line(approval, "          set -euo pipefail") or not has_exact_line(approval, """          trap 'rm -rf -- "$tmp"' EXIT"""):
+            errors.append("Réconciliation après approbation sans fermeture sûre ou nettoyage.")
 
         for name in APPLY_STEPS:
             block = step_block(apply, name)
