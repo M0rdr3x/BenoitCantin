@@ -51,7 +51,7 @@ Le lancement manuel `workflow_dispatch` avec `apply=false` est la seule voie gé
 
 Il exige les secrets de connexion afin que les contrôles distants soient réellement exécutés. Il peut lier le workspace protégé, lire l’inventaire et l’historique, exécuter les lints et `db push --dry-run`, mais `apply=false` interdit toute écriture.
 
-La valeur de confirmation par défaut est `PREFLIGHT_ONLY`. Elle doit rester non mutante.
+La valeur de confirmation par défaut est `PREFLIGHT_ONLY`. Elle doit rester non mutante. Le prévol distant est réservé à `main`, même avec `apply=false`, et exige cette valeur exacte. Les entrées manuelles sont transmises par variables d’environnement locales à l’étape de validation, jamais interpolées directement dans le shell. Vérifier également les restrictions de branches et les secrets de l’environment GitHub côté serveur : le YAML seul ne protège pas contre un workflow modifié sur une branche non fiable.
 
 Un run vert avec `apply=false` signifie **prévol distant réussi**, pas « production modifiée ».
 
