@@ -149,6 +149,28 @@ def validate_text(text: str) -> list[str]:
                 block.find("- name: Configurer Python")):
             errors.append(f"Ordre de vérification du commit exact invalide: {job_name}")
 
+    # The public repository must never publish raw privileged CLI diagnostics.
+    diagnostics = (
+        "          supabase functions list --project-ref \"$PROJECT_ID\" > \"$RUNNER_TEMP/sinjira-functions-before.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) > \"$RUNNER_TEMP/sinjira-db-lint-before.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase migration list --linked --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-migrations-before.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase db push --linked --dry-run --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-dry-run.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) > \"$RUNNER_TEMP/sinjira-db-lint-approval.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase migration list --linked --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-migrations-approval.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase db push --linked --dry-run --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-dry-run-approval.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) > \"$RUNNER_TEMP/sinjira-db-lint-after.txt\" 2>&1",
+        "          supabase functions list --project-ref \"$PROJECT_ID\" > \"$RUNNER_TEMP/sinjira-functions.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase migration list --linked --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-migrations-after.txt\" 2>&1",
+        "          (cd .prod-workspace && supabase db push --linked --dry-run --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-dry-run-after.txt\" 2>&1",
+    )
+    for command in diagnostics:
+        if text.count(command) != 1:
+            errors.append("Sortie de diagnostic privilégiée non confinée.")
+    if re.search(r"(?m)^\s*(?:cat|tail|head|less|more)\b[^\n]*sinjira-[^\n]*\.txt", text):
+        errors.append("Publication brute de diagnostics de production interdite.")
+    if re.search(r"(?m)^\s*[^#\n]*supabase (?:db lint|migration list|db push --linked --dry-run|functions list)[^\n]*\|\s*tee\b", text):
+        errors.append("Publication brute de diagnostics de production interdite.")
+
     uses = re.findall(r"(?m)^\s*-?\s*uses:\s+(\S+)", text)
     if not uses:
         errors.append("Aucune action réutilisable détectée.")
