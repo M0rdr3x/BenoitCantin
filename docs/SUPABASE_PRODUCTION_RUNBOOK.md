@@ -53,7 +53,7 @@ Il exige les secrets de connexion afin que les contrôles distants soient réell
 
 La valeur de confirmation par défaut est `PREFLIGHT_ONLY`. Elle doit rester non mutante. Le prévol distant est réservé à `main`, même avec `apply=false`, et exige cette valeur exacte. Les entrées manuelles sont transmises par variables d’environnement locales à l’étape de validation, jamais interpolées directement dans le shell. Vérifier également les restrictions de branches et les secrets de l’environment GitHub côté serveur : le YAML seul ne protège pas contre un workflow modifié sur une branche non fiable.
 
-Un run vert avec `apply=false` signifie **prévol distant réussi**, pas « production modifiée ».
+Un run vert avec `apply=false` signifie **prévol distant réussi**, pas « production modifiée ». Les trois jobs utilisent le SHA exact de l’événement et vérifient HEAD avant les opérations. Un résumé distant ne peut annoncer un prévol validé que si le job, la présence des secrets et le dry-run sont confirmés. Une divergence, une annulation ou une étape incomplète ne constitue pas un succès.
 
 ### Lancement manuel `apply=true`
 

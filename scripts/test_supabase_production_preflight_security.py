@@ -37,6 +37,24 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
     def test_current_workflow_is_accepted(self):
         self.assertEqual(validate_text(self.valid), [])
 
+    def test_exact_checkout_is_required_in_all_jobs(self):
+        marker = "          ref: ${{ github.sha }}"
+        self.assertEqual(self.valid.count(marker), 3)
+        for i in range(3):
+            parts = self.valid.split(marker)
+            bad = marker.join(parts[:i+1]) + "          ref: main" + marker.join(parts[i+1:])
+            self.assertRejected(bad, "Checkout non lié au commit exact")
+
+    def test_commit_identity_check_is_required(self):
+        marker = '          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"'
+        self.assertEqual(self.valid.count(marker), 3)
+        self.assertRejected(self.valid.replace(marker, "          echo unchecked", 1), "Vérification du commit exact absente")
+
+    def test_remote_summary_requires_actual_dry_run_success(self):
+        marker = '[ "$DRY_RUN_OUTCOME" != "success" ]'
+        self.assertIn(marker, self.valid)
+        self.assertRejected(self.valid.replace(marker, "false", 1), "Résumé distant sans preuve de succès complet")
+
     def test_runner_latest_is_rejected(self):
         bad = self.valid.replace("    runs-on: ubuntu-24.04", "    runs-on: ubuntu-latest", 1)
         self.assertRejected(bad, "ubuntu-latest")
