@@ -79,6 +79,7 @@ jobs:
           run_suite() {
             python tests/e2e/test_public_site.py &&
             python tests/e2e/test_home_responsive.py &&
+            python tests/e2e/test_library_access_responsive.py &&
             python tests/e2e/test_demo_reader_responsive.py &&
             python tests/e2e/test_auth_forms_responsive.py &&
             python tests/e2e/test_admin_console_responsive.py &&
