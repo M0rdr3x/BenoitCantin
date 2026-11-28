@@ -514,6 +514,24 @@ jobs:
           echo "Fonctions retirées encore physiquement présentes: $retired_found" >> "$GITHUB_STEP_SUMMARY"
           test "$missing" -eq 0
 
+      - name: Prouver l'inventaire exact des migrations appliquées
+        id: final_history
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf -- "$tmp"' EXIT
+          cp -a .prod-workspace/supabase "$tmp/supabase"
+          rm -rf "$tmp/supabase/migrations"
+          mkdir -p "$tmp/supabase/migrations"
+          (cd "$tmp" && supabase migration fetch --linked) > "$tmp/fetch.log" 2>&1
+          python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations" --after-apply > "$tmp/history.json"
+          echo "Inventaire distant conforme au ledger et au lot attendu (métadonnées)." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Vérifier l'historique et le dry-run après déploiement
         id: final_verify
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
@@ -538,7 +556,7 @@ jobs:
         run: |
           set -euo pipefail
           echo '## ÉTAT PRODUCTION' >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.final_verify.outcome }}" = "success" ]; then
+          if [ "${{ job.status }}" = "success" ] && [ "${{ steps.final_history.outcome }}" = "success" ] && [ "${{ steps.final_verify.outcome }}" = "success" ]; then
             echo '✅ APPLIQUÉ ET VÉRIFIÉ : migrations appliquées depuis le workspace protégé, Edge Functions contrôlées, historique relu et dry-run final réussi sans étape restante.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '❌ ÉCHEC OU SYNCHRONISATION PARTIELLE : apply=true a été demandé mais la vérification finale n’est pas verte. Ne pas considérer la production synchronisée; consulter la première étape en échec.' >> "$GITHUB_STEP_SUMMARY"
