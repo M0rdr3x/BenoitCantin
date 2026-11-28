@@ -1,0 +1,15 @@
+.message-moderation-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:min(36rem,calc(100% - 24px));max-width:calc(100% - 24px);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;padding:clamp(12px,4vw,24px);border:1px solid #5fbfb4;border-radius:18px;background:#101d2c;color:#f2f8ff;overflow-wrap:anywhere}
+.message-moderation-dialog::backdrop{background:rgba(4,8,16,.78)}
+.message-moderation-dialog .account-form,.message-moderation-dialog .field{min-width:0;gap:12px}
+.message-moderation-dialog :is(h2,p){margin:0}
+.message-moderation-dialog [data-moderation-fields]{display:grid;gap:12px;min-width:0}
+.message-moderation-dialog [data-moderation-fields][hidden]{display:none}
+.message-moderation-dialog :is(select,textarea){box-sizing:border-box;min-width:0;width:100%;max-width:100%;min-height:48px;font-size:max(16px,1rem)}
+.message-moderation-dialog textarea{min-height:96px;resize:vertical}
+.message-moderation-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px}
+.message-moderation-actions .btn{box-sizing:border-box;min-width:0;min-height:48px;white-space:normal;overflow-wrap:anywhere;text-align:center}
+.message-moderation-dialog :is(button,select,textarea):focus-visible{outline:3px solid #9cefe0;outline-offset:2px}
+@media(max-width:560px){.message-moderation-actions{grid-template-columns:minmax(0,1fr)}}
+
+.message-moderation-dialog :is(.account-form,.field,[data-moderation-fields]){grid-template-columns:minmax(0,1fr);max-width:100%;overflow-wrap:anywhere}
+@media(forced-colors:active){.message-moderation-dialog :is(button,select,textarea):focus-visible{outline-color:Highlight}}
