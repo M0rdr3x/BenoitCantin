@@ -1,7 +1,16 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.74';
+import {requestModeration} from './sinjira-message-moderation-dialog.mjs?v=1.0.0';
+
+const UI_VERSION='24.4.75';
+const reporting=new Set();
+function syncReportControls(){
+  for(const bubble of log.querySelectorAll('[data-message]')){
+    const control=bubble.querySelector('[data-report-message]');
+    if(control)control.disabled=reporting.has(bubble.dataset.message);
+  }
+}
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -120,20 +129,29 @@ async function messages(){
     throw error;
   }
   const rows=(Array.isArray(data)?data:[]).filter(message=>((message.sender_character_id===me.character_id&&message.recipient_character_id===selected.character_id&&message.sender_user_id===user.id&&message.recipient_user_id===selected.user_id)||(message.sender_character_id===selected.character_id&&message.recipient_character_id===me.character_id&&message.sender_user_id===selected.user_id&&message.recipient_user_id===user.id)));
-  log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${escapeHtml(message.id)}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
+  log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${escapeHtml(message.id)}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button type="button" class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
   if(nearBottom)log.scrollTop=log.scrollHeight;
   else log.scrollTop=previousTop;
 
+  syncReportControls();
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
-    const element=button.closest('[data-message]');
-    const message=rows.find(item=>item.id===element?.dataset.message);
-    if(!message)return;
-    const reason=prompt('Pourquoi signalez-vous ce message de rôle-play?');
-    if(!reason)return;
+    const message=rows.find(item=>String(item.id)===button.closest('[data-message]')?.dataset.message);
+    if(!message||message.sender_user_id===user.id||reporting.has(String(message.id)))return;
+    const id=String(message.id);
+    reporting.add(id);
     try{
-      await reportContent({network:'character',target_type:'message',target_id:message.id,reason,snapshot:{body:message.body,sender_character_id:message.sender_character_id,recipient_character_id:message.recipient_character_id}});
-      alert('Message signalé à l’administration.');
-    }catch(error){fail(error,'Signalement impossible pour le moment.');}
+      const choice=await requestModeration(button,{mode:'report',contact:selected.public_name||'Personnage'});
+      if(!choice||peer?.character_id!==selected.character_id)return;
+      syncReportControls();
+      const result=await reportContent({network:'character',target_type:'message',target_id:message.id,reason:choice.reason,details:choice.details??null});
+      if(result?.ok===false)throw Error('REPORT_UNCONFIRMED');
+      socialStatus(status,'Signalement transmis à la modération.','success');
+    }catch(error){
+      fail(error,'Signalement non confirmé. Vérifiez vos signalements avant de réessayer.');
+    }finally{
+      reporting.delete(id);
+      syncReportControls();
+    }
   }));
   // Les commandes de signalement restent actives même si l’état lu échoue.
   if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
