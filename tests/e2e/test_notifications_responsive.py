@@ -62,12 +62,12 @@ def run():
             bulk=page.locator("[data-notifications-read-all]")
             expect(cards).to_have_count(2)
             expect(filt).to_be_enabled()
-            for width in (320,390,768,1024,1440):
+            for width in (240,320,390,768,1024,1440):
                 page.set_viewport_size({"width":width,"height":780})
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"), f"overflow {width}"
-                for locator in (filt,read,bulk):
+                for label, locator in (("filtre",filt),("avis",read),("tout",bulk),("ouvrir",page.get_by_role("link",name="Ouvrir : Avis fictif A"))):
                     rect=locator.bounding_box()
-                    assert rect and rect["height"]>=44 and rect["width"]>=44, (width,rect)
+                    assert rect and rect["height"]>=48-0.5 and rect["width"]>=48-0.5, (width,label,rect)
             filt.select_option("read")
             expect(page.locator("[data-notification-id='a']")).to_be_hidden()
             expect(page.locator("[data-notification-id='b']")).to_be_visible()
@@ -89,6 +89,14 @@ def run():
             filt.select_option("all")
             expect(page.locator("[data-notification-id='a']")).to_be_visible()
             expect(bulk).to_be_disabled()
+            # Rechargement fictif : le marquage global doit aussi fonctionner.
+            page.reload(wait_until="load")
+            expect(bulk).to_be_enabled()
+            bulk.click()
+            expect(page.locator("[data-notifications-status]")).to_contain_text("Tous les avis")
+            expect(page.locator("[data-notifications-unread-count]")).to_have_text("0")
+            expect(bulk).to_be_disabled()
+            assert page.evaluate("window.fixtureWrites")==1
             ctx.close()
         finally:
             browser.close()

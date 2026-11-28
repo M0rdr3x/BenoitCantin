@@ -29,7 +29,7 @@ function syncReadControls(){
   if(all)all.disabled=locked||all.dataset.hasUnread!=='true';
 }
 async function runReadAction(user,button,mutate,successMessage,errorMessage){
-  if(mutationInFlight||refreshRequired)return;
+  if(button.disabled||mutationInFlight||refreshRequired)return;
   const hadFocus=document.activeElement===button;
   mutationInFlight=true;
   syncReadControls();
