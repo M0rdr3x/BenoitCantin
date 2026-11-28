@@ -29,6 +29,11 @@ function entitlementCard(row){
 }
 
 if(form&&list){
+  const input=form.elements.code,button=form.querySelector('button[type="submit"]');
+  let ready=false,busy=false;
+  // Bloquer la soumission native avant toute opération asynchrone.
+  form.addEventListener('submit',event=>event.preventDefault());
+  try{
   const user=await requireUser();
   const s=getSupabase();
   const ownerResult=await s.rpc('is_sinjira_owner',{p_user_id:user.id});
@@ -41,27 +46,60 @@ if(form&&list){
     const freeCard=freeModeCard();
     const roleCard=owner?ownerRoleCard():'';
     const {data,error}=await s.from('user_entitlements').select('source,granted_at,products(slug,name,product_type)').eq('user_id',user.id).order('granted_at',{ascending:false});
-    if(error){
+    if(error!==null||!Array.isArray(data)){
       list.innerHTML=freeCard+roleCard+(serverMissing(error)?'<div class="v2433-server-note"><strong>Licences en préparation</strong><br>Le serveur des droits d’accès doit encore être synchronisé. Aucun droit existant n’est supprimé pendant cette attente.</div>':'<div class="v24-empty">Impossible de lire les licences pour le moment.</div>');
-      return;
+      return false;
     }
-    const rows=Array.isArray(data)?data:[];
+    const rows=data;
     const empty=owner
       ?'<div class="v24-empty">Aucun droit numérique explicite n’est attribué à ce compte pour le moment. Le rôle propriétaire reste actif pour les fonctions qui lui sont réservées, sans inventer de possession produit.</div>'
       :'<div class="v24-empty">Aucune licence liée à ce compte.</div>';
     list.innerHTML=freeCard+roleCard+(rows.length?rows.map(entitlementCard).join(''):empty);
+    return true;
   }
 
   form.addEventListener('submit',async e=>{
     e.preventDefault();
-    const code=String(new FormData(form).get('code')||'').trim();
-    if(!code){setStatus(status,'Entrez un code d’activation.','error');return}
-    const {data,error}=await s.functions.invoke('redeem-license-code',{body:{code}});
-    if(error||!data?.ok){
-      setStatus(status,error&&serverMissing(error)?'Le service d’activation n’est pas encore disponible.':data?.error||'Activation impossible pour le moment.','error');
-      return;
+    if(!ready||busy)return;
+    const code=String(input.value||'').trim();
+    if(code.length<12||code.length>80){
+      setStatus(status,'Entrez un code d’activation de 12 à 80 caractères.','error');
+      input.focus();return;
     }
-    form.reset();setStatus(status,'Produit activé sur votre Compte SINJIRA™.','success');await render();
+    busy=true;
+    input.readOnly=true;button.disabled=true;
+    form.setAttribute('aria-busy','true');
+    button.textContent='Activation en cours…';
+    setStatus(status,'Vérification de votre code…','info');
+    try{
+      const {data,error}=await s.functions.invoke('redeem-license-code',{body:{code}});
+      if(error!==null||data?.ok!==true){
+        setStatus(status,'Activation non confirmée. Vérifiez vos licences avant de réessayer ou contactez le support.','error');
+        try{await render()}catch{}
+        return;
+      }
+      form.reset();
+      setStatus(status,'Produit activé sur votre Compte SINJIRA™.','success');
+      try{
+        if(!await render())throw Error('LIST_UNAVAILABLE');
+      }catch{
+        setStatus(status,'Produit activé. Rechargez la page pour actualiser vos licences.','success');
+      }
+    }catch{
+      setStatus(status,'Activation non confirmée. Votre saisie est conservée dans cet onglet. Vérifiez vos licences avant de réessayer.','error');
+      try{await render()}catch{}
+    }finally{
+      busy=false;input.readOnly=false;button.disabled=false;
+      button.textContent='Activer';
+      form.setAttribute('aria-busy','false');
+    }
   });
-  await render();
+  if(!await render())throw Error('LIST_UNAVAILABLE');
+  ready=true;input.disabled=false;button.disabled=false;
+  form.setAttribute('aria-busy','false');
+  if(!ownerResult.error)setStatus(status,'Vous pouvez saisir votre code physique.','info');
+  }catch{
+    form.setAttribute('aria-busy','false');
+    setStatus(status,'Impossible de vérifier votre session ou vos licences. Rechargez la page avant de saisir un code.','error');
+  }
 }

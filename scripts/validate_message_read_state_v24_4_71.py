@@ -55,16 +55,16 @@ def main():
     ],'helper état lu')
 
     require(real,[
-        "const UI_VERSION='24.4.73'",
+        "const UI_VERSION='24.4.74'",
         "unreadCounts('social_real_messages',user.id,'sender_user_id')",
-        "markConversationRead('social_real_messages',user.id,{sender_user_id:peer.user_id})",
+        "markConversationRead('social_real_messages',user.id,{sender_user_id:selected.user_id})",
         'non lu',
         "message.recipient_user_id===user.id"
     ],'messagerie réelle')
     require(char,[
-        "const UI_VERSION='24.4.73'",
+        "const UI_VERSION='24.4.74'",
         "unreadCounts('social_character_messages',user.id,'sender_character_id')",
-        "markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id})",
+        "markConversationRead('social_character_messages',user.id,{sender_character_id:selected.character_id})",
         'non lu',
         "message.recipient_user_id===user.id"
     ],'messagerie personnage')
@@ -76,11 +76,11 @@ def main():
         "data-character-unread"
     ],'résumé non-lus')
     require(hub,['data-real-unread','data-character-unread','sinjira-messages-summary.js?v=24.4.71','data-social-runtime="24.4.71"'],'hub Messages')
-    require(real_page,['sinjira-messages-real.js?v=24.4.73','data-social-runtime="24.4.71"'],'page messages réels')
-    require(char_page,['sinjira-messages-character.js?v=24.4.73','data-social-runtime="24.4.71"'],'page messages personnage')
+    require(real_page,['sinjira-messages-real.js?v=24.4.74','data-social-runtime="24.4.71"'],'page messages réels')
+    require(char_page,['sinjira-messages-character.js?v=24.4.74','data-social-runtime="24.4.71"'],'page messages personnage')
     for client in (real,char):
         require(client,['conversationVersion','requestVersion','if(!peer||sending)return;',
-                        'draft.readOnly=true','draft.readOnly=false','if(nearBottom)'], 'protection UX conversation')
+                        'draft.readOnly=true','draft.readOnly=false','if(nearBottom)', 'const drafts=new Map()', 'rememberDraft()', 'composer.value=drafts.get(id)', 'escapeHtml(message.id)'], 'protection UX conversation')
     for page in (real_page,char_page):
         require(page,['for="conversation-search"','for="chat-body"','aria-describedby="chat-help"',
                       'aria-label="Historique des messages" tabindex="0"','id="contenu" tabindex="-1"'], 'accessibilité messagerie')
