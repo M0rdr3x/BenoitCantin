@@ -7,6 +7,7 @@ const source = fs.readFileSync(path.join(__dirname, '../supabase/functions/_shar
 const code = source.replace(/^import .*;\n/m, '')
   .replace('export async function', 'async function')
   .replaceAll('token: string, userId: string', 'token, userId')
+  .replace('token: string)', 'token)')
   .replace('new Set<string>()', 'new Set()') +
   '\nglobalThis.gate = requireActiveAal2Session;';
 const uid = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -15,13 +16,15 @@ const other = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const current = {id: sid, is_current: true, aal: 'aal2', not_after: null};
 const token = claims => 'synthetic.' + Buffer.from(JSON.stringify(claims)).toString('base64url') + '.synthetic';
 const validToken = token({sub:uid, aal:'aal2', session_id:sid});
+const anonKey = token({role:'anon'});
 function harness(response, env = {}, reject = false) {
-  let calls = 0;
+  let calls = 0, clients = 0;
   const sandbox = {atob, TextDecoder, Uint8Array, Date,
-    Deno: {env: {get: key => ({SUPABASE_URL:'https://local.invalid', SUPABASE_ANON_KEY:'synthetic-public-key', ...env})[key]}},
+    Deno: {env: {get: key => ({SUPABASE_URL:'https://local.invalid', SUPABASE_ANON_KEY:anonKey, ...env})[key]}},
     createClient: (url, key, options) => {
+      clients++;
       assert.equal(url, 'https://local.invalid');
-      assert.equal(key, env.SUPABASE_PUBLISHABLE_KEYS ? 'sb_publishable_synthetic' : 'synthetic-public-key');
+      assert.equal(key, env.SUPABASE_PUBLISHABLE_KEYS?.includes('sb_publishable_synthetic') ? 'sb_publishable_synthetic' : anonKey);
       assert.equal(options.global.headers.Authorization, 'Bearer ' + validToken);
       assert.equal(options.auth.persistSession, false);
       assert.equal(options.auth.autoRefreshToken, false);
@@ -32,7 +35,7 @@ function harness(response, env = {}, reject = false) {
       }};
     }};
   vm.runInNewContext(code, sandbox, {timeout:1000});
-  return {gate: sandbox.gate, calls:()=>calls};
+  return {gate: sandbox.gate, calls:()=>calls, clients:()=>clients};
 }
 async function main() {
   for (const rows of [[current], [current,{id:other,is_current:false,aal:'aal1',not_after:null}],
@@ -64,8 +67,29 @@ async function main() {
     const h=harness({error:null,data:[current]});
     await assert.rejects(h.gate(bad,uid),{message:'AUTH_REQUIRED'}); assert.equal(h.calls(),0);
   }
+  const fallback=harness({error:null,data:[current]},{SUPABASE_PUBLISHABLE_KEYS:'{}'});
+  await fallback.gate(validToken,uid);
+  for (const env of [
+    {SUPABASE_URL:undefined}, {SUPABASE_ANON_KEY:undefined},
+    {SUPABASE_ANON_KEY:token({role:'service_role'})},
+    {SUPABASE_ANON_KEY:token({role:'authenticated'})},
+    {SUPABASE_ANON_KEY:'sb_secret_synthetic'},
+    {SUPABASE_ANON_KEY:'not-a-jwt'},
+    {SUPABASE_ANON_KEY:token({role:'anon'})+'\n'},
+    {SUPABASE_PUBLISHABLE_KEYS:'invalid'},
+    {SUPABASE_PUBLISHABLE_KEYS:'null'},
+    {SUPABASE_PUBLISHABLE_KEYS:'[]'},
+    {SUPABASE_PUBLISHABLE_KEYS:'{"default":null}'},
+    {SUPABASE_PUBLISHABLE_KEYS:'{"default":"sb_secret_synthetic"}'},
+    {SUPABASE_PUBLISHABLE_KEYS:'{"default":"sb_publishable_"}'},
+    {SUPABASE_PUBLISHABLE_KEYS:JSON.stringify({default:'sb_publishable_synthetic\n'})},
+  ]) {
+    const h=harness({error:null,data:[current]},env);
+    await assert.rejects(h.gate(validToken,uid),{message:'SECURITY_DECISION_INVALID'});
+    assert.equal(h.clients(),0); assert.equal(h.calls(),0);
+  }
   const offline=harness(null,{},true);
   await assert.rejects(offline.gate(validToken,uid),{message:'SECURITY_DECISION_INVALID'});
-  console.log('PASS: active AAL2 session contract, 30 negative cases and 4 positive cases.');
+  console.log('PASS: active AAL2 session contract, 44 negative cases and 5 positive cases.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
