@@ -52,6 +52,13 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         head, tail = self.valid.rsplit(marker, 1)
         self.assertRejected(head + "echo skipped-history" + tail, "Réconciliation après approbation obligatoire")
 
+    def test_history_cleanup_cannot_be_removed(self):
+        marker = """          trap 'rm -rf -- "$tmp"' EXIT"""
+        self.assertEqual(self.valid.count(marker), 2)
+        self.assertRejected(self.valid.replace(marker, "          echo cleanup-disabled", 1), "Réconciliation distante sans fermeture sûre ou nettoyage")
+        head, tail = self.valid.rsplit(marker, 1)
+        self.assertRejected(head + "          echo cleanup-disabled" + tail, "Réconciliation après approbation sans fermeture sûre ou nettoyage")
+
     def test_sql_history_artifact_is_rejected(self):
         marker = "          path: ${{ runner.temp }}/sinjira-migration-history.json"
         self.assertIn(marker, self.valid)
