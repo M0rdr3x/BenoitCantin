@@ -267,8 +267,9 @@ Deno.serve(async (req) => {
         throw new Error('SECURITY_DECISION_INVALID');
       }
 
-      const { data: sessionId, error: sessionError } = await service.rpc('service_conscience_open_session', {
+      const { data: sessionId, error: sessionError } = await service.rpc('service_conscience_open_session_bound', {
         p_user_id: user.id,
+        p_auth_session_id: authSessionId,
         p_aal: 'aal2',
         p_risk_score: decision.score,
         p_risk_outcome: decision.outcome,
@@ -276,7 +277,8 @@ Deno.serve(async (req) => {
         p_risk_model_version: 'v25.0',
         p_ttl_seconds: ttlRaw
       });
-      if (sessionError !== null || !validUuid(sessionId)) throw new Error('VAULT_OPERATION_REFUSED');
+      if (sessionError !== null) throw new Error(sessionError?.message === 'AUTH_REQUIRED' ? 'AUTH_REQUIRED' : 'VAULT_OPERATION_REFUSED');
+      if (!validUuid(sessionId)) throw new Error('VAULT_OPERATION_REFUSED');
 
       return privateJson({
         ok: true,
@@ -298,8 +300,9 @@ Deno.serve(async (req) => {
     if (!validUuid(sessionId)) throw new Error('VAULT_SESSION_REQUIRED');
 
     if (action === 'list_entries') {
-      const { data, error } = await service.rpc('service_conscience_list_entries', {
+      const { data, error } = await service.rpc('service_conscience_list_entries_bound', {
         p_user_id: user.id,
+        p_auth_session_id: authSessionId,
         p_session_id: sessionId
       });
       if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');
@@ -310,8 +313,9 @@ Deno.serve(async (req) => {
     if (action === 'create_entry') {
       const type = entryType(body.entry_type);
       const payload = contentPayload(body.content_payload);
-      const { data: entryId, error } = await service.rpc('service_conscience_create_entry', {
+      const { data: entryId, error } = await service.rpc('service_conscience_create_entry_bound', {
         p_user_id: user.id,
+        p_auth_session_id: authSessionId,
         p_session_id: sessionId,
         p_entry_type: type,
         p_content_payload: payload
@@ -326,8 +330,9 @@ Deno.serve(async (req) => {
       if (!validUuid(id)) throw new Error('VAULT_ENTRY_ID_INVALID');
       const type = entryType(body.entry_type);
       const payload = contentPayload(body.content_payload);
-      const { data: updated, error } = await service.rpc('service_conscience_update_entry', {
+      const { data: updated, error } = await service.rpc('service_conscience_update_entry_bound', {
         p_user_id: user.id,
+        p_auth_session_id: authSessionId,
         p_session_id: sessionId,
         p_entry_id: id,
         p_entry_type: type,
@@ -342,8 +347,9 @@ Deno.serve(async (req) => {
       const id = body.entry_id;
       if (!validUuid(id)) throw new Error('VAULT_ENTRY_ID_INVALID');
       if (body.human_confirmed_delete !== true) throw new Error('VAULT_DELETE_CONFIRMATION_REQUIRED');
-      const { data: deleted, error } = await service.rpc('service_conscience_delete_entry', {
+      const { data: deleted, error } = await service.rpc('service_conscience_delete_entry_bound', {
         p_user_id: user.id,
+        p_auth_session_id: authSessionId,
         p_session_id: sessionId,
         p_entry_id: id
       });
@@ -353,8 +359,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'revoke_session') {
-      const { data: revoked, error } = await service.rpc('service_conscience_revoke_session', {
+      const { data: revoked, error } = await service.rpc('service_conscience_revoke_session_bound', {
         p_user_id: user.id,
+        p_auth_session_id: authSessionId,
         p_session_id: sessionId
       });
       if (error !== null) throw new Error(error?.message || 'VAULT_OPERATION_REFUSED');

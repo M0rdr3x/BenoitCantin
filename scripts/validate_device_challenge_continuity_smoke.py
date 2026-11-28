@@ -156,7 +156,9 @@ def main() -> int:
     # Edge : le challenge du Coffre reste visible comme protection et ne crée pas de capacité avant approbation.
     require("code: 'SECURITY_CHALLENGE_REQUIRED'" in edge, 'code Edge de challenge absent')
     require("decision.outcome === 'challenge'" in edge, 'branche challenge Edge absente')
-    require("service.rpc('service_conscience_open_session'" in edge, 'ouverture de capacité serveur absente')
+    require("service.rpc('service_conscience_open_session_bound'" in edge, 'ouverture de capacité liée à Auth absente')
+    require("service.rpc('service_conscience_open_session'" not in edge, 'ouverture legacy interdite')
+    require('p_auth_session_id: authSessionId' in edge, 'origine Auth obligatoire pour la capacité')
     require("service.rpc('service_conscience_evaluate_access_session'" in edge,
             'le Registre doit utiliser le wrapper session-aware')
     require('p_session_id: authSessionId' in edge,

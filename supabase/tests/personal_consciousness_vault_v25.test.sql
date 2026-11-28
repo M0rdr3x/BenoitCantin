@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, auth, extensions;
 
-select plan(32);
+select plan(34);
 
 select has_table('private','conscience_entries','le coffre personnel existe dans le schema private');
 select has_table('private','conscience_vault_sessions','les sessions temporaires du coffre existent');
@@ -32,14 +32,20 @@ select ok(not has_function_privilege('anon',
 select ok(not has_function_privilege('authenticated',
   'public.service_conscience_open_session(uuid,text,integer,text,text,text,integer)','EXECUTE'),
   'authenticated ne peut pas ouvrir directement une session de coffre');
-select ok(has_function_privilege('service_role',
+select ok(not has_function_privilege('service_role',
   'public.service_conscience_open_session(uuid,text,integer,text,text,text,integer)','EXECUTE'),
+  'ancienne RPC open_session fermee');
+select ok(has_function_privilege('service_role',
+  'public.service_conscience_open_session_bound(uuid,uuid,text,integer,text,text,text,integer)','EXECUTE'),
   'service_role peut appeler le point entree serveur');
 select ok(not has_function_privilege('authenticated',
   'public.service_conscience_list_entries(uuid,uuid)','EXECUTE'),
   'authenticated ne peut pas lister directement le Registre personnel');
-select ok(has_function_privilege('service_role',
+select ok(not has_function_privilege('service_role',
   'public.service_conscience_list_entries(uuid,uuid)','EXECUTE'),
+  'ancienne RPC list_entries fermee');
+select ok(has_function_privilege('service_role',
+  'public.service_conscience_list_entries_bound(uuid,uuid,uuid)','EXECUTE'),
   'service_role peut utiliser la voie serveur avec capacite');
 select ok(not has_function_privilege('authenticated',
   'public.service_conscience_evaluate_access(uuid,text,text,text,text,text,text)','EXECUTE'),
@@ -70,18 +76,18 @@ select ok(not exists(
 -- avec search_path explicite. L'ancien wrapper est conservé mais son EXECUTE service_role
 -- est révoqué par la migration de liaison challenge/session.
 select ok(
-  (select count(*)=8 and bool_and(p.prosecdef)
+  (select count(*)=14 and bool_and(p.prosecdef)
    from pg_proc p
    join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname like 'service_conscience_%'),
-  'les huit RPC de coffre sont SECURITY DEFINER'
+  'les quatorze RPC de coffre sont SECURITY DEFINER'
 );
 select ok(
-  (select count(*)=8 and bool_and(array_to_string(p.proconfig,',') like '%search_path=%')
+  (select count(*)=14 and bool_and(array_to_string(p.proconfig,',') like '%search_path=%')
    from pg_proc p
    join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname like 'service_conscience_%'),
-  'les huit RPC de coffre figent leur search_path'
+  'les quatorze RPC de coffre figent leur search_path'
 );
 
 -- Le navigateur ne peut plus lire device_key directement; il passe par une RPC assainie.

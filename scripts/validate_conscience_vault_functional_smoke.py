@@ -98,6 +98,17 @@ def main() -> int:
     require(unconfirmed_index < intact_index < confirmed_index,
             'ordre obligatoire: refus sans confirmation → entrée intacte → suppression confirmée')
 
+    for marker in (
+        'second_aal1 = sign_in(_email, _password)',
+        'second_aal2 = verify_totp(second_aal1, factor_id, secret)',
+        'jwt_claims(second_aal2).get("session_id") != jwt_claims(aal2).get("session_id")',
+        'vault(second_aal2, action, vault_session_id=session2, **extra)',
+        '403, "VAULT_SESSION_INVALID", f"isolation intersessions {action}"',
+        'ok(second_aal2, "revoke_session", vault_session_id=session2).get("revoked") is False',
+        'contenu inchangé après les refus intersessions',
+    ):
+        require(marker in smoke, f'isolation intersessions absente: {marker}')
+
     # Deux comptes AAL2 réellement distincts, sans contournement des permissions.
     for marker in (
         'other_aal1, other_uid, _, _ = signup(',
@@ -152,13 +163,13 @@ def main() -> int:
     require('raw_ip_stored: false' in edge and 'gps_used: false' in edge,
             'garanties IP brute/GPS absentes de la réponse Edge')
 
-    # Les 32 pgTAP historiques doivent rester le socle avant le smoke HTTP.
-    require('select plan(32);' in pgtap, 'plan pgTAP Coffre doit rester à 32 assertions')
+    # Les 34 pgTAP historiques doivent rester le socle avant le smoke HTTP.
+    require('select plan(34);' in pgtap, 'plan pgTAP Coffre doit rester à 34 assertions')
     require('pull_request:' in workflow and 'workflow_dispatch:' in workflow, 'déclencheurs CI incomplets')
     require('supabase start' in workflow, 'pile Supabase complète obligatoire')
     require('supabase db start' not in workflow, 'db start seul ne suffit pas au smoke Auth/Edge')
     require('supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local' in workflow,
-            '32 pgTAP Coffre doivent être exécutés')
+            '34 pgTAP Coffre doivent être exécutés')
     require('python3 scripts/validate_conscience_vault_edge_v25.py' in workflow,
             'validateur Edge Coffre absent')
     require('python3 scripts/validate_sensitive_aal2_smoke.py' in workflow,

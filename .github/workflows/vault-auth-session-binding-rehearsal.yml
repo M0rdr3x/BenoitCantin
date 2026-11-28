@@ -26,17 +26,11 @@ jobs:
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
-      - name: Générer la migration candidate via le CLI
+      - name: Vérifier la migration canonique exacte
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration new sinjira_vault_auth_session_binding
-          mapfile -t candidates < <(find supabase/migrations -maxdepth 1 -type f -name '*_sinjira_vault_auth_session_binding.sql')
-          test "${#candidates[@]}" -eq 1
-          test ! -s "${candidates[0]}"
-          cp supabase/security-candidates/vault_auth_session_binding.sql "${candidates[0]}"
-          printf 'Migration candidate: %s\n' "${candidates[0]}"
-          sha256sum "${candidates[0]}"
+          printf '%s  %s\n' 'f9d47832451382eefbec3d3d859b05f72d1696dec1a5d312f2b048ff31b494dd' 'supabase/migrations/20261128082928_sinjira_vault_auth_session_binding.sql' | sha256sum --check --strict
       - name: Démarrer la pile locale et rejouer la migration
         run: supabase start
       - name: Vérifier les autorisations et la révocation
