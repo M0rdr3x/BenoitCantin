@@ -55,6 +55,16 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertIn(marker, self.valid)
         self.assertRejected(self.valid.replace(marker, "false", 1), "Résumé distant sans preuve de succès complet")
 
+    def test_post_apply_history_proof_is_required(self):
+        marker = ' --after-apply > "$tmp/history.json"'
+        self.assertIn(marker, self.valid)
+        self.assertRejected(self.valid.replace(marker, ' > "$tmp/history.json"', 1), "Preuve finale de l'inventaire distant")
+
+    def test_final_summary_requires_history_proof(self):
+        marker = '[ "${{ steps.final_history.outcome }}" = "success" ] && '
+        self.assertIn(marker, self.valid)
+        self.assertRejected(self.valid.replace(marker, "", 1), "Résumé final sans preuve complète")
+
     def test_runner_latest_is_rejected(self):
         bad = self.valid.replace("    runs-on: ubuntu-24.04", "    runs-on: ubuntu-latest", 1)
         self.assertRejected(bad, "ubuntu-latest")
