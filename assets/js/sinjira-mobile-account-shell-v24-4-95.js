@@ -84,9 +84,26 @@
       Math.max(0,Math.round((nav.clientWidth-link.width)/2));
     nav.scrollLeft=Math.max(0,Math.min(max,target));
   }
+  // Un changement de hauteur (clavier, barre d'adresse, zoom de texte)
+  // ne doit pas recentrer le dock contre un balayage manuel.
+  var lastViewportWidth=window.innerWidth;
+  var lastDockWidth=0;
+  var revealPending=true;
   function syncAfterLayout(){
     syncNavHeight();
-    revealActiveLink();
+    var width=nav.clientWidth;
+    if(window.innerWidth!==lastViewportWidth){
+      lastViewportWidth=window.innerWidth;
+      revealPending=true;
+    }
+    if(width>0&&width!==lastDockWidth){
+      lastDockWidth=width;
+      revealPending=true;
+    }
+    if(width>0&&revealPending){
+      revealPending=false;
+      revealActiveLink();
+    }
   }
 
   // Le dock peut grandir lorsque la police est agrandie : réserver sa
@@ -99,8 +116,13 @@
     document.body.style.setProperty('--sinjira-account-mobile-nav-height',height+'px');
   }
   syncNavHeight();
-  window.requestAnimationFrame(revealActiveLink);
+  window.requestAnimationFrame(syncAfterLayout);
   window.addEventListener('resize',function(){
+    // Mémoriser une rotation même si deux événements arrivent avant le rendu.
+    if(window.innerWidth!==lastViewportWidth){
+      lastViewportWidth=window.innerWidth;
+      revealPending=true;
+    }
     window.requestAnimationFrame(syncAfterLayout);
   });
   if('ResizeObserver' in window){

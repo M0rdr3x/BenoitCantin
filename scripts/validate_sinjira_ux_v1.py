@@ -178,13 +178,9 @@ def check():
             if "account-nav-scroll" not in page or 'data-sinjira-ux="v1"' not in page:
                 continue
             account_nav_pages += 1
-            # Cette page est déjà modifiée par la PR indépendante #1158.
-            # Éviter le conflit Git; son alignement est requis après fusion.
-            if account_page.name == "mes-commentaires.html":
-                continue
             for version in (
                 "site-ux-sinjira-v1.css?v=1.0.1",
-                "site.js?v=24.4.102",
+                "site.js?v=24.4.104",
             ):
                 if page.count(version) != 1:
                     rel = account_page.relative_to(ROOT)
