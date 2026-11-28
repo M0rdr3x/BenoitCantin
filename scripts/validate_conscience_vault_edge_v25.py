@@ -37,7 +37,7 @@ def main() -> int:
     auth = read('supabase/functions/_shared/auth.ts')
     edge = read('supabase/functions/conscience-vault/index.ts')
     active_session = read('supabase/functions/_shared/active-aal2-session.ts')
-    require(active_session, ["claims.sub !== userId", "claims.aal !== 'aal2'", "client.rpc('security_list_sessions')", 'result.error !== null', 'current.length !== 1', 'current[0].id !== sessionId', "current[0].aal !== 'aal2'", "seen.has(row.id)", "Date.parse(expiry) <= Date.now()"], 'session Auth active commune')
+    require(active_session, ["claims.sub !== userId", "claims.aal !== 'aal2'", "client.rpc('security_list_sessions')", 'result.error !== null', 'current.length !== 1', 'current[0].id !== sessionId', "current[0].aal !== 'aal2'", "seen.has(row.id)", "const key = userContextKey()", "decodeClaims(key).role !== 'anon'", "sb_publishable_[A-Za-z0-9_-]+", "Date.parse(expiry) <= Date.now()"], 'session Auth active commune')
     forbid(active_session, ["Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')"], 'session à moindre privilège')
     require(edge, ['await requireActiveAal2Session(token, user.id);'], 'session active sur toutes les actions')
     if edge.index('await requireActiveAal2Session(token, user.id);') > edge.index("if (action === 'open_session')"):
