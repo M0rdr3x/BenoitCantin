@@ -99,6 +99,15 @@ def self_test_delete_contract(edge:str,js:str,migration:str,bound:str)->None:
         if (mut_edge,mut_js,mut_sql)==(edge,js,migration):raise AssertionError(f'Auto-test suppression sans effet: {label}')
         if not delete_contract_errors(mut_edge,mut_js,mut_sql,bound):raise AssertionError(f'Régression suppression non détectée: {label}')
 
+    start=edge.index("    if (action === 'delete_entry') {")
+    for marker,replacement in (
+        ('p_auth_session_id: authSessionId,','p_auth_session_id: body.auth_session_id,'),
+        ("service.rpc('service_conscience_delete_entry_bound'","service.rpc('service_conscience_delete_entry'"),
+    ):
+        mutated=edge[:start]+edge[start:].replace(marker,replacement,1)
+        if mutated==edge or not delete_contract_errors(mutated,js,migration,bound):
+            raise AssertionError(f'Régression Edge suppression liée non détectée: {marker}')
+
     for marker,replacement in (
         ('perform private.conscience_vault_assert_bound(p_user_id,p_session_id,p_auth_session_id);','perform 1;'),
         ('revoke all on function public.service_conscience_delete_entry(uuid,uuid,uuid) from public,anon,authenticated,service_role;','-- legacy left callable'),
@@ -231,7 +240,7 @@ def main()->int:
         'Elle ne transmet pas le Registre personnel des consciences.',
     ],'Histoire de vie ne confond plus le coffre réel et le Registre narratif')
 
-    print('OK Web V25: Registre personnel distinct du narratif, Edge uniquement, capacité mémoire, auto-verrouillage, aucun export ni stockage local du contenu, suppression physique protégée par confirmation humaine côté client et serveur (10 mutations auto-testées).')
+    print('OK Web V25: Registre personnel distinct du narratif, Edge uniquement, capacité mémoire, auto-verrouillage, aucun export ni stockage local du contenu, suppression physique protégée par confirmation humaine côté client et serveur (12 mutations auto-testées).')
     return 0
 
 
