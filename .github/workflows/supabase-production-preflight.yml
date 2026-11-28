@@ -10,6 +10,7 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/audit_production_migration_history.py'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
@@ -24,6 +25,7 @@ on:
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/validate_social_rls_contract.py'
       - 'scripts/validate_production_migration_ledger.py'
+      - 'scripts/audit_production_migration_history.py'
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
@@ -235,27 +237,20 @@ jobs:
         run: |
           set -euo pipefail
           tmp="$(mktemp -d)"
+          trap 'rm -rf -- "$tmp"' EXIT
           cp -a .prod-workspace/supabase "$tmp/supabase"
           rm -rf "$tmp/supabase/migrations"
           mkdir -p "$tmp/supabase/migrations"
-          (
-            cd "$tmp"
-            supabase migration fetch --linked
-          )
-          rm -rf /tmp/supabase-production-migrations
-          mkdir -p /tmp/supabase-production-migrations
-          cp -a "$tmp/supabase/migrations/." /tmp/supabase-production-migrations/
-          find /tmp/supabase-production-migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort | tee /tmp/supabase-production-migrations/MANIFEST.txt
-          count="$(find /tmp/supabase-production-migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
-          echo "Historique distant exporté en lecture seule : $count migration(s)." >> "$GITHUB_STEP_SUMMARY"
-          test "$count" -gt 0
+          (cd "$tmp" && supabase migration fetch --linked)
+          python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations" > "$RUNNER_TEMP/sinjira-migration-history.json"
+          echo "Historique distant aligné sur le ledger (métadonnées uniquement)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publier l'historique distant comme artefact de prévol
         if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 vérifié le 2026-09-08
         with:
           name: supabase-production-migrations-${{ github.run_id }}
-          path: /tmp/supabase-production-migrations
+          path: ${{ runner.temp }}/sinjira-migration-history.json
           if-no-files-found: error
           retention-days: 7
 
@@ -382,6 +377,13 @@ jobs:
         run: |
           set -euo pipefail
           (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
+          tmp="$(mktemp -d)"
+          trap 'rm -rf -- "$tmp"' EXIT
+          cp -a .prod-workspace/supabase "$tmp/supabase"
+          rm -rf "$tmp/supabase/migrations"
+          mkdir -p "$tmp/supabase/migrations"
+          (cd "$tmp" && supabase migration fetch --linked)
+          python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations" > "$RUNNER_TEMP/sinjira-migration-history-approval.json"
           (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-approval.txt
           (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-approval.txt
           (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt
