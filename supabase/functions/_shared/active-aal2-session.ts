@@ -2,15 +2,41 @@ import { createClient } from 'npm:@supabase/supabase-js@2.119.2';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Validate key class before handing configuration to the SDK. The legacy
+// JWT payload is inspected only for its role; the API verifies the signature.
+function decodeClaims(token: string) {
+  const parts = token.split('.');
+  if (parts.length !== 3 || token.length > 16384 ||
+      parts.some(part => !part || /[^A-Za-z0-9_-]/.test(part))) throw new Error();
+  const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+  const bytes = Uint8Array.from(atob(raw.padEnd(Math.ceil(raw.length / 4) * 4, '=')), c => c.charCodeAt(0));
+  const claims = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  if (!claims || typeof claims !== 'object' || Array.isArray(claims)) throw new Error();
+  return claims;
+}
+
+function userContextKey() {
+  const raw = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS');
+  if (raw !== undefined) {
+    const keys = JSON.parse(raw);
+    if (!keys || typeof keys !== 'object' || Array.isArray(keys)) throw new Error();
+    if (Object.prototype.hasOwnProperty.call(keys, 'default')) {
+      const key = keys.default;
+      if (typeof key !== 'string' || key.length > 512 ||
+          !/^sb_publishable_[A-Za-z0-9_-]+$/.test(key) || key.trim() !== key) throw new Error();
+      return key;
+    }
+  }
+  const key = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!key || decodeClaims(key).role !== 'anon') throw new Error();
+  return key;
+}
+
 // Le jeton est déjà vérifié par le garde Auth de l'Edge (Auth et AAL2).
 // Aucune revendication provenant du corps de requête n'est utilisée.
 function verifiedSessionId(token: string, userId: string) {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) throw new Error();
-    const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const bytes = Uint8Array.from(atob(raw.padEnd(Math.ceil(raw.length / 4) * 4, '=')), c => c.charCodeAt(0));
-    const claims = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const claims = decodeClaims(token);
     if (!claims || typeof claims !== 'object' || Array.isArray(claims) ||
         claims.sub !== userId || claims.aal !== 'aal2' ||
         typeof claims.session_id !== 'string' || claims.session_id.length !== 36 ||
@@ -26,11 +52,8 @@ export async function requireActiveAal2Session(token: string, userId: string) {
   let result;
   try {
     const url = Deno.env.get('SUPABASE_URL');
-    const keys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS');
-    const publishable = keys ? JSON.parse(keys)?.default : null;
-    const key = typeof publishable === 'string' && publishable.startsWith('sb_publishable_')
-      ? publishable : Deno.env.get('SUPABASE_ANON_KEY');
-    if (!url || !key) throw new Error();
+    const key = userContextKey();
+    if (!url) throw new Error();
     // Client limité à l'identité du demandeur; jamais la clé service_role.
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },

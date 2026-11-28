@@ -90,7 +90,7 @@ need(SESSION_ALIAS,"requireActiveAal2Session as requireActivePersonalAiSession",
 for marker in ("claims.sub !== userId", "claims.aal !== 'aal2'", "claims.session_id.length !== 36",
                "SUPABASE_ANON_KEY", "SUPABASE_PUBLISHABLE_KEYS", "client.rpc('security_list_sessions')",
                "result.error !== null", "Array.isArray(result.data)", "current.length !== 1",
-               "current[0].id !== sessionId", "current[0].aal !== 'aal2'", "seen.has(row.id)", "Date.parse(expiry) <= Date.now()", "persistSession: false"):
+               "current[0].id !== sessionId", "current[0].aal !== 'aal2'", "seen.has(row.id)", "const key = userContextKey()", "decodeClaims(key).role !== 'anon'", "sb_publishable_[A-Za-z0-9_-]+", "Date.parse(expiry) <= Date.now()", "persistSession: false"):
     need(SESSION,marker,f'Session: garde absente {marker}')
 forbid(SESSION,"Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')",'Session: clé privilégiée interdite')
 need(EDGE,"await requireActivePersonalAiSession(token, user.id);",'Edge: session active obligatoire')
