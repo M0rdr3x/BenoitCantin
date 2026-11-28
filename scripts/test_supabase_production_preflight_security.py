@@ -55,6 +55,18 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertIn(marker, self.valid)
         self.assertRejected(self.valid.replace(marker, "false", 1), "Résumé distant sans preuve de succès complet")
 
+    def test_diagnostics_must_remain_private(self):
+        marker = '> "$RUNNER_TEMP/sinjira-db-lint-before.txt" 2>&1'
+        self.assertIn(marker, self.valid)
+        self.assertRejected(self.valid.replace(marker, "| tee /tmp/sinjira-db-lint-before.txt", 1), "Sortie de diagnostic privilégiée non confinée")
+        self.assertRejected(self.valid.replace(marker, "", 1), "Sortie de diagnostic privilégiée non confinée")
+
+    def test_raw_diagnostic_summary_is_rejected(self):
+        marker = '          echo "Historique distant aligné sur le ledger (métadonnées uniquement)."'
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, '          cat "$RUNNER_TEMP/sinjira-db-lint-before.txt" >> "$GITHUB_STEP_SUMMARY"\n' + marker, 1)
+        self.assertRejected(bad, "Publication brute de diagnostics de production interdite")
+
     def test_runner_latest_is_rejected(self):
         bad = self.valid.replace("    runs-on: ubuntu-24.04", "    runs-on: ubuntu-latest", 1)
         self.assertRejected(bad, "ubuntu-latest")
@@ -183,7 +195,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévol distant ne doit jamais exécuter db push")
 
     def test_remote_preflight_cannot_deploy_functions(self):
-        marker = "          (cd .prod-workspace && supabase db push --linked --dry-run --password \"$SUPABASE_DB_PASSWORD\") | tee /tmp/sinjira-dry-run.txt"
+        marker = "          (cd .prod-workspace && supabase db push --linked --dry-run --password \"$SUPABASE_DB_PASSWORD\") > \"$RUNNER_TEMP/sinjira-dry-run.txt\" 2>&1"
         bad = self.valid.replace(
             marker,
             marker + "\n          (cd .prod-workspace && supabase functions deploy --project-ref \"$PROJECT_ID\" --use-api)",
@@ -234,7 +246,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévols local et distant")
 
     def test_post_environment_revalidation_requires_dry_run(self):
-        marker = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt'
+        marker = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") > "$RUNNER_TEMP/sinjira-dry-run-approval.txt" 2>&1'
         bad = self.valid.replace(marker, "echo dry-run-retire", 1)
         self.assertRejected(bad, "Revalidation post-environment incomplète")
 
