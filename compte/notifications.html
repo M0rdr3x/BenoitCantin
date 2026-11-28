@@ -15,6 +15,7 @@
 <link href="../assets/css/v20-social.css?v=24.4.63" rel="stylesheet"/>
 <link href="../assets/css/v24-platform.css?v=24.4.63" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/css/site-ux-sinjira-v1.css?v=1.0.1">
+<link rel="stylesheet" href="/assets/css/sinjira-notifications-ux-v1.css?v=1.0.0">
 </head>
 <body class="account-page" data-account-page="notifications" data-sinjira-ux="v1">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
@@ -22,12 +23,12 @@
 <div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a href="bibliotheque.html">Bibliothèque</a><a href="licences.html">Licences</a><a href="mes-lectures.html">Lectures</a><a href="mes-achats.html">Achats</a><a aria-current="page" href="notifications.html">Notifications</a><a href="mon-personnage.html">Personnage</a><a href="communaute.html">Communauté</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><a data-admin-nav hidden href="/admin/sinjira/">Administration</a><button data-logout type="button">Déconnexion</button></nav></div>
 <main id="contenu" tabindex="-1">
 <section class="account-hero"><div class="account-shell"><span class="eyebrow">Centre d’avis privé</span><h1>Mes notifications SINJIRA™</h1><p>Les changements importants de votre compte apparaissent ici : accès, commentaires, réponses de la Communauté, Rencontres, Registre, personnage et playtests. Aucun courriel, SMS ou service payant n’est nécessaire.</p><div class="account-stats"><div class="account-stat"><span>Non lus (total)</span><strong data-notifications-unread-count>—</strong></div><div class="account-stat"><span>Affichés (100 max.)</span><strong data-notifications-total-count>—</strong></div></div><div class="hero-actions"><button class="btn btn-primary" data-notifications-read-all type="button" disabled>Tout marquer comme lu</button><a class="btn btn-secondary" href="index.html">Retour à Mon espace</a></div><div class="account-status" data-notifications-status tabindex="-1" hidden></div></div></section>
-<section class="section section-tight"><div class="account-shell"><div class="account-reader-grid" data-notifications-list aria-busy="true"><div class="notice"><strong>Chargement des avis privés…</strong></div></div></div></section>
+<section class="section section-tight"><div class="account-shell"><div class="sinjira-notification-toolbar"><label for="notification-filter">Afficher les avis</label><select id="notification-filter" data-notifications-filter disabled><option value="all">Tous les avis récents</option><option value="unread">Non lus uniquement</option><option value="read">Lus uniquement</option></select><p data-notifications-filter-summary role="status" aria-atomic="true"></p></div><p class="notice" data-notifications-filter-empty hidden>Aucun avis récent ne correspond à ce filtre.</p><div class="account-reader-grid" data-notifications-list aria-busy="true"><div class="notice"><strong>Chargement des avis privés…</strong></div></div></div></section>
 <section class="section section-tight"><div class="account-shell"><article class="account-card"><span class="eyebrow">Confidentialité</span><h2>Notifications internes seulement</h2><p>Le navigateur peut lire uniquement les avis liés à votre propre compte et peut seulement modifier leur état lu/non lu. Il ne peut pas créer ni supprimer des notifications.</p></article></div></section>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Notifications SINJIRA™ — internes et gratuites.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=24.4.104"></script>
 <script src="../assets/js/sinjira-account.js?v=24.4.63" type="module"></script>
-<script src="../assets/js/sinjira-user-notifications-v24-4-63.js?v=24.4.76" type="module"></script>
+<script src="../assets/js/sinjira-user-notifications-v24-4-63.js?v=24.4.77" type="module"></script>
 </body>
 </html>

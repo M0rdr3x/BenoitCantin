@@ -1,0 +1,18 @@
+/* Centre de notifications : portée limitée aux listes privées. */
+[data-notifications-list] > [hidden],
+[data-notifications-filter-empty][hidden]{display:none!important}
+.sinjira-notification-toolbar{display:grid;gap:8px;min-width:0;margin-bottom:16px}
+.sinjira-notification-toolbar label{font-weight:700}
+.sinjira-notification-toolbar select{box-sizing:border-box;width:100%;max-width:28rem;min-width:0;min-height:48px;font:inherit;font-size:max(16px,1rem);padding:8px 12px;color:#f7fbff;background:#151e32;border:1px solid #8396b9;border-radius:10px}
+.sinjira-notification-toolbar p{margin:0}
+:is([data-notifications-list],[data-notifications-preview]) > .account-card{box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere}
+:is([data-notifications-list],[data-notifications-preview]) .account-welcome-strip{flex-wrap:wrap;gap:8px}
+:is([data-notifications-list],[data-notifications-preview]) .hero-actions{display:flex;flex-wrap:wrap;gap:10px;min-width:0}
+:is([data-notifications-list],[data-notifications-preview]) .hero-actions > .btn{box-sizing:border-box;min-width:48px;min-height:48px;max-width:100%;white-space:normal;text-align:center;overflow-wrap:anywhere}
+@media(max-width:600px){
+  [data-notifications-list]{grid-template-columns:minmax(0,1fr)}
+  [data-notifications-list] > .account-card{padding:clamp(12px,4vw,22px)}
+  [data-notifications-list] .hero-actions > .btn{width:100%}
+  body[data-account-page="notifications"] .account-stats{grid-template-columns:minmax(0,1fr)}
+  body[data-account-page="notifications"] .account-hero .hero-actions > .btn{box-sizing:border-box;min-height:48px;width:100%;max-width:100%;white-space:normal;text-align:center}
+}

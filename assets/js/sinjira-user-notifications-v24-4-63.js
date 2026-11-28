@@ -2,6 +2,53 @@ import {getSupabase,requireUser,escapeHtml,formatDate,setStatus} from './sinjira
 
 const s=getSupabase();
 const pageStatus=document.querySelector('[data-notifications-status]');
+const filter=document.querySelector('[data-notifications-filter]');
+let mutationInFlight=false;
+let refreshRequired=false;
+
+function applyFilter(){
+  const cards=[...document.querySelectorAll('[data-notifications-list] [data-notification-id]')];
+  const mode=filter?.value||'all';
+  let shown=0;
+  for(const card of cards){
+    const unread=card.classList.contains('v24-notification-unread');
+    card.hidden=mode==='unread'?!unread:mode==='read'?unread:false;
+    if(!card.hidden)shown++;
+  }
+  const summary=document.querySelector('[data-notifications-filter-summary]');
+  if(summary)summary.textContent=cards.length?`${shown} avis affiché(s) sur ${cards.length} avis récents.`:'Aucun avis récent.';
+  const empty=document.querySelector('[data-notifications-filter-empty]');
+  if(empty)empty.hidden=cards.length===0||shown!==0;
+}
+filter?.addEventListener('change',applyFilter);
+
+function syncReadControls(){
+  const locked=mutationInFlight||refreshRequired;
+  document.querySelectorAll('[data-notifications-list] [data-notification-read]').forEach(button=>{button.disabled=locked;});
+  const all=document.querySelector('[data-notifications-read-all]');
+  if(all)all.disabled=locked||all.dataset.hasUnread!=='true';
+}
+async function runReadAction(user,button,mutate,successMessage,errorMessage){
+  if(mutationInFlight||refreshRequired)return;
+  const hadFocus=document.activeElement===button;
+  mutationInFlight=true;
+  syncReadControls();
+  let updated=false;
+  try{
+    await mutate();
+    updated=true;
+    await loadFullPage(user);
+    setStatus(pageStatus,successMessage,'success');
+  }catch(_){
+    document.querySelector('[data-notifications-list]')?.setAttribute('aria-busy','false');
+    refreshRequired=updated;
+    setStatus(pageStatus,updated?'Modification enregistrée, mais la liste n’a pas pu être actualisée. Rechargez la page.':errorMessage,'error');
+  }finally{
+    mutationInFlight=false;
+    syncReadControls();
+    if(hadFocus&&(!document.activeElement||document.activeElement===document.body||document.activeElement===button&&button.disabled))pageStatus?.focus();
+  }
+}
 
 const typeLabel=type=>({
   access_request:'Accès',
@@ -28,8 +75,8 @@ function notificationCard(item,{compact=false}={}){
     <p>${escapeHtml(item.body||'')}</p>
     <small>${escapeHtml(formatDate(item.created_at))}</small>
     <div class="hero-actions">
-      ${unread&&!compact?`<button class="btn btn-secondary btn-small" type="button" data-notification-read="${escapeHtml(item.id)}">Marquer comme lu</button>`:''}
-      ${path?`<a class="btn btn-primary btn-small" data-notification-open="${escapeHtml(item.id)}" href="${escapeHtml(path)}">Ouvrir</a>`:''}
+      ${unread&&!compact?`<button class="btn btn-secondary btn-small" type="button" data-notification-read="${escapeHtml(item.id)}" aria-label="Marquer comme lu : ${escapeHtml(item.title||'Avis SINJIRA™')}">Marquer comme lu</button>`:''}
+      ${path?`<a class="btn btn-primary btn-small" data-notification-open="${escapeHtml(item.id)}" href="${escapeHtml(path)}" aria-label="Ouvrir : ${escapeHtml(item.title||'Avis SINJIRA™')}">Ouvrir</a>`:''}
     </div>
   </article>`;
 }
@@ -74,57 +121,44 @@ async function loadFullPage(user){
     : '<div class="notice"><strong>Aucun avis pour le moment.</strong><p>Les changements importants de votre compte apparaîtront ici.</p></div>';
 
   box.setAttribute('aria-busy','false');
-  box.querySelectorAll('[data-notification-read]').forEach(button=>button.addEventListener('click',async()=>{
-    const hadFocus=document.activeElement===button;
-    button.disabled=true;
-    let updated=false;
-    try{
-      await markRead(user,button.dataset.notificationRead);
-      updated=true;
-      await loadFullPage(user);
-      setStatus(pageStatus,'Avis marqué comme lu.','success');
-    }catch(_){
-      box.setAttribute('aria-busy','false');
-      button.disabled=updated;
-      setStatus(pageStatus,updated?'Avis marqué comme lu, mais la liste n’a pas pu être actualisée. Rechargez la page.':'Impossible de modifier cet avis pour le moment.','error');
-    }
-    if(hadFocus&&(!document.activeElement||document.activeElement===document.body||document.activeElement===button))pageStatus?.focus();
+  if(filter)filter.disabled=false;
+  applyFilter();
+  box.querySelectorAll('[data-notification-read]').forEach(button=>button.addEventListener('click',()=>{
+    return runReadAction(user,button,()=>markRead(user,button.dataset.notificationRead),
+      'Avis marqué comme lu.','Impossible de modifier cet avis pour le moment.');
   }));
 
   box.querySelectorAll('[data-notification-open]').forEach(link=>link.addEventListener('click',async event=>{
-    const id=link.dataset.notificationOpen;
+    // Respecter les usages natifs (nouvel onglet, sélection avec modificateurs).
+    if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
     const card=link.closest('[data-notification-id]');
-    if(!card?.querySelector('[data-notification-read]'))return;
+    if(!card?.querySelector('[data-notification-read]')||mutationInFlight||refreshRequired)return;
     event.preventDefault();
-    try{await markRead(user,id)}catch(_){}
+    mutationInFlight=true;
+    syncReadControls();
+    // Ne pas bloquer indéfiniment la navigation lorsque le réseau est lent.
+    let timeout;
+    try{
+      await Promise.race([
+        markRead(user,link.dataset.notificationOpen),
+        new Promise(resolve=>{timeout=setTimeout(resolve,1500);})
+      ]);
+    }catch(_){}finally{clearTimeout(timeout);}
     location.href=link.href;
   }));
 
   const all=document.querySelector('[data-notifications-read-all]');
   if(all){
-    all.disabled=unread===0;
-    all.onclick=async()=>{
-      if(all.disabled)return;
-      const hadFocus=document.activeElement===all;
-      all.disabled=true;
-      let updated=false;
-      try{
-        const {error:updateError}=await s.from('user_notifications')
-          .update({read_at:new Date().toISOString()})
-          .eq('user_id',user.id)
-          .is('read_at',null);
-        if(updateError)throw updateError;
-        updated=true;
-        await loadFullPage(user);
-        setStatus(pageStatus,'Tous les avis sont maintenant marqués comme lus.','success');
-      }catch(_){
-        box.setAttribute('aria-busy','false');
-        all.disabled=updated;
-        setStatus(pageStatus,updated?'Avis marqués comme lus, mais la liste n’a pas pu être actualisée. Rechargez la page.':'Impossible de marquer tous les avis comme lus.','error');
-      }
-      if(hadFocus&&all.disabled&&(document.activeElement===document.body||document.activeElement===all))pageStatus?.focus();
-    };
+    all.dataset.hasUnread=String(unread>0);
+    all.onclick=()=>runReadAction(user,all,async()=>{
+      const {error}=await s.from('user_notifications')
+        .update({read_at:new Date().toISOString()})
+        .eq('user_id',user.id)
+        .is('read_at',null);
+      if(error)throw error;
+    },'Tous les avis sont maintenant marqués comme lus.','Impossible de marquer tous les avis comme lus.');
   }
+  syncReadControls();
 }
 
 async function loadDashboardPreview(user){
