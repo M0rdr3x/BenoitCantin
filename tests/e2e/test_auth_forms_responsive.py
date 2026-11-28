@@ -256,10 +256,11 @@ def inspect_member_forms(browser):
             for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(768,"100%"),(1440,"100%")):
                 page.set_viewport_size({"width":width,"height":844})
                 page.evaluate("(zoom)=>document.documentElement.style.fontSize=zoom",zoom)
+                page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
                 state=page.evaluate("""() => {
                   const controls=[...document.querySelectorAll('main .account-form .field input:not([type=hidden]),main .account-form select,main .account-form textarea,main .btn,main summary,main .account-check')].filter(e=>e.getBoundingClientRect().width>0);
                   return {count:controls.length,overflow:document.documentElement.scrollWidth>innerWidth+2,
-                    offenders:controls.filter(e=>{const r=e.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2||r.height<47.5}).map(e=>e.id||e.className||e.tagName),
+                    offenders:controls.filter(e=>{const r=e.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2||r.height<47.5}).map(e=>{const r=e.getBoundingClientRect();return {control:e.id||e.className||e.tagName,left:r.left,right:r.right,height:r.height,width:r.width}}),
                     status:[...document.querySelectorAll('main .account-status')].every(e=>e.getAttribute('role')==='status'&&e.getAttribute('aria-live')==='polite')};
                 }""")
                 assert_ok(state["count"]>=5 and not state["overflow"] and not state["offenders"] and state["status"],

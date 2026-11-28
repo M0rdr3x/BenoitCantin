@@ -144,3 +144,35 @@ body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-p
 @media(forced-colors:active){
   body[data-sinjira-form-ux="v1"]:is([data-account-page="profile"],[data-account-page="settings-v70"]) main :is(button,a,input,select,summary):focus-visible{outline-color:Highlight}
 }
+
+/* Paramètres : reflow explicite des pistes de grille et contrôles natifs.
+   Les formulaires inertes gardent les mêmes dimensions que les formulaires actifs. */
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main :is(.account-shell,.account-card,.account-form,.field,.account-check,.hero-actions,.account-status){
+  box-sizing:border-box;min-inline-size:0;max-inline-size:100%;overflow-wrap:anywhere;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main :is(.account-form,.account-form .field){
+  grid-template-columns:minmax(0,1fr);
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main .account-form .field select{
+  display:block;box-sizing:border-box;inline-size:100%;min-inline-size:0;max-inline-size:100%;
+  height:max(48px,2.75em);min-height:48px;padding-inline:8px;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main .account-form .account-check{
+  display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:center;
+  width:100%;min-height:48px;min-block-size:48px;padding:8px 0;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main .account-form .account-check span{
+  min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;
+}
+body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main .btn{
+  min-width:0;min-block-size:48px;white-space:normal;overflow-wrap:anywhere;
+}
+@media(max-width:850px){
+  body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main :is(.account-layout,.v24-two-col){
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media(max-width:360px){
+  body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main .account-card{padding:12px}
+  body[data-sinjira-form-ux="v1"][data-account-page="settings-v70"] main .btn{padding-inline:8px}
+}
