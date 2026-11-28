@@ -137,6 +137,18 @@ def validate_text(text: str) -> list[str]:
     if text.count("          persist-credentials: false") != 3:
         errors.append("Les trois checkouts doivent conserver persist-credentials: false.")
 
+    for job_name, block in jobs.items():
+        checkout = step_block(block, "Checkout")
+        exact = step_block(block, "Vérifier le commit exact du workflow")
+        if not has_exact_line(checkout, "          ref: ${{ github.sha }}"):
+            errors.append(f"Checkout non lié au commit exact: {job_name}")
+        if not has_exact_line(exact, '          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"') or not has_exact_line(exact, "          set -euo pipefail"):
+            errors.append(f"Vérification du commit exact absente: {job_name}")
+        if not (0 <= block.find("- name: Checkout") <
+                block.find("- name: Vérifier le commit exact du workflow") <
+                block.find("- name: Configurer Python")):
+            errors.append(f"Ordre de vérification du commit exact invalide: {job_name}")
+
     uses = re.findall(r"(?m)^\s*-?\s*uses:\s+(\S+)", text)
     if not uses:
         errors.append("Aucune action réutilisable détectée.")
@@ -240,6 +252,19 @@ def validate_text(text: str) -> list[str]:
         for block in (export,):
             if not has_exact_line(block, "          set -euo pipefail") or not has_exact_line(block, """          trap 'rm -rf -- "$tmp"' EXIT"""):
                 errors.append("Réconciliation distante sans fermeture sûre ou nettoyage.")
+
+        dry = step_block(remote, "Prévisualiser les migrations sans modifier la production")
+        summary = step_block(remote, "ÉTAT PRÉVOL DISTANT")
+        for marker in (
+            "          PREFLIGHT_STATUS: ${{ job.status }}",
+            "          AUTH_READY: ${{ steps.auth.outputs.ready }}",
+            "          DRY_RUN_OUTCOME: ${{ steps.remote_dry_run.outcome }}",
+            'if [ "$PREFLIGHT_STATUS" != "success" ] || [ "$AUTH_READY" != "true" ] || [ "$DRY_RUN_OUTCOME" != "success" ]; then',
+        ):
+            if marker not in summary:
+                errors.append("Résumé distant sans preuve de succès complet.")
+        if not has_exact_line(dry, "        id: remote_dry_run"):
+            errors.append("Identifiant dry-run distant absent.")
 
         if "supabase secrets set" in remote:
             errors.append("Le prévol distant ne doit jamais modifier les secrets Supabase.")
