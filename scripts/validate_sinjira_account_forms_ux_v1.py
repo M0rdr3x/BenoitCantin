@@ -39,7 +39,7 @@ def check_page(path, expected):
         errors.append(f"{path}: cible du lien d’évitement non focalisable")
     if auth_nav and 'data-backend-state role="status" aria-atomic="true"' not in text:
         errors.append(f"{path}: état du service non annoncé")
-    css_version = "1.0.3" if auth_nav else "1.0.4"
+    css_version = "1.0.3" if auth_nav else "1.0.5"
     if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.3" not in text:
         errors.append(f"{path}: aide de validation absente")
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
