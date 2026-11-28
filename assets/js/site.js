@@ -63,8 +63,16 @@
     pwaScript.setAttribute('data-sinjira-pwa-install', '');
     // Conserver l'invite éventuellement émise pendant le chargement du module.
     // Pas de preventDefault avant que le module ait confirmé son éligibilité.
+    var pwaStarted = false;
+    function startPwa() {
+      if (pwaStarted) return;
+      pwaStarted = true;
+      doc.head.appendChild(pwaScript);
+    }
     function captureInstallPrompt(event) {
       pwaScript.sinjiraPendingInstallPrompt = event;
+      // Une vraie proposition du navigateur reste prioritaire sur le délai.
+      startPwa();
     }
     function releaseInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
@@ -75,7 +83,24 @@
     window.addEventListener('beforeinstallprompt', captureInstallPrompt);
     pwaScript.addEventListener('load', releaseInstallPrompt, {once:true});
     pwaScript.addEventListener('error', releaseInstallPrompt, {once:true});
-    doc.head.appendChild(pwaScript);
+    var path = window.location.pathname;
+    if (path === '/' || path === '/index.html') {
+      // L'accueil public doit afficher son contenu avant les fonctions
+      // facultatives. Le prompt natif est capturé dès maintenant.
+      function scheduleHomePwa() {
+        window.setTimeout(function () {
+          if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(startPwa, {timeout: 1500});
+          } else {
+            startPwa();
+          }
+        }, 1200);
+      }
+      if (doc.readyState === 'complete') scheduleHomePwa();
+      else window.addEventListener('load', scheduleHomePwa, {once:true});
+    } else {
+      startPwa();
+    }
   }
 
   appendCompatStylesheet();
