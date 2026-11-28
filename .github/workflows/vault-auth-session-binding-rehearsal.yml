@@ -1,0 +1,50 @@
+name: Sécurité — répétition liaison coffre et session Auth
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/security-candidates/vault_auth_session_binding*.sql'
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/vault-auth-session-binding-rehearsal.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+      - name: Générer la migration candidate via le CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration new sinjira_vault_auth_session_binding
+          mapfile -t candidates < <(find supabase/migrations -maxdepth 1 -type f -name '*_sinjira_vault_auth_session_binding.sql')
+          test "${#candidates[@]}" -eq 1
+          test ! -s "${candidates[0]}"
+          cp supabase/security-candidates/vault_auth_session_binding.sql "${candidates[0]}"
+          printf 'Migration candidate: %s\n' "${candidates[0]}"
+          sha256sum "${candidates[0]}"
+      - name: Démarrer la pile locale et rejouer la migration
+        run: supabase start
+      - name: Vérifier les autorisations et la révocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --local
+          supabase test db supabase/security-candidates/vault_auth_session_binding.test.sql --local
+      - name: Arrêter la pile locale
+        if: always()
+        run: supabase stop --no-backup || true
