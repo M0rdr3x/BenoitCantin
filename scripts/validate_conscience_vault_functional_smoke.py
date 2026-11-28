@@ -65,6 +65,25 @@ def main() -> int:
     require('CLIENT_IDENTITY_FORBIDDEN' in smoke and 'user_id=' in smoke,
             'identité client injectée non testée')
 
+    # Entrées malformées: aucune conversion permissive ni modification silencieuse.
+    for marker in (
+        'for invalid_ttl in ("60", True, False, None, 60.5, 601, [], {})',
+        'ttl_seconds=invalid_ttl',
+        'for invalid_key in (None, True, 1234567890123456, "short", "x" * 129,',
+        'device_key=invalid_key',
+        '400, "DEVICE_KEY_INVALID", "clé appareil malformée"',
+        'for invalid_id in (None, True, 1, [], {},',
+        '400, "VAULT_ENTRY_ID_INVALID", "UUID entrée malformé"',
+        'for invalid_content in (None, True, 123, [], {}, "")',
+        '400, "VAULT_ENTRY_CONTENT_INVALID", "contenu malformé"',
+        'unchanged[0].get("content_payload") == CONTENT_1',
+        'aucune mutation après les refus de données malformées',
+        'for invalid_confirmation in (False, None, 1, "true", "false", [], {})',
+        'human_confirmed_delete=invalid_confirmation',
+        '409, "VAULT_DELETE_CONFIRMATION_REQUIRED", "confirmation non booléenne ou négative"',
+    ):
+        require(marker in smoke, f'preuve de refus strict manquante: {marker}')
+
     # Une suppression physique doit d'abord être refusée sans preuve humaine,
     # laisser l'entrée intacte, puis réussir uniquement avec confirmation explicite.
     require('VAULT_DELETE_CONFIRMATION_REQUIRED' in smoke,
