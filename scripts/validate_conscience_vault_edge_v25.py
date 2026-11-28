@@ -97,12 +97,12 @@ def main() -> int:
         'security?.requires_step_up !== true',
         "p_risk_action: 'conscience_vault'",
         "p_risk_model_version: 'v25.0'",
-        "service.rpc('service_conscience_open_session'",
-        "service.rpc('service_conscience_list_entries'",
-        "service.rpc('service_conscience_create_entry'",
-        "service.rpc('service_conscience_update_entry'",
-        "service.rpc('service_conscience_delete_entry'",
-        "service.rpc('service_conscience_revoke_session'",
+        "service.rpc('service_conscience_open_session_bound'",
+        "service.rpc('service_conscience_list_entries_bound'",
+        "service.rpc('service_conscience_create_entry_bound'",
+        "service.rpc('service_conscience_update_entry_bound'",
+        "service.rpc('service_conscience_delete_entry_bound'",
+        "service.rpc('service_conscience_revoke_session_bound'",
         "Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true'",
         "req.headers.get('cf-ipcountry')",
         "req.headers.get('x-sinjira-region')",
@@ -112,6 +112,14 @@ def main() -> int:
         'trusted_device_confirmation',
         "console.warn('[conscience-vault] opération refusée', code)",
     ], 'contrat Edge du Registre personnel')
+
+    bound_migration = read('supabase/migrations/20261128082928_sinjira_vault_auth_session_binding.sql')
+    for action in ('open_session', 'list_entries', 'create_entry', 'update_entry', 'delete_entry', 'revoke_session'):
+        require(edge, [f"service.rpc('service_conscience_{action}_bound', {{\n        p_user_id: user.id,\n        p_auth_session_id: authSessionId,"], f'liaison JWT {action}')
+        forbid(edge, [f"service.rpc('service_conscience_{action}'"], f'RPC legacy {action}')
+        require(bound_migration, [f'create function public.service_conscience_{action}_bound('], f'RPC SQL {action}')
+    require(bound_migration, ['s.user_id=p_user_id', "s.aal::text='aal2'", 'for share;', 'v.auth_session_id=p_auth_session_id', 'for update;', 'for no key update;'], 'liaison transactionnelle obligatoire')
+    forbid(edge, ['body.auth_session_id', 'body.p_auth_session_id'], 'session Auth exclusivement dérivée du JWT')
 
     risk_block = function_block(edge, 'function assertVaultRiskDecision(', 'function errorCode(')
     require(risk_block, [
