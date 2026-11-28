@@ -100,11 +100,33 @@ def reconcile(baseline, future, remote):
                 history_aligned=safe, deployment_authorized=False)
 
 
+def verify_applied(baseline, future, remote):
+    # Reuse overlap/order validation. The exact remote inventory must equal
+    # the baseline plus the reviewed batch, not merely have a successful dry-run.
+    reconcile(baseline, future, remote)
+    expected = {**baseline, **future}
+    missing = sorted(set(expected) - set(remote))
+    unexpected = sorted(set(remote) - set(expected))
+    mismatched = sorted(v for v in expected.keys() & remote.keys()
+                        if expected[v] != remote[v])
+    return dict(expected_count=len(expected), remote_count=len(remote),
+                missing=missing, unexpected=unexpected, mismatched=mismatched,
+                history_aligned=not (missing or unexpected or mismatched),
+                deployment_authorized=False)
+
+
 def self_test():
     base = {"20260101000000":"base"}
     future = {"20260201000000":"future"}
     v, name = next(iter(future.items()))
     assert reconcile(base, future, base)["history_aligned"]
+    assert verify_applied(base, future, {**base, **future})["history_aligned"]
+    for remote in [base, future, {**base, v:"wrong"},
+                   {**base, **future, "20260301000000":"unexpected"},
+                   {**base, "20260301000000":name}]:
+        result = verify_applied(base, future, remote)
+        assert not result["history_aligned"]
+        assert not result["deployment_authorized"]
     for remote in [
         {"20260101000000":"wrong"},
         {"20260102000000":"base"},
@@ -151,7 +173,7 @@ def self_test():
             pass
         else:
             raise AssertionError("lien distant accepté")
-    print("OK: réconciliation lecture seule, 24 assertions/scénarios de sécurité")
+    print("OK: réconciliation lecture seule, 24 scénarios existants et 6 scénarios post-application")
 
 
 def main():
@@ -160,6 +182,7 @@ def main():
     inputs.add_argument("--remote-json", type=Path)
     inputs.add_argument("--remote-dir", type=Path)
     p.add_argument("--self-test", action="store_true")
+    p.add_argument("--after-apply", action="store_true")
     args = p.parse_args()
     if args.self_test:
         self_test()
@@ -177,7 +200,7 @@ def main():
             remote = validate(json.loads(raw))
         base = manifest(ROOT / "supabase/production-migration-ledger.txt")
         future = manifest(ROOT / "supabase/production-reviewed-migration-batch.txt", True)
-        report = reconcile(base, future, remote)
+        report = (verify_applied if args.after_apply else reconcile)(base, future, remote)
     except (OSError, ValueError, UnicodeError):
         print("REFUS: inventaire ou manifestes invalides", file=sys.stderr)
         return 2

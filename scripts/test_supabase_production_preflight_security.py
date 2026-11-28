@@ -67,6 +67,16 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, '          cat "$RUNNER_TEMP/sinjira-db-lint-before.txt" >> "$GITHUB_STEP_SUMMARY"\n' + marker, 1)
         self.assertRejected(bad, "Publication brute de diagnostics de production interdite")
 
+    def test_post_apply_history_proof_is_required(self):
+        marker = ' --after-apply > "$tmp/history.json"'
+        self.assertIn(marker, self.valid)
+        self.assertRejected(self.valid.replace(marker, ' > "$tmp/history.json"', 1), "Preuve finale de l'inventaire distant")
+
+    def test_final_summary_requires_history_proof(self):
+        marker = '[ "${{ steps.final_history.outcome }}" = "success" ] && '
+        self.assertIn(marker, self.valid)
+        self.assertRejected(self.valid.replace(marker, "", 1), "Résumé final sans preuve complète")
+
     def test_runner_latest_is_rejected(self):
         bad = self.valid.replace("    runs-on: ubuntu-24.04", "    runs-on: ubuntu-latest", 1)
         self.assertRejected(bad, "ubuntu-latest")
@@ -77,17 +87,21 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
 
     def test_remote_history_gate_cannot_be_removed(self):
         marker = 'python scripts/audit_production_migration_history.py --remote-dir "$tmp/supabase/migrations"'
-        self.assertEqual(self.valid.count(marker), 2)
-        self.assertRejected(self.valid.replace(marker, "echo skipped-history", 1), "Réconciliation distante obligatoire")
-        head, tail = self.valid.rsplit(marker, 1)
-        self.assertRejected(head + "echo skipped-history" + tail, "Réconciliation après approbation obligatoire")
+        self.assertEqual(self.valid.count(marker), 3)
+        parts = self.valid.split(marker)
+        for i, expected in enumerate(("Réconciliation distante obligatoire", "Réconciliation après approbation obligatoire", "Preuve finale de l'inventaire distant")):
+            with self.subTest(boundary=i):
+                bad = marker.join(parts[:i+1]) + "echo skipped-history" + marker.join(parts[i+1:])
+                self.assertRejected(bad, expected)
 
     def test_history_cleanup_cannot_be_removed(self):
         marker = """          trap 'rm -rf -- "$tmp"' EXIT"""
-        self.assertEqual(self.valid.count(marker), 2)
-        self.assertRejected(self.valid.replace(marker, "          echo cleanup-disabled", 1), "Réconciliation distante sans fermeture sûre ou nettoyage")
-        head, tail = self.valid.rsplit(marker, 1)
-        self.assertRejected(head + "          echo cleanup-disabled" + tail, "Réconciliation après approbation sans fermeture sûre ou nettoyage")
+        self.assertEqual(self.valid.count(marker), 3)
+        parts = self.valid.split(marker)
+        for i, expected in enumerate(("Réconciliation distante sans fermeture sûre ou nettoyage", "Réconciliation après approbation sans fermeture sûre ou nettoyage", "Preuve finale de l'inventaire distant")):
+            with self.subTest(boundary=i):
+                bad = marker.join(parts[:i+1]) + "          echo cleanup-disabled" + marker.join(parts[i+1:])
+                self.assertRejected(bad, expected)
 
     def test_sql_history_artifact_is_rejected(self):
         marker = "          path: ${{ runner.temp }}/sinjira-migration-history.json"
