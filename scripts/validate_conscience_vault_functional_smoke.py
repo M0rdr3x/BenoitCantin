@@ -98,6 +98,17 @@ def main() -> int:
     require(unconfirmed_index < intact_index < confirmed_index,
             'ordre obligatoire: refus sans confirmation → entrée intacte → suppression confirmée')
 
+    for marker in (
+        'second_aal1 = sign_in(_email, _password)',
+        'second_aal2 = verify_totp(second_aal1, factor_id, secret)',
+        'jwt_claims(second_aal2).get("session_id") != jwt_claims(aal2).get("session_id")',
+        'vault(second_aal2, action, vault_session_id=session2, **extra)',
+        '403, "VAULT_SESSION_INVALID", f"isolation intersessions {action}"',
+        'ok(second_aal2, "revoke_session", vault_session_id=session2).get("revoked") is False',
+        'contenu inchangé après les refus intersessions',
+    ):
+        require(marker in smoke, f'isolation intersessions absente: {marker}')
+
     # Deux comptes AAL2 réellement distincts, sans contournement des permissions.
     for marker in (
         'other_aal1, other_uid, _, _ = signup(',
